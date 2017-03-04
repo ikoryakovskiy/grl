@@ -416,7 +416,7 @@ double CLeoBhWalkSym::calculateReward()
         (!mLastStancelegWasLeft && mRightAnklePos > mLeftAnklePos-0.1) )  // left swing leg is behind
       clearanceReward = mRwFootClearance;
 
-    mLogInfoLn("[REWARD] Robot has low foot clearance of " << mFootClearance*100.0 << "cm! Reward = " << clearanceReward);
+    TRACE("[REWARD] Robot has low foot clearance of " << mFootClearance*100.0 << "cm! Reward = " << clearanceReward);
     reward += clearanceReward;
   }
 
@@ -437,7 +437,7 @@ double CLeoBhWalkSym::calculateReward()
 
   // Reward for keeping torso upright
   //double torsoReward = mRwTorsoUpright * 1.0/(1.0 + (getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle)*(getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle)/(mRwTorsoUprightAngleMargin*mRwTorsoUprightAngleMargin));
-  double torsoReward = mRwTorsoUpright * pow((getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle), 2) / pow(mRwTorsoUprightAngleMargin, 2);
+  double torsoReward = mRwTorsoUpright * pow(getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle, 2) / pow(mRwTorsoUprightAngleMargin, 2);
   mLogDebugLn("Torso upright reward: " << torsoReward);
   reward += torsoReward;
 
