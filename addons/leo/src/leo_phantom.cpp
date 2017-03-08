@@ -85,11 +85,13 @@ void LeoPhantomEnvironment::start(int test, Observation *obs)
   pub_ic_signal_->set(contact_[idx_]);
   INFO(contact_[idx_]);
 
-  idx_++;
+  ++idx_;
 }
 
 double LeoPhantomEnvironment::step(const Action &action, Observation *obs, double *reward, int *terminal)
 {
+  INFO(action);
+
   // copy observation
   obs->v.resize(state0_[idx_].size());
   obs->v = state0_[idx_];
@@ -99,9 +101,21 @@ double LeoPhantomEnvironment::step(const Action &action, Observation *obs, doubl
   pub_ic_signal_->set(contact_[idx_]);
   INFO(contact_[idx_]);
 
-  idx_++;
-  return (time_[idx_][0] - time_[idx_-1][0]);
-}
+  double tau = (time_[idx_][0] - time_[idx_-1][0]);
 
+  *reward = 0;
+  if (idx_+1 < time_.size())
+    *terminal = 0;
+  else
+    *terminal = 1;
+
+  exporter_->write({time_[idx_], state0_[idx_-1], state0_[idx_], action.v,
+                    grl::VectorConstructor(*reward), grl::VectorConstructor(*terminal),
+                    grl::VectorConstructor(atUndefined), contact_[idx_]
+                   });
+
+  ++idx_;
+  return tau;
+}
 
 

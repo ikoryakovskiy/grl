@@ -1,4 +1,4 @@
-/** \file communicator_agent.h
+/** \file communicator.h
  * \brief Communicator agent header file.
  *
  * \author    Ivan Koryakovskiy <i.koryakovskiy@gmail.com>

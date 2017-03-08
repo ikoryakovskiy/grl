@@ -30,7 +30,6 @@
 
 #include <grl/policies/parameterized.h>
 #include <grl/policies/feed_forward.h>
-#include <grl/importer.h>
 
 namespace grl
 {

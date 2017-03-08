@@ -1,4 +1,4 @@
-/** \file communivator_env.h
+/** \file communivator.h
  * \brief Communicator environment header file.
  *
  * \author    Ivan Koryakovskiy <i.koryakovskiy@gmail.com>

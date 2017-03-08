@@ -33,7 +33,7 @@ REGISTER_CONFIGURABLE(TimelineMapping)
 
 void TimelineMapping::request(ConfigurationRequest *config)
 {
-  config->push_back(CRP("importer", "importer", "Importer with time as the first column", importer_));
+  config->push_back(CRP("importer", "importer.dynamic", "Importer with time as the first column", importer_));
 }
 
 void TimelineMapping::configure(Configuration &config)
@@ -42,7 +42,7 @@ void TimelineMapping::configure(Configuration &config)
   importer_->open();
   
   Vector line;
-  while (importer_->read({&line}))
+  while (importer_->read(&line))
   {
     if (data_.size() && data_[data_.size()-1].size() != line.size())
     {

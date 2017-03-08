@@ -20,7 +20,7 @@ add_library(${TARGET} SHARED
             ${SRC}/agents/voluntary.cpp
             ${SRC}/agents/solver.cpp
             ${SRC}/agents/filtering.cpp
-            ${SRC}/agents/communicator_agent.cpp
+            ${SRC}/agents/communicator.cpp
             ${SRC}/discretizers/uniform.cpp
             ${SRC}/discretizers/peaked.cpp
             ${SRC}/discretizers/split.cpp
@@ -42,7 +42,7 @@ add_library(${TARGET} SHARED
             ${SRC}/environments/flyer2d.cpp
             ${SRC}/environments/puddle.cpp
             ${SRC}/environments/mountain.cpp
-            ${SRC}/environments/communicator_env.cpp
+            ${SRC}/environments/communicator.cpp
             ${SRC}/experiments/approx_test.cpp
             ${SRC}/experiments/online_learning.cpp
             ${SRC}/experiments/batch_learning.cpp
@@ -97,6 +97,7 @@ add_library(${TARGET} SHARED
             ${SRC}/representations/additive.cpp
             ${SRC}/representations/iterative.cpp
             ${SRC}/representations/dictionary.cpp
+            ${SRC}/representations/communicator.cpp
             ${SRC}/samplers/greedy.cpp
             ${SRC}/samplers/softmax.cpp
             ${SRC}/samplers/pada.cpp

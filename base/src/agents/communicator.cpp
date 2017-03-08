@@ -1,4 +1,4 @@
-/** \file communicator_agent.cpp
+/** \file communicator.cpp
  * \brief Communicator agent source file.
  *
  * \author    Ivan Koryakovskiy <i.koryakovskiy@gmail.com>
@@ -25,7 +25,7 @@
  * \endverbatim
  */
 
-#include <grl/agents/communicator_agent.h>
+#include <grl/agents/communicator.h>
 #include <iomanip>
 #include <unistd.h>
 

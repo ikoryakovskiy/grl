@@ -1,4 +1,4 @@
-/** \file Communicator_env.cpp
+/** \file Communicator.cpp
  * \brief Communicator environment source file.
  *
  * \author    Ivan Koryakovskiy <i.koryakovskiy@gmail.com>
@@ -25,7 +25,7 @@
  * \endverbatim
  */
 
-#include <grl/environments/communicator_env.h>
+#include <grl/environments/communicator.h>
 #include <iomanip>
 #include <unistd.h>
 

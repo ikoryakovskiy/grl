@@ -133,9 +133,6 @@ void PIDPolicy::act(double time, const Observation &in, Action *out)
     prev_in_ = in;
   }
 
-  CRAWL("Setpoint " << setpoint_);
-  CRAWL("Observation " << in.v);
-
   out->v.resize(outputs_); 
   out->type = atGreedy;
 
@@ -163,7 +160,7 @@ void PIDPolicy::act(double time, const Observation &in, Action *out)
 ////////////////////////////////////////////////
 void PIDTrajectoryPolicy::request(ConfigurationRequest *config)
 {
-  config->push_back(CRP("trajectory", "mapping", "Maps time to setpoints", trajectory_, true));
+  config->push_back(CRP("trajectory", "mapping", "Maps time to setpoints", trajectory_));
 
   config->push_back(CRP("inputs", "int.observation_dims", "Number of inputs", (int)inputs_, CRP::System, 1));
   config->push_back(CRP("outputs", "int.action_dims", "Number of outputs", (int)outputs_, CRP::System, 1));
@@ -195,28 +192,24 @@ void PIDTrajectoryPolicy::configure(Configuration &config)
     p_ = ConstantLargeVector(inputs_*outputs_, 0.);
   if (p_.size() && p_.size() != inputs_*outputs_)
     throw bad_param("policy/pidt:p");
-  CRAWL(p_);
 
   i_ = config["i"].v();
   if (!i_.size())
     i_ = ConstantLargeVector(inputs_*outputs_, 0.);
   if (i_.size() && i_.size() != inputs_*outputs_)
     throw bad_param("policy/pidt:i");
-  CRAWL(i_);
 
   d_ = config["d"].v();
   if (!d_.size())
     d_ = ConstantLargeVector(inputs_*outputs_, 0.);
   if (d_.size() && d_.size() != inputs_*outputs_)
     throw bad_param("policy/pidt:d");
-  CRAWL(d_);
 
   il_ = config["il"].v();
   if (!il_.size())
     il_ = ConstantLargeVector(inputs_*outputs_, std::numeric_limits<double>::infinity());
   if (il_.size() && il_.size() != inputs_*outputs_)
     throw bad_param("policy/pidt:il");
-  CRAWL(il_);
 
   params_ = extend(extend(extend(p_, i_), d_), il_);
 
@@ -236,9 +229,6 @@ void PIDTrajectoryPolicy::act(double time, const Observation &in, Action *out)
   // Read current setpoint from the trajectory
   trajectory_->read(VectorConstructor(time), &setpoint_);
   
-  CRAWL("Setpoint " << setpoint_);
-  CRAWL("Observation " << in.v);
-
   if (setpoint_.size() != inputs_)
     throw bad_param("policy/pidt:inputs");
 
@@ -269,8 +259,6 @@ void PIDTrajectoryPolicy::act(double time, const Observation &in, Action *out)
 
     (*out)[oo] = fmin(action_max_[oo], fmax(u, action_min_[oo]));
   }
-
-  CRAWL(*out);
 
   prev_in_ = in;
 }

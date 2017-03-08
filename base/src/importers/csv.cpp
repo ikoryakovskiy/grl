@@ -32,11 +32,13 @@ using namespace grl;
 
 REGISTER_CONFIGURABLE(CSVImporter)
 
-void CSVImporter::request(ConfigurationRequest *config)
+void CSVImporter::request(const std::string &role, ConfigurationRequest *config)
 {
   config->push_back(CRP("file", "Input base filename", file_));
-  config->push_back(CRP("headers", "Comma-separated list of imported headers elements", ""));
-  config->push_back(CRP("split", "Allows to import all data into a single variable or split colums across multiple variables", split_, CRP::Configuration, {"no_split", "split"}));
+  if (role == "static")
+    config->push_back(CRP("fields", "Comma-separated list of fields to read (should be empty)", fields_));
+  else
+    config->push_back(CRP("fields", "Comma-separated list of fields to read", fields_));
 }
 
 void CSVImporter::configure(Configuration &config)
@@ -45,8 +47,8 @@ void CSVImporter::configure(Configuration &config)
   if (file_.empty())
     throw bad_param("importer/csv:file");
 
-  init(cutLongStr(config["headers"].str()));
-  split_ = config["split"].str();
+  fields_ = config["fields"].str();
+  init(cutLongStr(fields_));
 }
 
 void CSVImporter::reconfigure(const Configuration &config)
@@ -55,10 +57,13 @@ void CSVImporter::reconfigure(const Configuration &config)
 
 void CSVImporter::init(const std::vector<std::string> &headers)
 {
-  if (!headers_.size())
-    headers_ = headers;
+  if (headers_.size())
+  {
+    ERROR("Tried to specify fields of static importer");
+    throw bad_param("importer/csv:fields");
+  }
   else
-    throw bad_param("importer/csv:headers (attempt to overwrite headers provided in configuration)");
+    headers_ = headers;
 }
 
 void CSVImporter::open(const std::string &variant)
@@ -73,7 +78,7 @@ void CSVImporter::open(const std::string &variant)
   
   if (headers_.size())
   {
-    // Requested specific headers to read
+    // Requested specific fields to read
     std::string line;
     std::getline(stream_, line);
     if (line != "COLUMNS:")
@@ -82,7 +87,7 @@ void CSVImporter::open(const std::string &variant)
       throw bad_param("importer/csv:file");
     }
     
-    std::vector<bool> found(false, headers_.size());
+    std::vector<bool> found(headers_.size(), false);
     do
     {
       std::getline(stream_, line);
@@ -94,15 +99,18 @@ void CSVImporter::open(const std::string &variant)
         if (line.find('[') != std::string::npos)
           line.erase(line.find('['));
         
-        for (size_t ii=0; ii != headers_.size(); ++ii)
+        size_t ii;
+        for (ii=0; ii != headers_.size(); ++ii)
           if (headers_[ii] == line)
           {
-            if (split_ == "no_split")
-              order_.push_back(0);
-            else
-              order_.push_back(ii);
+            order_.push_back(ii);
             found[ii] = true;
+            break;
           }
+          
+        // Not requested
+        if (ii == headers_.size())
+          order_.push_back(-1);
       }
     } while (stream_.good() && line != "DATA:");
     
@@ -114,20 +122,30 @@ void CSVImporter::open(const std::string &variant)
       }
   }
   else
-    order_ = std::vector<size_t>(1024, 0);
+  {
+    if (stream_.peek() == 'C')
+    {
+      // Reading a CSV file with headers without specifying fields.
+      // Clear until we get to the data.
+      
+      CRAWL("Skipping headers");
+      
+      std::string line;
+      do
+      {
+        std::getline(stream_, line);
+      } while (stream_.good() && line != "DATA:");
+    }
+    
+    order_ = std::vector<int>(1024, 0);
+  }
 }
 
 bool CSVImporter::read(const std::vector<Vector*> &vars)
 {
-  if (headers_.size() && vars.size() != headers_.size() && split_ == "split")
+  if (headers_.size() && vars.size() != headers_.size())
   {
-    ERROR("Variable list does not match header list");
-    return false;
-  }
-
-  if (vars.size() > 1 && split_ == "no_split")
-  {
-    ERROR("No-split does not match input list");
+    ERROR("Variable list does not match field list");
     return false;
   }
   
@@ -138,29 +156,16 @@ bool CSVImporter::read(const std::vector<Vector*> &vars)
   while (ii < order_.size() && stream_.good())
   {
     char c = stream_.get();
-    
-    if (c == 'C')
-    {
-      // Reading a CSV file with headers without specifying headers.
-      // Clear until we get to the data.
-      
-      CRAWL("Skipping header");
-      
-      std::string line;
-      do
-      {
-        std::getline(stream_, line);
-      } while (stream_.good() && line != "DATA:");
-      
-      continue;
-    }
-    
+  
     if (c == ',' || c == '\n' || !stream_.good())
     {
-      if (str == "nan")
-        var_vec[order_[ii]].push_back(nan(""));
-      else
-        var_vec[order_[ii]].push_back(atof(str.c_str()));
+      if (order_[ii] >= 0)
+      {
+        if (str == "nan")
+          var_vec[order_[ii]].push_back(nan(""));
+        else
+          var_vec[order_[ii]].push_back(atof(str.c_str()));
+      }
         
       str.clear();
       ++ii;
@@ -177,12 +182,40 @@ bool CSVImporter::read(const std::vector<Vector*> &vars)
   for (; it != var_vec.end(); ++it, ++jt)
     toVector(*it, **jt);
 
-  if (stream_.peek() != '\n')
+  return stream_.good();
+}
+
+bool CSVImporter::read(Vector *var)
+{
+  // Prepare vector to read variables into  
+  std::vector<Vector*> vars;
+  
+  if (headers_.size())
+    vars.resize(headers_.size());
+  else
+    vars.resize(1);
+    
+  for (size_t ii=0; ii < vars.size(); ++ii)
+    vars[ii] = new Vector();
+    
+  // Read variables normally
+  bool res = read(vars);
+
+  // Prepare single output  
+  size_t sz=0;
+  for (size_t ii=0; ii < vars.size(); ++ii)
+    sz += vars[ii]->size();
+    
+  *var = Vector(sz);
+  
+  // Copy variables into single output
+  sz = 0;
+  for (size_t ii=0; ii < vars.size(); ++ii)
   {
-    std::string line;
-    std::getline(stream_, line);
-    INFO(line);
+    var->segment(sz, vars[ii]->size()) = *vars[ii];
+    sz += vars[ii]->size();
+    safe_delete(&vars[ii]);
   }
   
-  return stream_.good();
+  return res;
 }
