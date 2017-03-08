@@ -1136,6 +1136,32 @@ environment/ode:
     type: double.reward_max
     description: Upper limit on immediate reward
     mutability: provided
+environment/phantom:
+  description: Phantom environment which reads state transitions from importer
+  importer:
+    type: importer
+    description: Importer with time as the first column
+    mutability: configuration
+    default: 0
+    optional: 0
+  exporter:
+    type: exporter
+    description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
+    mutability: configuration
+    default: 0
+    optional: 1
+  sub_transition_type:
+    type: signal/vector
+    description: Subscriber to the transition type
+    mutability: configuration
+    default: 0
+    optional: 0
+  pub_ic_signal:
+    type: signal/vector
+    description: Publisher of the initialization and contact signal
+    mutability: configuration
+    default: 0
+    optional: 0
 environment/pre/noise:
   description: Injects noise into an environment
   environment:
@@ -1646,7 +1672,7 @@ mapping/policy/feed_forward:
     type: mapping
     description: Maps time to controls
     mutability: configuration
-    default: 0x1220100
+    default: 0x20
     optional: 1
 mapping/policy/mcts:
   description: Monte-Carlo Tree Search policy

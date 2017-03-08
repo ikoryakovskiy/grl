@@ -25,17 +25,23 @@ state0[11],
 state0[12], 
 state0[13], 
 state0[14], 
-state0[15]
+state0[15]{contact}
 DATA:"""
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('filename')
+    parser.add_argument('-c', '--add_contact_info', help='Adding contact information', action='store_true')
     args = parser.parse_args()
 
-    data = np.loadtxt(args.filename, skiprows=44, delimiter=',')
+    hd_sz = header_size(args.filename)
+    print "Skipping {} rows".format(hd_sz)
+
+    data = np.loadtxt(args.filename, skiprows=hd_sz, delimiter=',')
     ts = data[:, 0]       # time
     xs = data[:, 1:17]    # states
+    xc = data[:, -1]      # contacts
+
     nxs = np.empty(xs.shape)
 
     nxs[:, 0] = xs[:, 7]
@@ -58,9 +64,28 @@ def main():
     nxs[:, xdo+6] = xs[:, xdo+5]
     nxs[:, xdo+7] = xs[:, xdo+4]
 
+    # join
+    if args.add_contact_info:
+        data = np.column_stack((ts,nxs,xc))
+        out_header = hd.format(contact=",\ncontact")
+    else:
+        data = np.column_stack((ts,nxs))
+        out_header = hd.format(contact="")
+
     # save
-    [fn, ext] = os.path.splitext( os.path.basename(args.filename))
-    np.savetxt(fn+"-converted"+ext, np.column_stack((ts,nxs)), fmt='%11.6f', delimiter=',', newline='\n', header=hd, comments='')
+    [path, fn_ext] = os.path.split(args.filename)
+    if path == "":
+        path = "."
+    [fn, ext] = os.path.splitext(fn_ext)
+    pt = path+"/"+fn+"-converted"+ext
+    print "Saving to {}".format(pt)
+    np.savetxt(pt, data, fmt='%11.6f', delimiter=',', newline='\n', header=out_header, comments='')
+
+def header_size(fn):
+    with open(fn) as f:
+      for idx, line in enumerate(f):
+          if "DATA:" in line:
+               return idx+1
 
 if __name__ == "__main__":
     main()

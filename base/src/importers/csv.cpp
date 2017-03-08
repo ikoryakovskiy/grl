@@ -181,6 +181,7 @@ bool CSVImporter::read(const std::vector<Vector*> &vars)
   {
     std::string line;
     std::getline(stream_, line);
+    INFO(line);
   }
   
   return stream_.good();

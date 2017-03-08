@@ -23,6 +23,7 @@ if (PKG_CONFIG_FOUND AND QT4_FOUND)
                           ${SRC}/leo.cpp
                           ${SRC}/leo_walk.cpp
                           ${SRC}/leo_squat.cpp
+                          ${SRC}/leo_phantom.cpp
                           ${SRC}/LeoBhWalkSym.cpp
                           ${SRC}/STGLeoSim.cpp
                           ${SRC}/ThirdOrderButterworth.cpp
