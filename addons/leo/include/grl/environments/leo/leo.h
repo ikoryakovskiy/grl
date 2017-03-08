@@ -10,6 +10,26 @@
 
 namespace grl
 {
+enum LeoXmlStateVar
+{
+  xsvTorsoAngle,
+  xsvLeftArmAngle,
+  xsvRightHipAngle,
+  xsvLeftHipAngle,
+  xsvRightKneeAngle,
+  xsvLeftKneeAngle,
+  xsvRightAnkleAngle,
+  xsvLeftAnkleAngle,
+  xsvTorsoAngleRate,
+  xsvLeftArmAngleRate,
+  xsvRightHipAngleRate,
+  xsvLeftHipAngleRate,
+  xsvRightKneeAngleRate,
+  xsvLeftKneeAngleRate,
+  xsvRightAnkleAngleRate,
+  xsvLeftAnkleAngleRate
+};
+
 struct TargetInterface
 {
   struct ObserverInterface

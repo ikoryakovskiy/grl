@@ -61,6 +61,11 @@ class LeoStateMachineAgent : public Agent
     virtual void start(const Observation &obs, Action *action);
     virtual void step(double tau, const Observation &obs, double reward, Action *action);
     virtual void end(double tau, const Observation &obs, double reward);
+
+  protected:
+    virtual bool unpack_ic(int *touchDown, int *groundContact, int *stanceLegLeft) const;
+    virtual bool failed(const Observation &obs, bool stanceLegLeft) const;
+    virtual void set_agent(Agent *agent, double tau, const Observation &obs, double reward, Action *action, const char* msg);
 };
 
 }

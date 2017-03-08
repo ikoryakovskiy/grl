@@ -142,6 +142,7 @@ void OnlineLearningExperiment::run()
       state_->set(obs.v);
       action_->set(action.v);
 
+      double current_time = 0;
       do
       {
         if (rate_)
@@ -152,7 +153,9 @@ void OnlineLearningExperiment::run()
           step_timer.restart();
         }
 
-        double tau = environment_->step(action, &obs, &reward, &terminal);
+        std::cout << "Time: " << current_time;
+        double tau = environment_->step(action, &obs, &reward, &terminal);      
+        current_time += tau;
 
         CRAWL(action << " - " << reward << " -> " << obs);
         

@@ -70,6 +70,17 @@ void CommunicatorEnvironment::reconfigure(const Configuration &config)
 
 void CommunicatorEnvironment::start(int test, Observation *obs)
 {
+  if (started_)
+  {
+    // always need to reply with a dummy action
+//    communicator_->send(ConstantVector(target_action_dims_, 0.0));
+
+//    usleep(2000000); // sleep to ensure
+    Configuration config;
+    config.set("action", "restart");
+    communicator_->reconfigure(config);
+  }
+
   communicator_->recv(&obs_conv_);
   clock_gettime(CLOCK_MONOTONIC, &computation_begin_);
   if (converter_)
@@ -77,6 +88,8 @@ void CommunicatorEnvironment::start(int test, Observation *obs)
   else
     *obs = obs_conv_;
   obs->absorbing = false;
+
+  started_ = true;
 }
 
 double CommunicatorEnvironment::step(const Action &action, Observation *obs, double *reward, int *terminal)

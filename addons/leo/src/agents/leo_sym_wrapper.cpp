@@ -32,26 +32,6 @@ using namespace grl;
 
 REGISTER_CONFIGURABLE(LeoSymWrapperAgent)
 
-enum LeoXmlStateVar
-{
-  xsvTorsoAngle,
-  xsvLeftArmAngle,
-  xsvRightHipAngle,
-  xsvLeftHipAngle,
-  xsvRightKneeAngle,
-  xsvLeftKneeAngle,
-  xsvRightAnkleAngle,
-  xsvLeftAnkleAngle,
-  xsvTorsoAngleRate,
-  xsvLeftArmAngleRate,
-  xsvRightHipAngleRate,
-  xsvLeftHipAngleRate,
-  xsvRightKneeAngleRate,
-  xsvLeftKneeAngleRate,
-  xsvRightAnkleAngleRate,
-  xsvLeftAnkleAngleRate
-};
-
 void LeoSymWrapperAgent::request(ConfigurationRequest *config)
 {
   config->push_back(CRP("agent", "agent", "Target agent with reduced state-action space due to symmetry", agent_));

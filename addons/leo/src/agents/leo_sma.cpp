@@ -65,10 +65,13 @@ void LeoStateMachineAgent::reconfigure(const Configuration &config)
 void LeoStateMachineAgent::start(const Observation &obs, Action *action)
 {
   time_ = 0.;
-  if (!agent_)
-    agent_ = agent_prepare_;
+  int touchDown, groundContact, stanceLegLeft;
+  unpack_ic(&touchDown, &groundContact, &stanceLegLeft);
+  if (failed(obs, stanceLegLeft))
+    agent_ = agent_standup_; // standing up from lying position
   else
-    agent_ = agent_standup_;
+    agent_ = agent_prepare_; // prepare from hanging position
+
   agent_->start(obs, action);
 }
 
@@ -76,54 +79,92 @@ void LeoStateMachineAgent::step(double tau, const Observation &obs, double rewar
 {
   time_ += tau;
 
+  // obtain contact information for symmetrical switching
+  // note that groundContact is not reliable when Leo is moving,
+  // but is reliable when Leo is standing still
+  int touchDown, groundContact, stanceLegLeft;
+  unpack_ic(&touchDown, &groundContact, &stanceLegLeft);
+
+  // if Leo fell down and we are not trying to stand up alredy, then try!
+  if ((agent_ != agent_standup_) && (failed(obs, stanceLegLeft)))
+    return set_agent(agent_standup_, tau, obs, reward, action, "Leo fall down, need to stand up!");
+
   if (agent_ == agent_prepare_)
   {
-    if (sub_ic_signal_)
+    // if Leo is in the upright position wait for the contact before we start the starter
+    // or the main agent
+    Vector gc = VectorConstructor(groundContact);
+    if (foot_contact_trigger_->check(time_, gc))
     {
-      Vector signal = sub_ic_signal_->get();
-      Vector fc = VectorConstructor(((int)signal[0] & lstGroundContact) != 0);
-      if (foot_contact_trigger_->check(time_, fc))
-      {
-        if (agent_starter_ && starter_trigger_ && !starter_trigger_->check(time_, Vector()))
-        {
-          agent_ = agent_starter_;
-          INFO("Starter!");
-        }
-        else
-        {
-          agent_ = agent_main_;
-          INFO("Main direct!");
-        }
-        agent_->start(obs, action);
-        return;
-      }
+      if (agent_starter_ && starter_trigger_ && !starter_trigger_->check(time_, Vector()))
+        return set_agent(agent_starter_, tau, obs, reward, action, "Starter!");
+      else
+        return set_agent(agent_main_, tau, obs, reward, action, "Main directly!");
     }
   }
 
   if (agent_ == agent_starter_)
+  {
+    // run starter agent for some time, it helps the main agent to start
     if (starter_trigger_->check(time_, Vector()))
-    {
-      agent_starter_->end(tau, obs, reward);
-      agent_ = agent_main_;
-      agent_->start(obs, action);
-      INFO("Main!");
-      return;
-    }
+      return set_agent(agent_main_, tau, obs, reward, action, "Main!");
+  }
 
   if (agent_ == agent_standup_)
+  {
+    // try to stand up (body should be in the upright position)
     if (upright_trigger_->check(time_, obs))
-    {
-      agent_standup_->end(tau, obs, reward);
-      agent_ = agent_prepare_;
-      agent_->start(obs, action);
-      INFO("Upright!");
-      return;
-    }
+      return set_agent(agent_prepare_, tau, obs, reward, action, "Prepare!");
+  }
 
   agent_->step(tau, obs, reward, action);
 }
 
 void LeoStateMachineAgent::end(double tau, const Observation &obs, double reward)
 {
-  agent_->end(tau, obs, reward);
+  std::cout << "End should not be called here!" << std::endl;
 }
+
+void LeoStateMachineAgent::set_agent(Agent *agent, double tau, const Observation &obs, double reward, Action *action, const char* msg)
+{
+  agent_->end(tau, obs, reward);  // finish previous agent
+  agent_ = agent;                 // switch to the new agent
+  agent_->start(obs, action);     // start it to obtain action
+  INFO(msg);
+}
+
+bool LeoStateMachineAgent::failed(const Observation &obs, bool stanceLegLeft) const
+{
+  double torsoComstraint = 1; // 1
+  double stanceComstraint = 0.36*M_PI; // 0.36*M_PI
+
+  // Torso angle out of range
+  if (fabs(obs[LeoXmlStateVar::xsvTorsoAngle]) > torsoComstraint)
+  {
+    std::cout << "[TERMINATION] Torso angle too large" << std::endl;
+    return true;
+  }
+
+  // Stance leg angle out of range
+  int hipStance = stanceLegLeft ? LeoXmlStateVar::xsvLeftHipAngle : LeoXmlStateVar::xsvRightKneeAngle;
+  if (fabs(obs[LeoXmlStateVar::xsvTorsoAngle] + obs[hipStance]) > stanceComstraint)
+  {
+    std::cout << "[TERMINATION] Stance leg angle too large" << std::endl;
+    return true;
+  }
+  return false;
+}
+
+bool LeoStateMachineAgent::unpack_ic(int *touchDown, int *groundContact, int *stanceLegLeft) const
+{
+  if (sub_ic_signal_)
+  {
+    Vector signal = sub_ic_signal_->get();
+    *touchDown     = (((int)signal[0] & lstSwlTouchDown ) != 0);
+    *groundContact = (((int)signal[0] & lstGroundContact) != 0);
+    *stanceLegLeft = (((int)signal[0] & lstStanceLeft   ) != 0);
+    return true;
+  }
+  return false;
+}
+

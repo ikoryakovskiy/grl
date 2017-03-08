@@ -1,0 +1,102 @@
+experiment:
+  runs: 1
+  trials: 0
+  steps: 0
+  rate: 0
+  test_interval: 0
+  output: complex_leo_pid_walk
+  environment:
+    behavior:
+      type: behavior/leo_walk
+    xml: ../../leo/cfg/xm430_210_vc_leo_walk_real.xml
+    target_env:
+      communicator:
+        role: ZMQ_REP
+        sync: tcp://192.168.1.10:5560
+        addr: tcp://*:5561
+        type: communicator/zeromq/request_reply
+      target_obs_dims: 20
+      target_action_dims: 7
+      converter: 0
+      benchmark_delays: 0
+      type: environment/communicator
+    observe: torso_boom, shoulder, hipright, hipleft, kneeright, kneeleft, ankleright, ankleleft
+    actuate: shoulder, hipright, hipleft, kneeright, kneeleft, ankleright, ankleleft
+    exporter:
+      file: complex_leo_pid_walk
+      style: meshup
+      variant: all
+      enabled: 1
+      fields: ""
+      type: exporter/csv
+    sub_transition_type:
+      type: signal/vector
+    pub_ic_signal:
+      type: signal/vector
+    measurement_noise: 0
+    type: environment/leo_walk
+  agent:
+    agent_prepare:
+      policy:
+        setpoint: [ -0.101485, -0.261799, 0.819996, 0.100951, -1.269998, 0.001465, 0.0, 4e-06, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        outputs: 7
+        p: [ 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        i: [  ]
+        d: [  ]
+        il: [  ]
+        action_min: ../../../../environment/action_min
+        action_max: ../../../../environment/action_max
+        type: mapping/policy/parameterized/pid
+      pub_transition_type: ../../../environment/sub_transition_type
+      type: agent/leo/fixed
+    agent_standup:
+      policy:
+        setpoint: [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        outputs: 7
+        p: [  ]
+        i: [  ]
+        d: [  ]
+        il: [  ]
+        action_min: ../../../../environment/action_min
+        action_max: ../../../../environment/action_max
+        type: mapping/policy/parameterized/pid
+      pub_transition_type: ../../../environment/sub_transition_type
+      type: agent/leo/fixed
+    agent_main:
+      policy:
+        trajectory:
+          importer:
+            file: ../src/grl/addons/leo/pid_trajectories/leosim_dsarsa_walk_egreedy_play-test-0-converted
+            headers: time, state0
+            split: no_split
+            type: importer/csv
+          type: mapping/timeline
+        inputs: 16
+        outputs: 7
+        p: [ 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0 ]
+        i: [  ]
+        d: [  ]
+        il: [  ]
+        action_min: ../../../../environment/action_min
+        action_max: ../../../../environment/action_max
+        type: mapping/policy/parameterized/pidt
+      pub_transition_type: ../../../environment/sub_transition_type
+      type: agent/leo/fixed
+    upright_trigger:
+      min: [ -0.2, -100000, -0.3, -0.3, -0.6, -0.6, -3.14, -3.14, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1 ]
+      max: [ 0.2, 100000, 0.3, 0.3, 0.1, 0.1, 3.14, 3.14, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 ]
+      delay: 0
+      type: trigger
+    fc_trigger:
+      min: [ 0.9 ]
+      max: [ 1.1 ]
+      delay: 5
+      type: trigger
+    sub_ic_signal: ../../environment/pub_ic_signal
+    agent_starter: 0
+    starter_trigger: 0
+    type: agent/leo/sma
+  test_agent: ../agent
+  save_every: never
+  load_file: ""
+  type: experiment/online_learning

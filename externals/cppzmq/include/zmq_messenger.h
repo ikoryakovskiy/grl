@@ -41,8 +41,12 @@ public:
   void start(int type, const char *primaryAddr, const char *secondaryAddr = NULL, const char *syncAddress = NULL);
   bool send(const void *data, unsigned int size) const;
   bool recv(void* data, unsigned int size, int flags = 0) const;
-  void sync();
+  void sync_wait();
   bool isConnected() const { return connected_; }
+  void close_connection();
+
+protected:
+  void safe_clean();
 };
 
 #endif // ZEROMQ_MESSENGER_H

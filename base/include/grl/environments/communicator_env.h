@@ -42,7 +42,7 @@ class CommunicatorEnvironment: public Environment
 {
   public:
     TYPEINFO("environment/communicator", "Communicator environment which interects with a real environment by sending and receiving messages")
-    CommunicatorEnvironment(): converter_(NULL), communicator_(NULL), target_obs_dims_(0), target_action_dims_(0), benchmark_delays_(0) {}
+    CommunicatorEnvironment(): converter_(NULL), communicator_(NULL), target_obs_dims_(0), target_action_dims_(0), benchmark_delays_(0), started_(false) {}
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -59,6 +59,8 @@ class CommunicatorEnvironment: public Environment
     Communicator *communicator_;
     timespec computation_begin_;
     int target_obs_dims_, target_action_dims_;
+
+    bool started_;
 
     // benchmark communicaton delays
     int benchmark_delays_;

@@ -93,8 +93,11 @@ std::string LeoBhWalk::getProgressReport(double trialTime)
   // Number of footsteps in this trial
   progressString << std::setw(pw) << mNumFootsteps;
 
-  // Walked distance (estimate)
+  // Walked distance
   progressString << std::setw(pw) << mWalkedDistance;
+
+  // Average length of a step
+  progressString << std::setw(pw) << mWalkedDistance/mNumFootsteps;
 
   // Speed
   progressString << std::setw(pw) << mWalkedDistance/trialTime;
@@ -195,6 +198,7 @@ void LeoWalkEnvironment::configure(Configuration &config)
 
 void LeoWalkEnvironment::start(int test, Observation *obs)
 {
+  INFO("Starting leo env");
   LeoBaseEnvironment::start(test);
 
   target_env_->start(test_, &target_obs_);
@@ -293,10 +297,10 @@ double LeoWalkEnvironment::step(const Action &action, Observation *obs, double *
         signal << VectorConstructor(0), ti_actuator_sym, ti_actuator;
     }
 
-    int gc = leoState_.mFootContacts  ? lstGroundContact : lstNone;
     int td = bh_->madeFootstep()      ? lstSwlTouchDown  : lstNone;
+    int gc = leoState_.mFootContacts  ? lstGroundContact : lstNone;
     int sl = bh_->stanceLegLeft()     ? lstStanceLeft    : lstStanceRight;
-    signal[0] = gc | td | sl;
+    signal[0] = td | gc | sl;
     pub_ic_signal_->set(signal);
   }
 

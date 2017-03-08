@@ -232,7 +232,7 @@ void CLeoBhWalkSym::updateDerivedStateVars(CLeoState* currentSTGState)
     // Calculate clearance for left foot
     mFootClearance      = std::min(leftToeZ, leftHeelZ);
   }
-//  std::cout << " leftIsStance = " << leftIsStance << "; FC " << leftFootContact << ", " << rightFootContact << std::endl;
+  std::cout << " leftIsStance = " << leftIsStance << "; FC " << (int)(currentSTGState->mFootContacts) << "; l-r " << leftFootContact << ", " << rightFootContact << std::endl;
 
   mLogInfoLn("Foot clearance is " << mFootClearance);
   // Adjust swing time, used to determine early swing against late swing
@@ -416,7 +416,7 @@ double CLeoBhWalkSym::calculateReward()
         (!mLastStancelegWasLeft && mRightAnklePos > mLeftAnklePos-0.1) )  // left swing leg is behind
       clearanceReward = mRwFootClearance;
 
-    TRACE("[REWARD] Robot has low foot clearance of " << mFootClearance*100.0 << "cm! Reward = " << clearanceReward);
+    //INFO("[REWARD] Robot has low foot clearance of " << mFootClearance*100.0 << "cm! Reward = " << clearanceReward);
     reward += clearanceReward;
   }
 
@@ -487,7 +487,7 @@ bool CLeoBhWalkSym::isDoomedToFall(CLeoState* state, bool report)
     {
       if (report)
         mLogNoticeLn("[TERMINATION] Torso angle too large");
-//      std::cout << "[TERMINATION] Torso angle too large" << std::endl;
+      std::cout << "[TERMINATION] Torso angle too large" << std::endl;
       return true;
     }
 
@@ -510,7 +510,7 @@ bool CLeoBhWalkSym::isDoomedToFall(CLeoState* state, bool report)
     {
       if (report)
         mLogNoticeLn("[TERMINATION] Stance leg angle too large");
-//      std::cout << "[TERMINATION] Stance leg angle too large" << std::endl;
+      std::cout << "[TERMINATION] Stance leg angle too large" << std::endl;
       return true;
     }
   }

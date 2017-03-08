@@ -112,6 +112,17 @@ void ZeromqRequestReplyCommunicator::configure(Configuration &config)
   zmq_messenger_.start(role_, addr_.c_str(), NULL, sync_.c_str());
 }
 
+void ZeromqRequestReplyCommunicator::reconfigure(const Configuration &config)
+{
+  if (config.has("action"))
+  {
+    if (config["action"].str() == "restart")
+    {
+      zmq_messenger_.start(role_, addr_.c_str(), NULL, sync_.c_str());
+    }
+  }
+}
+
 //////////////////////////////////////////////////////////
 
 void CommunicatorRepresentation::request(const std::string &role, ConfigurationRequest *config)

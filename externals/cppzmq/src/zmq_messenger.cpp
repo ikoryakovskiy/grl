@@ -66,6 +66,9 @@ void *worker_routine(void *param)
 
 void ZeromqMessenger::start(int type, const char* primaryAddr, const char* secondaryAddr, const char* syncAddress)
 {
+  // Safe clean in case start is called multiple times, e.g. after connection was lost
+  safe_clean();
+
   type_ = type;
 
   // Prepare our context
@@ -75,6 +78,7 @@ void ZeromqMessenger::start(int type, const char* primaryAddr, const char* secon
   {
     primary_ = new zmq::socket_t(*context_, ZMQ_REQ);
     primary_->connect(primaryAddr);
+    primary_->setsockopt(ZMQ_RCVTIMEO, 2000); // reply timeout
   }
   else if (type_ == ZMQ_REP)
   {
@@ -124,6 +128,17 @@ void ZeromqMessenger::start(int type, const char* primaryAddr, const char* secon
       // synchronize with a client
       syncService_ = new zmq::socket_t(*context_, ZMQ_REQ);
       syncService_->connect(syncAddress);
+      syncService_->setsockopt(ZMQ_RCVTIMEO, 2000); // reply timeout, ms
+/*
+      // - send a synchronization request
+      zmq::message_t update;
+      do
+      {
+        zmq::message_t message(0);
+        syncService_->send(message);
+      } while (!syncService_->recv(&update));
+      // - wait for synchronization reply
+*/
 
       // - send a synchronization request
       zmq::message_t message(0);
@@ -143,7 +158,7 @@ void ZeromqMessenger::start(int type, const char* primaryAddr, const char* secon
     connected_ = true;
 }
 
-void ZeromqMessenger::sync()
+void ZeromqMessenger::sync_wait()
 {
   if (connected_)
     return;
@@ -167,6 +182,13 @@ void ZeromqMessenger::sync()
   }
 }
 
+void ZeromqMessenger::close_connection()
+{
+  // cannot be re-established again
+  connected_ = false;
+  subscribers_ = 0;
+}
+
 bool ZeromqMessenger::send(const void* data, unsigned int size) const
 {
   zmq::message_t message(size);
@@ -180,6 +202,7 @@ bool ZeromqMessenger::recv(void *data, unsigned int size, int flags) const
   {
     zmq::message_t msg(size);
     bool received = primary_->recv(&msg, flags);
+
     if(received)
     {
       if (size == msg.size())
@@ -190,7 +213,11 @@ bool ZeromqMessenger::recv(void *data, unsigned int size, int flags) const
       else
         std::cout << "Error: (ZeromqMessenger) Incomming message size " << msg.size() << " is different from expected size" << size << std::endl;
     }
-    return false;
+    else
+    {
+      std::cout << "ZMQ receive timeout" << std::endl;
+      return false;
+    }
   }
   else if ((type_ == ZMQ_PUB) || (type_ == ZMQ_SUB))
   {
@@ -246,6 +273,11 @@ bool ZeromqMessenger::recv(void *data, unsigned int size, int flags) const
 
 ZeromqMessenger::~ZeromqMessenger()
 {
+  safe_clean();
+}
+
+void ZeromqMessenger::safe_clean()
+{
   safe_delete(&mtx_);
   if (buffer_)
     delete[] buffer_;
@@ -254,6 +286,8 @@ ZeromqMessenger::~ZeromqMessenger()
   safe_delete(&syncService_);
   zmq_close(primary_);
   safe_delete(&primary_);
+  if (context_)
+    context_->close();
   safe_delete(&context_);
   safe_delete(&g_args);
 }
