@@ -88,7 +88,7 @@ std::string LeoBhWalk::getProgressReport(double trialTime)
   progressString << std::setw(pw) << mWalkedDistance;
 
   // Average length of a step
-  progressString << std::setw(pw) << mWalkedDistance/mNumFootsteps;
+  progressString << std::setw(pw) << (mNumFootsteps ? mWalkedDistance/mNumFootsteps : 0);
 
   // Speed
   progressString << std::setw(pw) << mWalkedDistance/trialTime;
