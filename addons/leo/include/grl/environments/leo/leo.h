@@ -10,25 +10,6 @@
 
 namespace grl
 {
-enum LeoXmlStateVar
-{
-  xsvTorsoAngle,
-  xsvLeftArmAngle,
-  xsvRightHipAngle,
-  xsvLeftHipAngle,
-  xsvRightKneeAngle,
-  xsvLeftKneeAngle,
-  xsvRightAnkleAngle,
-  xsvLeftAnkleAngle,
-  xsvTorsoAngleRate,
-  xsvLeftArmAngleRate,
-  xsvRightHipAngleRate,
-  xsvLeftHipAngleRate,
-  xsvRightKneeAngleRate,
-  xsvLeftKneeAngleRate,
-  xsvRightAnkleAngleRate,
-  xsvLeftAnkleAngleRate
-};
 
 struct TargetInterface
 {
@@ -63,57 +44,6 @@ enum LeoSignalType {
 class CLeoBhBase: public CLeoBhWalkSym
 {
   public:
-    enum LeoStateVar
-    {
-      svTorsoAngle,
-      svTorsoAngleRate,
-      svLeftArmAngle,
-      svLeftArmAngleRate,
-      svRightHipAngle,
-      svRightHipAngleRate,
-      svLeftHipAngle,
-      svLeftHipAngleRate,
-      svRightKneeAngle,
-      svRightKneeAngleRate,
-      svLeftKneeAngle,
-      svLeftKneeAngleRate,
-      svRightAnkleAngle,
-      svRightAnkleAngleRate,
-      svLeftAnkleAngle,
-      svLeftAnkleAngleRate,
-      svRightToeContact,
-      svRightHeelContact,
-      svLeftToeContact,
-      svLeftHeelContact,
-      svNumStates
-    };
-    enum LeoObservationWalk
-    {
-      owTorsoAngle,
-      owTorsoAngleRate,
-      owHipStanceAngle,
-      owHipStanceAngleRate,
-      owHipSwingAngle,
-      owHipSwingAngleRate,
-      owKneeStanceAngle,
-      owKneeStanceAngleRate,
-      owKneeSwingAngle,
-      owKneeSwingAngleRate,
-      owNumDims
-    };
-    enum LeoActionVar
-    {
-      avLeftArmAction,
-      avRightHipAction,
-      avLeftHipAction,
-      avRightKneeAction,
-      avLeftKneeAction,
-      avRightAnkleAction,
-      avLeftAnkleAction,
-      svNumActions
-    };
-
-  public:
     CLeoBhBase() : CLeoBhWalkSym(&leoSim_) {}
 
     int getHipStance()   {return mHipStance;}
@@ -126,7 +56,7 @@ class CLeoBhBase: public CLeoBhWalkSym
 
   public:
     virtual void resetState(double time0);
-    virtual void parseLeoState(const CLeoState &leoState, Vector &obs);
+    virtual void parseLeoState(const CLeoState &leoState, Vector &obs) = 0;
     virtual void parseLeoAction(const Action &action, Action &target_action) = 0;
 
     void setObserverInterface(const TargetInterface::ObserverInterface oi, const TargetInterface::ObserverInterface oi_sym) { interface_.observer = oi; interface_.observer_sym = oi_sym; }

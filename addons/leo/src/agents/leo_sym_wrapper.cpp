@@ -32,6 +32,9 @@ using namespace grl;
 
 REGISTER_CONFIGURABLE(LeoSymWrapperAgent)
 
+#define TARGET_OBSERVATION_SIZE 10
+#define TARGET_ACTION_SIZE       3
+
 void LeoSymWrapperAgent::request(ConfigurationRequest *config)
 {
   config->push_back(CRP("agent", "agent", "Target agent with reduced state-action space due to symmetry", agent_));
@@ -50,10 +53,10 @@ void LeoSymWrapperAgent::reconfigure(const Configuration &config)
 
 void LeoSymWrapperAgent::start(const Observation &obs, Action *action)
 {
-  Observation obs_agent = ConstantVector(10, 0);
-  Action act_agent = ConstantVector(3, 0);
+  Observation obs_agent = ConstantVector(TARGET_OBSERVATION_SIZE, 0);
+  Action act_agent = ConstantVector(TARGET_ACTION_SIZE, 0);
 
-  action->v.resize(7);
+  action->v.resize(ljNumJoints);
 
   int stl = stanceLegLeft();
   parseStateForAgent(obs, &obs_agent, stl);
@@ -63,8 +66,8 @@ void LeoSymWrapperAgent::start(const Observation &obs, Action *action)
 
 void LeoSymWrapperAgent::step(double tau, const Observation &obs, double reward, Action *action)
 {
-  Observation obs_agent = ConstantVector(10, 0);
-  Action act_agent = ConstantVector(3, 0);
+  Observation obs_agent = ConstantVector(TARGET_OBSERVATION_SIZE, 0);
+  Action act_agent = ConstantVector(TARGET_ACTION_SIZE, 0);
 
   int stl = stanceLegLeft();
   parseStateForAgent(obs, &obs_agent, stl);
@@ -74,7 +77,7 @@ void LeoSymWrapperAgent::step(double tau, const Observation &obs, double reward,
 
 void LeoSymWrapperAgent::end(double tau, const Observation &obs, double reward)
 {
-  Observation obs_agent = ConstantVector(10, 0);
+  Observation obs_agent = ConstantVector(TARGET_OBSERVATION_SIZE, 0);
 
   int stl = stanceLegLeft();
   parseStateForAgent(obs, &obs_agent, stl);
@@ -111,37 +114,37 @@ int LeoSymWrapperAgent::stanceLegLeft() const
 void LeoSymWrapperAgent::parseStateForAgent(const Observation &obs, Observation *obs_agent, int stl) const
 {
   // environment
-  //   observe: torso_boom, shoulder, hipright, hipleft, kneeright, kneeleft, ankleright, ankleleft
-  //   actuate: shoulder, hipright, hipleft, kneeright, kneeleft, ankleright, ankleleft
+  //   obs: hipleft, hipright, kneeleft, kneeright, ankleleft, ankleright, shoulder, torso_boom
+  //   obs_agent: hipleft, hipright, kneeleft, kneeright, shoulder
 
   CRAWL(obs);
 
-  (*obs_agent)[0] = obs[LeoXmlStateVar::xsvTorsoAngle];
-  (*obs_agent)[5] = obs[LeoXmlStateVar::xsvTorsoAngleRate];
+  (*obs_agent)[ljTorso] = obs[ljTorso];
+  (*obs_agent)[TARGET_OBSERVATION_SIZE/2+ljTorso] = obs[ljNumJoints+ljTorso];
 
   if (stl)
   {
-    (*obs_agent)[1] = obs[LeoXmlStateVar::xsvRightHipAngle];
-    (*obs_agent)[2] = obs[LeoXmlStateVar::xsvLeftHipAngle];
-    (*obs_agent)[3] = obs[LeoXmlStateVar::xsvRightKneeAngle];
-    (*obs_agent)[4] = obs[LeoXmlStateVar::xsvLeftKneeAngle];
+    (*obs_agent)[ljHipLeft]   = obs[ljHipLeft];
+    (*obs_agent)[ljHipRight]  = obs[ljHipRight];
+    (*obs_agent)[ljKneeLeft]  = obs[ljKneeLeft];
+    (*obs_agent)[ljKneeRight] = obs[ljKneeRight];
 
-    (*obs_agent)[6] = obs[LeoXmlStateVar::xsvRightHipAngleRate];
-    (*obs_agent)[7] = obs[LeoXmlStateVar::xsvLeftHipAngleRate];
-    (*obs_agent)[8] = obs[LeoXmlStateVar::xsvRightKneeAngleRate];
-    (*obs_agent)[9] = obs[LeoXmlStateVar::xsvLeftKneeAngleRate];
+    (*obs_agent)[TARGET_OBSERVATION_SIZE/2+ljHipLeft]   = obs[ljNumJoints+ljHipLeft];
+    (*obs_agent)[TARGET_OBSERVATION_SIZE/2+ljHipRight]  = obs[ljNumJoints+ljHipRight];
+    (*obs_agent)[TARGET_OBSERVATION_SIZE/2+ljKneeLeft]  = obs[ljNumJoints+ljKneeLeft];
+    (*obs_agent)[TARGET_OBSERVATION_SIZE/2+ljKneeRight] = obs[ljNumJoints+ljKneeRight];
   }
   else
   {
-    (*obs_agent)[2] = obs[LeoXmlStateVar::xsvRightHipAngle];
-    (*obs_agent)[1] = obs[LeoXmlStateVar::xsvLeftHipAngle];
-    (*obs_agent)[4] = obs[LeoXmlStateVar::xsvRightKneeAngle];
-    (*obs_agent)[3] = obs[LeoXmlStateVar::xsvLeftKneeAngle];
+    (*obs_agent)[ljHipRight]  = obs[ljHipLeft];
+    (*obs_agent)[ljHipLeft]   = obs[ljHipRight];
+    (*obs_agent)[ljKneeRight] = obs[ljKneeLeft];
+    (*obs_agent)[ljKneeLeft]  = obs[ljKneeRight];
 
-    (*obs_agent)[7] = obs[LeoXmlStateVar::xsvRightHipAngleRate];
-    (*obs_agent)[6] = obs[LeoXmlStateVar::xsvLeftHipAngleRate];
-    (*obs_agent)[9] = obs[LeoXmlStateVar::xsvRightKneeAngleRate];
-    (*obs_agent)[8] = obs[LeoXmlStateVar::xsvLeftKneeAngleRate];
+    (*obs_agent)[TARGET_OBSERVATION_SIZE/2+ljHipRight]  = obs[ljNumJoints+ljHipLeft];
+    (*obs_agent)[TARGET_OBSERVATION_SIZE/2+ljHipLeft]   = obs[ljNumJoints+ljHipRight];
+    (*obs_agent)[TARGET_OBSERVATION_SIZE/2+ljKneeRight] = obs[ljNumJoints+ljKneeLeft];
+    (*obs_agent)[TARGET_OBSERVATION_SIZE/2+ljKneeLeft]  = obs[ljNumJoints+ljKneeRight];
   }
 
   obs_agent->absorbing = obs.absorbing;
@@ -152,33 +155,33 @@ void LeoSymWrapperAgent::parseStateForAgent(const Observation &obs, Observation 
 void LeoSymWrapperAgent::parseActionForEnvironment(const Action &act_agent, const Observation &obs, Action *action, int stl) const
 {
   // agent
-  //   observe: torso_boom, hipright, hipleft, kneeright, kneeleft
-  //   actuate: hipright, hipleft, stanceknee
+  //   observe: hipleft, hipright, kneeleft, kneeright, ankleleft, ankleright, shoulder, torso_boom
+  //   actuate: hipleft, hipright, kneeleft, kneeright, ankleleft, ankleright, shoulder
 
   TRACE(act_agent);
 
-  (*action)[CLeoBhBase::avLeftArmAction] = autoActuateArm(obs[LeoXmlStateVar::xsvLeftArmAngle]);
-
   if (stl)
   {
-    (*action)[CLeoBhBase::avRightHipAction]  = act_agent[0];
-    (*action)[CLeoBhBase::avLeftHipAction]   = act_agent[1];
-    (*action)[CLeoBhBase::avRightKneeAction] = act_agent[2];
-    (*action)[CLeoBhBase::avLeftKneeAction]  = autoActuateKnees(obs[LeoXmlStateVar::xsvLeftKneeAngle]); // auto actuate stance leg, which is left now
+    (*action)[ljHipLeft]   = act_agent[0];
+    (*action)[ljHipRight]  = act_agent[1];
+    (*action)[ljKneeLeft]  = autoActuateKnees(obs[ljKneeLeft]); // auto actuate stance leg, which is left now
+    (*action)[ljKneeRight] = act_agent[2];
   }
   else
   {
-    (*action)[CLeoBhBase::avRightHipAction]  = act_agent[1];
-    (*action)[CLeoBhBase::avLeftHipAction]   = act_agent[0];
-    (*action)[CLeoBhBase::avRightKneeAction] = autoActuateKnees(obs[LeoXmlStateVar::xsvRightKneeAngle]); // auto actuate stance leg, which is right now
-    (*action)[CLeoBhBase::avLeftKneeAction]  = act_agent[2];
+    (*action)[ljHipLeft]   = act_agent[1];
+    (*action)[ljHipRight]  = act_agent[0];
+    (*action)[ljKneeLeft]  = act_agent[2];
+    (*action)[ljKneeRight] = autoActuateKnees(obs[ljKneeRight]); // auto actuate stance leg, which is right now
   }
 
-  double leftAnkleAction, rightAnkleAction;
-  autoActuateAnkles_FixedPos(obs[LeoXmlStateVar::xsvLeftAnkleAngle],  &leftAnkleAction,
-                             obs[LeoXmlStateVar::xsvRightAnkleAngle], &rightAnkleAction);
-  (*action)[CLeoBhBase::avLeftAnkleAction] = leftAnkleAction;
-  (*action)[CLeoBhBase::avRightAnkleAction] = rightAnkleAction;
+  double actionAnkleLeft, actionAnkleRight;
+  autoActuateAnkles_FixedPos(obs[ljAnkleLeft],  &actionAnkleLeft,
+                             obs[ljAnkleRight], &actionAnkleRight);
+  (*action)[ljAnkleLeft] = actionAnkleLeft;
+  (*action)[ljAnkleRight] = actionAnkleRight;
+
+  (*action)[ljShoulder] = autoActuateArm(obs[ljShoulder]);
 
   action->type = act_agent.type;
 

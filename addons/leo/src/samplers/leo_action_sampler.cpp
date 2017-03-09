@@ -66,17 +66,17 @@ size_t LeoActionSampler::sample(double time, const LargeVector &values, ActionTy
       // Take care of Leo body symmetry, if required!
       TRACE(sampler_state);
       Vector sampler_state_new = sampler_state;
-      Vector ti_actuator_to = signal.block(0, 1, 1, CLeoBhBase::svNumActions);
+      Vector ti_actuator_to = signal.block(0, 1, 1, ljNumDynamixels);
       TRACE(ti_actuator_to);
-      Vector ti_actuator_from = signal.block(0, 1+CLeoBhBase::svNumActions, 1, CLeoBhBase::svNumActions);
+      Vector ti_actuator_from = signal.block(0, 1+ljNumDynamixels, 1, ljNumDynamixels);
       TRACE(ti_actuator_from);
 
       // Weak point of the implementation: auto-actuated knee is not supported properly.
       // A simplification is made: if knee is autoactuated, then at the moment of contact
-      // knee action or noise is set to 0 (iven if noise is centered not around 0)
+      // knee action or noise is set to 0 (even if noise is centered not around 0)
       // Good thing to know is that auto-actuated knee action is usually small, around 0,
       // therefore if PADA selects a new action, 0 is a good choice.
-      for (int i = 0; i < CLeoBhBase::svNumActions; i++)
+      for (int i = 0; i < ljNumDynamixels; i++)
       {
         if (ti_actuator_from[i] != -1)
         {

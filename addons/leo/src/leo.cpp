@@ -29,54 +29,35 @@ void CLeoBhBase::fillLeoState(const Vector &obs, const Vector &action, CLeoState
   // '-' required to match with Erik's code, but does not matter for learning.
   // Erik used a rotation matrix which was rotating a unit vector. For torso it seems
   // the positive direction was not same as for other joints, internally defined in ODE.
-  leoState.mJointAngles[ljTorso]      = -obs[svTorsoAngle];
-  leoState.mJointSpeeds[ljTorso]      = -mJointSpeedFilter[ljTorso].filter(obs[svTorsoAngleRate]);
-  leoState.mJointAngles[ljShoulder]   = obs[svLeftArmAngle];
-  leoState.mJointSpeeds[ljShoulder]   = mJointSpeedFilter[ljShoulder].filter(obs[svLeftArmAngleRate]);
-  leoState.mJointAngles[ljHipRight]   = obs[svRightHipAngle];
-  leoState.mJointSpeeds[ljHipRight]   = mJointSpeedFilter[ljHipRight].filter(obs[svRightHipAngleRate]);
-  leoState.mJointAngles[ljHipLeft]    = obs[svLeftHipAngle];
-  leoState.mJointSpeeds[ljHipLeft]    = mJointSpeedFilter[ljHipLeft].filter(obs[svLeftHipAngleRate]);
-  leoState.mJointAngles[ljKneeRight]  = obs[svRightKneeAngle];
-  leoState.mJointSpeeds[ljKneeRight]	= mJointSpeedFilter[ljKneeRight].filter(obs[svRightKneeAngleRate]);
-  leoState.mJointAngles[ljKneeLeft]   = obs[svLeftKneeAngle];
-  leoState.mJointSpeeds[ljKneeLeft]   = mJointSpeedFilter[ljKneeLeft].filter(obs[svLeftKneeAngleRate]);
-  leoState.mJointAngles[ljAnkleRight] = obs[svRightAnkleAngle];
-  leoState.mJointSpeeds[ljAnkleRight] = mJointSpeedFilter[ljAnkleRight].filter(obs[svRightAnkleAngleRate]);
-  leoState.mJointAngles[ljAnkleLeft]  = obs[svLeftAnkleAngle];
-  leoState.mJointSpeeds[ljAnkleLeft]	= mJointSpeedFilter[ljAnkleLeft].filter(obs[svLeftAnkleAngleRate]);
+  for (int i = 0; i < ljNumDynamixels; i++)
+  {
+    leoState.mJointAngles[i] = obs[i];
+    leoState.mJointSpeeds[i] = mJointSpeedFilter[i].filter(obs[ljNumJoints+i]);
+  }
+  leoState.mJointAngles[ljTorso] = -obs[ljTorso];
+  leoState.mJointSpeeds[ljTorso] = -mJointSpeedFilter[ljTorso].filter(obs[ljNumJoints+ljTorso]);
 
-  leoState.mFootContacts  = obs[svRightToeContact] > 0.5  ? LEO_FOOTSENSOR_RIGHT_TOE  : 0;
-  leoState.mFootContacts |= obs[svRightHeelContact] > 0.5 ? LEO_FOOTSENSOR_RIGHT_HEEL : 0;
-  leoState.mFootContacts |= obs[svLeftToeContact] > 0.5  ? LEO_FOOTSENSOR_LEFT_TOE   : 0;
-  leoState.mFootContacts |= obs[svLeftHeelContact] >0.5 ? LEO_FOOTSENSOR_LEFT_HEEL  : 0;
+  leoState.mFootContacts  = obs[2*ljNumJoints+lfToeRight]  > 0.5 ? LEO_FOOTSENSOR_RIGHT_TOE  : 0;
+  leoState.mFootContacts |= obs[2*ljNumJoints+lfHeelRight] > 0.5 ? LEO_FOOTSENSOR_RIGHT_HEEL : 0;
+  leoState.mFootContacts |= obs[2*ljNumJoints+lfToeLeft]   > 0.5 ? LEO_FOOTSENSOR_LEFT_TOE   : 0;
+  leoState.mFootContacts |= obs[2*ljNumJoints+lfHeelLeft]  > 0.5 ? LEO_FOOTSENSOR_LEFT_HEEL  : 0;
 
   // required for the correct energy calculation in the reward function
   if (action.size())
   {
     if (interface_.actuator.mode == amVoltage)
     {
-      leoState.mActuationVoltages[ljShoulder]   = action[avLeftArmAction];
-      leoState.mActuationVoltages[ljHipRight]   = action[avRightHipAction];
-      leoState.mActuationVoltages[ljHipLeft]    = action[avLeftHipAction];
-      leoState.mActuationVoltages[ljKneeRight]  = action[avRightKneeAction];
-      leoState.mActuationVoltages[ljKneeLeft]   = action[avLeftKneeAction];
-      leoState.mActuationVoltages[ljAnkleRight] = action[avRightAnkleAction];
-      leoState.mActuationVoltages[ljAnkleLeft]  = action[avLeftAnkleAction];
+      for (int i = 0; i < ljNumDynamixels; i++)
+        leoState.mActuationVoltages[i] = action[i];
     }
     else if (interface_.actuator.mode == amTorque)
     {
-      leoState.mActuationTorques[ljShoulder]   = action[avLeftArmAction];
-      leoState.mActuationTorques[ljHipRight]   = action[avRightHipAction];
-      leoState.mActuationTorques[ljHipLeft]    = action[avLeftHipAction];
-      leoState.mActuationTorques[ljKneeRight]  = action[avRightKneeAction];
-      leoState.mActuationTorques[ljKneeLeft]   = action[avLeftKneeAction];
-      leoState.mActuationTorques[ljAnkleRight] = action[avRightAnkleAction];
-      leoState.mActuationTorques[ljAnkleLeft]  = action[avLeftAnkleAction];
+      for (int i = 0; i < ljNumDynamixels; i++)
+        leoState.mActuationTorques[i] = action[i];
     }
   }
 }
-
+/*
 void CLeoBhBase::parseLeoState(const CLeoState &leoState, Vector &obs)
 {
   obs[owTorsoAngle]           = leoState.mJointAngles[ljTorso];
@@ -90,7 +71,7 @@ void CLeoBhBase::parseLeoState(const CLeoState &leoState, Vector &obs)
   obs[owKneeSwingAngle]       = leoState.mJointAngles[mKneeSwing];
   obs[owKneeSwingAngleRate]   = leoState.mJointSpeeds[mKneeSwing];
 }
-
+*/
 void CLeoBhBase::setCurrentSTGState(CLeoState *leoState)
 {
   mCurrentSTGState = leoState;
@@ -156,8 +137,8 @@ std::string CLeoBhBase::jointIndexToName(int jointIndex) const
 LeoBaseEnvironment::LeoBaseEnvironment() :
   target_env_(NULL),
   bh_(NULL),
-  observation_dims_(CLeoBhBase::svNumStates),
-  action_dims_(CLeoBhBase::svNumActions),
+  observation_dims_(2*ljNumJoints),
+  action_dims_(2*ljNumDynamixels),
   exporter_(NULL),
   test_(0),
   time_test_(0),
@@ -565,7 +546,7 @@ void LeoBaseEnvironment::fillActuate(const std::vector<CGenericActionVar> &gener
     }
 
     // special case
-    if (*listMember == "stanceknee")
+    if (*listMember == "swingknee")
     {
       // request update of both knees with the same action
       gAction = genericAction.begin();

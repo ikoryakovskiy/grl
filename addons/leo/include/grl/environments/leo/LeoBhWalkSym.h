@@ -40,6 +40,7 @@ class CLeoBhWalkSym: public CSTGAgentQLeo
     double        mRwTorsoUprightAngle;       // Desired angle for mRwTorsoUpright
     double        mRwTorsoUprightAngleMargin; // Desired angle margin for mRwTorsoUpright, defined as angle deviation for which reward is 50% of its max.
     double        mRwDoubleStance;            // Reward for both feet touching the floor
+    double        mRwFootContact;             // Reward for 1 or 0 contacts (out of 4)
 
     // State space scaling variables
     double        mScaleFactTorsoAngle;

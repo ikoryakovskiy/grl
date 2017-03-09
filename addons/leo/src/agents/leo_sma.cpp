@@ -139,15 +139,15 @@ bool LeoStateMachineAgent::failed(const Observation &obs, bool stanceLegLeft) co
   double stanceComstraint = 0.36*M_PI; // 0.36*M_PI
 
   // Torso angle out of range
-  if (fabs(obs[LeoXmlStateVar::xsvTorsoAngle]) > torsoComstraint)
+  if (fabs(obs[ljTorso]) > torsoComstraint)
   {
     std::cout << "[TERMINATION] Torso angle too large" << std::endl;
     return true;
   }
 
   // Stance leg angle out of range
-  int hipStance = stanceLegLeft ? LeoXmlStateVar::xsvLeftHipAngle : LeoXmlStateVar::xsvRightKneeAngle;
-  if (fabs(obs[LeoXmlStateVar::xsvTorsoAngle] + obs[hipStance]) > stanceComstraint)
+  int hipStance = stanceLegLeft ? ljHipLeft : ljHipRight;
+  if (fabs(obs[ljTorso] + obs[hipStance]) > stanceComstraint)
   {
     std::cout << "[TERMINATION] Stance leg angle too large" << std::endl;
     return true;

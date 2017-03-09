@@ -42,42 +42,33 @@ void LeoBhWalk::parseStateFromTarget(const CLeoState &leoState, Vector &obs, con
 
 void LeoBhWalk::parseActionForTarget(const Action &action, Action &target_action, const TargetInterface::ActuatorInterface *actuator)
 {
-  double actionArm, actionRightHip, actionLeftHip, actionRightKnee, actionLeftKnee, actionRightAnkle, actionLeftAnkle;
-
-  if (actuator->action[avRightHipAction] != -1)
-    actionRightHip = action[ actuator->action[avRightHipAction] ];
-  if (actuator->action[avLeftHipAction] != -1)
-    actionLeftHip = action[ actuator->action[avLeftHipAction] ];
-  if (actuator->action[avRightKneeAction] != -1)
-    actionRightKnee = action[ actuator->action[avRightKneeAction] ];
-  if (actuator->action[avLeftKneeAction] != -1)
-    actionLeftKnee = action[ actuator->action[avLeftKneeAction] ];
-  if (actuator->action[avRightAnkleAction] != -1)
-    actionRightAnkle = action[ actuator->action[avRightAnkleAction] ];
-  if (actuator->action[avLeftAnkleAction] != -1)
-    actionLeftAnkle = action[ actuator->action[avLeftAnkleAction] ];
-  if (actuator->action[avLeftArmAction] != -1)
-    actionArm = action[ actuator->action[avLeftArmAction] ];
+  for (int i = 0; i < actuator->action.size(); i++)
+  {
+    if (actuator->action[i] != -1)
+      target_action[i] = action[ actuator->action[i] ]; // this is 1-to-1 mapping or symmetrically inverted
+  }
 
   for (int i = 0; i < actuator->autoActuated.size(); i++)
   {
-    if (actuator->autoActuated[i] == "shoulder")
-      actionArm = grlAutoActuateArm();
     if (actuator->autoActuated[i] == "stanceknee")
     {
       // refers to an auto-actuation of the stance leg knee
       if (stanceLegLeft())
-        actionLeftKnee = grlAutoActuateKnee();
+        target_action[ljKneeLeft] = grlAutoActuateKnee();
       else
-        actionRightKnee = grlAutoActuateKnee();
+        target_action[ljKneeRight] = grlAutoActuateKnee();
     }
-     if (actuator->autoActuated[i] == "ankleright")
-       actionRightAnkle = grlAutoActuateRightAnkle();
-     if (actuator->autoActuated[i] == "ankleleft")
-       actionLeftAnkle = grlAutoActuateLeftAnkle();
+
+    if (actuator->autoActuated[i] == "ankleleft")
+      target_action[ljAnkleLeft] = grlAutoActuateLeftAnkle();
+
+    if (actuator->autoActuated[i] == "ankleright")
+      target_action[ljAnkleRight] = grlAutoActuateRightAnkle();
+
+    if (actuator->autoActuated[i] == "shoulder")
+      target_action[ljShoulder] = grlAutoActuateArm();
   }
 
-  target_action.v << actionArm, actionRightHip, actionLeftHip, actionRightKnee, actionLeftKnee, actionRightAnkle, actionLeftAnkle;
   target_action.type = action.type;
 }
 
@@ -198,10 +189,11 @@ void LeoWalkEnvironment::configure(Configuration &config)
 
 void LeoWalkEnvironment::start(int test, Observation *obs)
 {
-  INFO("Starting leo env");
+  CRAWL("Starting leo env");
   LeoBaseEnvironment::start(test);
 
   target_env_->start(test_, &target_obs_);
+  CRAWL(target_obs_);
 
   add_measurement_noise(&target_obs_.v);
   CRAWL(target_obs_);
@@ -210,7 +202,6 @@ void LeoWalkEnvironment::start(int test, Observation *obs)
   bh_->fillLeoState(target_obs_, Vector(), leoState_);
   bh_->setCurrentSTGState(&leoState_);
   bh_->setPreviousSTGState(&leoState_);
-  bh_->resetState(0);
 
   // update derived state variables
   bh_->updateDerivedStateVars(&leoState_); // swing-stance switching happens here
@@ -284,7 +275,7 @@ double LeoWalkEnvironment::step(const Action &action, Observation *obs, double *
   if (pub_ic_signal_)
   {
     Vector signal;
-    signal.resize(1+2*CLeoBhBase::svNumActions);
+    signal.resize(1+2*ljNumDynamixels);
     if (bh_->madeFootstep())
     {
       const TargetInterface ti = bh_->getInterface();

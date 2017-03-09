@@ -50,6 +50,7 @@ CLeoBhWalkSym::CLeoBhWalkSym(ISTGActuation *actuationInterface):
   mRwTorsoUprightAngle          = -0.1;
   mRwTorsoUprightAngleMargin    = 0.1;
   mRwDoubleStance               = 0.0;
+  mRwFootContact                = 0.0;
   mTrialTimeout                 = (uint64_t)15E6;
   mLastStancelegWasLeft         = 0;
   mLastRewardedFoot             = lpFootLeft;
@@ -105,6 +106,7 @@ bool CLeoBhWalkSym::readConfig(const CConfigSection &xmlRoot)
   configresult &= mLogAssert(configNode.get("rewardTorsoUpright", &mRwTorsoUpright));
   configresult &= mLogAssert(configNode.get("rewardTorsoUprightAngle", &mRwTorsoUprightAngle));
   configresult &= mLogAssert(configNode.get("rewardTorsoUprightAngleMargin", &mRwTorsoUprightAngleMargin));
+  configresult &= mLogAssert(configNode.get("rewardFootContact", &mRwFootContact));
   configresult &= mLogAssert(configNode.get("preprogrammedTorsoAngle", &mPreProgTorsoAngle));
   configresult &= mLogAssert(configNode.get("preprogrammedHipAngle", &mPreProgHipAngle));
   configresult &= mLogAssert(configNode.get("preprogrammedShoulderAngle", &mPreProgShoulderAngle));
@@ -232,7 +234,7 @@ void CLeoBhWalkSym::updateDerivedStateVars(CLeoState* currentSTGState)
     // Calculate clearance for left foot
     mFootClearance      = std::min(leftToeZ, leftHeelZ);
   }
-  std::cout << " leftIsStance = " << leftIsStance << "; FC " << (int)(currentSTGState->mFootContacts) << "; l-r " << leftFootContact << ", " << rightFootContact << std::endl;
+//  std::cout << " leftIsStance = " << leftIsStance << "; FC " << (int)(currentSTGState->mFootContacts) << "; l-r " << leftFootContact << ", " << rightFootContact << std::endl;
 
   mLogInfoLn("Foot clearance is " << mFootClearance);
   // Adjust swing time, used to determine early swing against late swing
@@ -403,7 +405,7 @@ double CLeoBhWalkSym::calculateReward()
 
   // Foot contact penalty
   if (mFootContactNum <= 1)
-    reward += -2;
+    reward += mRwFootContact;
 
   // Footstep reward
   reward += getFootstepReward();
@@ -487,7 +489,7 @@ bool CLeoBhWalkSym::isDoomedToFall(CLeoState* state, bool report)
     {
       if (report)
         mLogNoticeLn("[TERMINATION] Torso angle too large");
-      std::cout << "[TERMINATION] Torso angle too large" << std::endl;
+      //std::cout << "[TERMINATION] Torso angle too large" << std::endl;
       return true;
     }
 
@@ -510,7 +512,7 @@ bool CLeoBhWalkSym::isDoomedToFall(CLeoState* state, bool report)
     {
       if (report)
         mLogNoticeLn("[TERMINATION] Stance leg angle too large");
-      std::cout << "[TERMINATION] Stance leg angle too large" << std::endl;
+      //std::cout << "[TERMINATION] Stance leg angle too large" << std::endl;
       return true;
     }
   }
