@@ -153,7 +153,7 @@ void OnlineLearningExperiment::run()
           step_timer.restart();
         }
 
-        std::cout << "Time: " << current_time;
+//        std::cout << "Time: " << current_time;
         double tau = environment_->step(action, &obs, &reward, &terminal);      
         current_time += tau;
 

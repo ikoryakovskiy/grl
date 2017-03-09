@@ -91,13 +91,15 @@ int LeoSymWrapperAgent::stanceLegLeft() const
   // update signal because of symmetrical state
   if ((int)signal[0] & lstSwlTouchDown)
   {
+    double contact = signal[0];
     Vector ti_actuator = VectorConstructor(-1, 1, 0, 2, 2, -1, -1);
     Vector ti_actuator_sym = VectorConstructor(-1, 0, 1, 2, 2, -1, -1);
 
+    signal.resize(1+ti_actuator.size()+ti_actuator_sym.size());
     if (stl)
-      signal << signal[0], ti_actuator, ti_actuator_sym;
+      signal << contact, ti_actuator, ti_actuator_sym;
     else
-      signal << signal[0], ti_actuator_sym, ti_actuator;
+      signal << contact, ti_actuator_sym, ti_actuator;
     sub_ic_signal_->set(signal);
 
     INFO("LeoSymWrapperAgent : TouchDown");

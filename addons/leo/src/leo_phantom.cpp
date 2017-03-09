@@ -79,41 +79,43 @@ void LeoPhantomEnvironment::start(int test, Observation *obs)
   // copy observation
   obs->v.resize(state0_[idx_].size());
   obs->v = state0_[idx_];
-  INFO(obs->v);
+  CRAWL(obs->v);
 
   // copy contact
   pub_ic_signal_->set(contact_[idx_]);
-  INFO(contact_[idx_]);
+  CRAWL(contact_[idx_]);
 
-  ++idx_;
+  if (exporter_)
+    exporter_->open("test", 0);
 }
 
 double LeoPhantomEnvironment::step(const Action &action, Observation *obs, double *reward, int *terminal)
 {
-  INFO(action);
-
-  // copy observation
-  obs->v.resize(state0_[idx_].size());
-  obs->v = state0_[idx_];
-  INFO(obs->v);
-
-  // copy contact
-  pub_ic_signal_->set(contact_[idx_]);
-  INFO(contact_[idx_]);
-
-  double tau = (time_[idx_][0] - time_[idx_-1][0]);
+  TRACE(state0_[idx_]);
+  TRACE(action);
 
   *reward = 0;
-  if (idx_+1 < time_.size())
+
+  if (idx_+2 < time_.size())
     *terminal = 0;
   else
     *terminal = 1;
 
-  exporter_->write({time_[idx_], state0_[idx_-1], state0_[idx_], action.v,
+  exporter_->write({time_[idx_], state0_[idx_], state0_[idx_+1], action.v,
                     grl::VectorConstructor(*reward), grl::VectorConstructor(*terminal),
                     grl::VectorConstructor(atUndefined), contact_[idx_]
                    });
 
+  // Prepare new observation
+  obs->v.resize(state0_[idx_+1].size());
+  obs->v = state0_[idx_+1];
+  CRAWL(obs->v);
+
+  // Prepare new contact
+  pub_ic_signal_->set(contact_[idx_+1]);
+  CRAWL(contact_[idx_+1]);
+
+  double tau = (time_[idx_+1][0] - time_[idx_][0]);
   ++idx_;
   return tau;
 }
