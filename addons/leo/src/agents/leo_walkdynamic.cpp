@@ -159,6 +159,9 @@ void LeoWalkdynamicAgent::walk(double time, const Vector &obs, Vector *action)
   (*action)[hipStance]   = torqueToVolt*hipStanceTorque;
   (*action)[hipSwing]    = torqueToVolt*hipSwingTorque;
   (*action)[ljShoulder]  = torqueToVolt*shoulderTorque;
+
+  for (int i = 0; i < ljNumDynamixels; i++)
+    (*action)[i] = fmin(action_max_[i], fmax((*action)[i], action_min_[i]));
 }
 
 bool LeoWalkdynamicAgent::isShoulderAngleSafe(Vector obs, int leftIsStance, double* safeShoulderAngle)

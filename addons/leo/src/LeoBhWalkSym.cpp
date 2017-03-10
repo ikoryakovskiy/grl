@@ -584,7 +584,7 @@ void CLeoBhWalkSym::autoActuateArm(ISTGActuation* actuationInterface)
   if (actuationInterface->getActuationMode() == amVoltage)
   {
     // The "torque" here is not actually torque, but a leftover from the "endless turn mode" control from dynamixels, which is actually voltage control
-    const double torqueToVoltage  = 14.0/3.3;
+    const double torqueToVoltage  =XM430_VS_RX28_COEFF*14.0/3.3;
     getActuationInterface()->setJointVoltage(ljShoulder, torqueToVoltage*armTorque);
   }
   else if (actuationInterface->getActuationMode() == amTorque)

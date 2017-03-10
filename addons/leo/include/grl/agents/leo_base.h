@@ -38,6 +38,7 @@ class LeoBaseAgent : public Agent
 {
   protected:
     VectorSignal *sub_ic_signal_;
+    Vector action_min_, action_max_;
     
   public:
     LeoBaseAgent() : sub_ic_signal_(NULL) { }

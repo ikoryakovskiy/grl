@@ -82,6 +82,20 @@ void LeoStateMachineAgent::step(double tau, const Observation &obs, double rewar
 {
   time_ += tau;
 
+  act(tau, obs, reward, action);
+
+  // ensure limits
+  for (int i = 0; i < ljNumDynamixels; i++)
+    (*action)[i] = fmin(action_max_[i], fmax((*action)[i], action_min_[i]));
+}
+
+void LeoStateMachineAgent::end(double tau, const Observation &obs, double reward)
+{
+  std::cout << "End should not be called here!" << std::endl;
+}
+
+void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward, Action *action)
+{
   // obtain contact information for symmetrical switching
   // note that groundContact is not reliable when Leo is moving,
   // but is reliable when Leo is standing still
@@ -122,12 +136,6 @@ void LeoStateMachineAgent::step(double tau, const Observation &obs, double rewar
 
   agent_->step(tau, obs, reward, action);
 }
-
-void LeoStateMachineAgent::end(double tau, const Observation &obs, double reward)
-{
-  std::cout << "End should not be called here!" << std::endl;
-}
-
 
 void LeoStateMachineAgent::set_agent(Agent *agent, double tau, const Observation &obs, double reward, Action *action, const char* msg)
 {

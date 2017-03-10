@@ -28,25 +28,24 @@
 #ifndef GRL_LEO_WALKING_WRAPPER_AGENT_H_
 #define GRL_LEO_WALKING_WRAPPER_AGENT_H_
 
-#include <grl/agent.h>
+#include <grl/agents/leo_base.h>
 #include <grl/signal.h>
 
 namespace grl
 {
 
 /// Temporal difference learning agent for leo.
-class LeoSymWrapperAgent : public Agent
+class LeoSymWrapperAgent : public LeoBaseAgent
 {
   public:
     TYPEINFO("agent/leo/sym_wrapper", "Leo agent that symmetrically wraps angles and controls")
 
   protected: 
     Agent *agent_;
-    VectorSignal *sub_ic_signal_;
     double preProgShoulderAngle_, preProgStanceKneeAngle_, preProgAnkleAngle_;
 
   public:
-    LeoSymWrapperAgent() : agent_(NULL), sub_ic_signal_(NULL), preProgShoulderAngle_(-0.261799387799149), preProgStanceKneeAngle_(0), preProgAnkleAngle_(0.0649262481741891) { }
+    LeoSymWrapperAgent() : agent_(NULL), preProgShoulderAngle_(-0.26), preProgStanceKneeAngle_(0), preProgAnkleAngle_(0.065) { }
 
     // From Configurable    
     virtual void request(ConfigurationRequest *config);

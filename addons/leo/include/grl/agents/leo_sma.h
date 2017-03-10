@@ -62,7 +62,7 @@ class LeoStateMachineAgent : public LeoBaseAgent
 
   protected:
     virtual void set_agent(Agent *agent, double tau, const Observation &obs, double reward, Action *action, const char* msg);
-
+    virtual void act(double tau, const Observation &obs, double reward, Action *action);
 };
 
 }

@@ -198,6 +198,18 @@ agent/leo/sma:
     mutability: configuration
     default: 0
     optional: 1
+  action_min:
+    type: vector.action_min
+    description: Lower limit on actions
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  action_max:
+    type: vector.action_max
+    description: Upper limit on actions
+    mutability: system
+    default: "[  ]"
+    optional: 1
   agent_prepare:
     type: agent
     description: Prepare agent
@@ -242,15 +254,27 @@ agent/leo/sma:
     optional: 1
 agent/leo/sym_wrapper:
   description: Leo agent that symmetrically wraps angles and controls
+  sub_ic_signal:
+    type: signal/vector
+    description: Subscriber to the contact signal
+    mutability: configuration
+    default: 0
+    optional: 1
+  action_min:
+    type: vector.action_min
+    description: Lower limit on actions
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  action_max:
+    type: vector.action_max
+    description: Upper limit on actions
+    mutability: system
+    default: "[  ]"
+    optional: 1
   agent:
     type: agent
     description: Target agent with reduced state-action space due to symmetry
-    mutability: configuration
-    default: 0
-    optional: 0
-  sub_ic_signal:
-    type: signal/vector
-    description: Publisher of the initialization and contact signal
     mutability: configuration
     default: 0
     optional: 0
@@ -281,6 +305,18 @@ agent/leo/walkdynamic:
     description: Subscriber to the contact signal
     mutability: configuration
     default: 0
+    optional: 1
+  action_min:
+    type: vector.action_min
+    description: Lower limit on actions
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  action_max:
+    type: vector.action_max
+    description: Upper limit on actions
+    mutability: system
+    default: "[  ]"
     optional: 1
 agent/master/exclusive:
   description: Master agent that selects one sub-agent to execute

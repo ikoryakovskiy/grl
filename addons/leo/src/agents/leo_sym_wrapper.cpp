@@ -32,19 +32,19 @@ using namespace grl;
 
 REGISTER_CONFIGURABLE(LeoSymWrapperAgent)
 
-#define TARGET_OBSERVATION_SIZE 10
-#define TARGET_ACTION_SIZE       3
+#define TARGET_OBSERVATION_SIZE       10
+#define TARGET_ACTION_SIZE             3
 
 void LeoSymWrapperAgent::request(ConfigurationRequest *config)
 {
+  LeoBaseAgent::request(config);
   config->push_back(CRP("agent", "agent", "Target agent with reduced state-action space due to symmetry", agent_));
-  config->push_back(CRP("sub_ic_signal", "signal/vector", "Publisher of the initialization and contact signal", sub_ic_signal_));
 }
 
 void LeoSymWrapperAgent::configure(Configuration &config)
 {
+  LeoBaseAgent::configure(config);
   agent_ = (Agent*)config["agent"].ptr();
-  sub_ic_signal_ = (VectorSignal*)config["sub_ic_signal"].ptr();
 }
 
 void LeoSymWrapperAgent::reconfigure(const Configuration &config)
@@ -56,7 +56,7 @@ void LeoSymWrapperAgent::start(const Observation &obs, Action *action)
   Observation obs_agent = ConstantVector(TARGET_OBSERVATION_SIZE, 0);
   Action act_agent = ConstantVector(TARGET_ACTION_SIZE, 0);
 
-  action->v.resize(ljNumJoints);
+  action->v.resize(ljNumDynamixels);
 
   int stl = stanceLegLeft();
   parseStateForAgent(obs, &obs_agent, stl);
@@ -185,20 +185,24 @@ void LeoSymWrapperAgent::parseActionForEnvironment(const Action &act_agent, cons
 
   action->type = act_agent.type;
 
+  // ensure limits
+  for (int i = 0; i < ljNumDynamixels; i++)
+    (*action)[i] = fmin(action_max_[i], fmax((*action)[i], action_min_[i]));
+
   CRAWL(*action);
 }
 
 double LeoSymWrapperAgent::autoActuateArm(double armObs) const
 {
   double armTorque = 5.0*(preProgShoulderAngle_ - armObs);
-  const double torqueToVoltage  = 14.0/3.3;
+  const double torqueToVoltage  = XM430_VS_RX28_COEFF*14.0/3.3;
   return torqueToVoltage*armTorque;
 }
 
 double LeoSymWrapperAgent::autoActuateKnees(double stanceKneeObs) const
 {
   double kneeStanceTorque = 5.0*(preProgStanceKneeAngle_ - stanceKneeObs);
-  const double torqueToVoltage = 14.0/3.3;
+  const double torqueToVoltage = XM430_VS_RX28_COEFF*14.0/3.3;
   return torqueToVoltage*kneeStanceTorque;
 }
 
@@ -208,7 +212,7 @@ void LeoSymWrapperAgent::autoActuateAnkles_FixedPos(double leftAnkleObs, double 
   double leftAnkleTorque    = K*(preProgAnkleAngle_ - leftAnkleObs);
   double rightAnkleTorque   = K*(preProgAnkleAngle_ - rightAnkleObs);
 
-  const double torqueToVoltage  = 14.0/3.3;
+  const double torqueToVoltage  = XM430_VS_RX28_COEFF*14.0/3.3;
   *leftAnkleAction = leftAnkleTorque*torqueToVoltage;
   *rightAnkleAction = rightAnkleTorque*torqueToVoltage;
 }

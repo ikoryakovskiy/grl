@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 from collections import OrderedDict
 import argparse
 
+sys.path.append('/home/ivan/work/scripts/py')
+from my_csv.utils import *
+
 hd = """COLUMNS:
 time[0], 
 state0[0], 
@@ -34,7 +37,7 @@ def main():
     parser.add_argument('-c', '--add_contact_info', help='Adding contact information', action='store_true')
     args = parser.parse_args()
 
-    hd_sz = header_size(args.filename)
+    hd_sz = get_header_size(args.filename)
     print "Skipping {} rows".format(hd_sz)
 
     data = np.loadtxt(args.filename, skiprows=hd_sz, delimiter=',')
@@ -58,12 +61,6 @@ def main():
     pt = path+"/"+fn+"-converted"+ext
     print "Saving to {}".format(pt)
     np.savetxt(pt, data, fmt='%11.6f', delimiter=',', newline='\n', header=out_header, comments='')
-
-def header_size(fn):
-    with open(fn) as f:
-      for idx, line in enumerate(f):
-          if "DATA:" in line:
-               return idx+1
 
 if __name__ == "__main__":
     main()

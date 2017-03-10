@@ -33,11 +33,15 @@ using namespace grl;
 void LeoBaseAgent::request(ConfigurationRequest *config)
 {
   config->push_back(CRP("sub_ic_signal", "signal/vector", "Subscriber to the contact signal", sub_ic_signal_, true));
+  config->push_back(CRP("action_min", "vector.action_min", "Lower limit on actions", action_min_, CRP::System));
+  config->push_back(CRP("action_max", "vector.action_max", "Upper limit on actions", action_max_, CRP::System));
 }
 
 void LeoBaseAgent::configure(Configuration &config)
 {
   sub_ic_signal_ = (VectorSignal*)config["sub_ic_signal"].ptr();
+  action_min_ = config["action_min"].v();
+  action_max_ = config["action_max"].v();
 }
 
 bool LeoBaseAgent::failed(const Observation &obs, bool stanceLegLeft) const
