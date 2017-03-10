@@ -42,34 +42,12 @@ def main():
     xs = data[:, 1:17]    # states
     xc = data[:, -1]      # contacts
 
-    nxs = np.empty(xs.shape)
-
-    nxs[:, 0] = xs[:, 7]
-    nxs[:, 1] = xs[:, 6]
-    nxs[:, 2] = xs[:, 1]
-    nxs[:, 3] = xs[:, 0]
-    nxs[:, 4] = xs[:, 3]
-    nxs[:, 5] = xs[:, 2]
-    nxs[:, 6] = xs[:, 5]
-    nxs[:, 7] = xs[:, 4]
-
-    xdo = 8
-
-    nxs[:, xdo+0] = xs[:, xdo+7]
-    nxs[:, xdo+1] = xs[:, xdo+6]
-    nxs[:, xdo+2] = xs[:, xdo+1]
-    nxs[:, xdo+3] = xs[:, xdo+0]
-    nxs[:, xdo+4] = xs[:, xdo+3]
-    nxs[:, xdo+5] = xs[:, xdo+2]
-    nxs[:, xdo+6] = xs[:, xdo+5]
-    nxs[:, xdo+7] = xs[:, xdo+4]
-
     # join
     if args.add_contact_info:
-        data = np.column_stack((ts,nxs,xc))
+        data = np.column_stack((ts,xs,xc))
         out_header = hd.format(contact=",\ncontact")
     else:
-        data = np.column_stack((ts,nxs))
+        data = np.column_stack((ts,xs))
         out_header = hd.format(contact="")
 
     # save

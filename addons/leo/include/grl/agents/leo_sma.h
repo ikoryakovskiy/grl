@@ -45,7 +45,6 @@ class LeoStateMachineAgent : public LeoBaseAgent
     Agent *agent_prepare_, *agent_standup_, *agent_starter_, *agent_main_;
     Agent *agent_;
     Trigger *upright_trigger_, *foot_contact_trigger_, *starter_trigger_;
-//    VectorSignal *sub_ic_signal_;
     double time_;
     
   public:
@@ -62,8 +61,6 @@ class LeoStateMachineAgent : public LeoBaseAgent
     virtual void end(double tau, const Observation &obs, double reward);
 
   protected:
-//    virtual bool unpack_ic(int *touchDown, int *groundContact, int *stanceLegLeft) const;
-//    virtual bool failed(const Observation &obs, bool stanceLegLeft) const;
     virtual void set_agent(Agent *agent, double tau, const Observation &obs, double reward, Action *action, const char* msg);
 
 };

@@ -115,12 +115,13 @@ void LeoSymWrapperAgent::parseStateForAgent(const Observation &obs, Observation 
 {
   // environment
   //   obs: hipleft, hipright, kneeleft, kneeright, ankleleft, ankleright, shoulder, torso_boom
-  //   obs_agent: hipleft, hipright, kneeleft, kneeright, shoulder
+  //   obs_agent: hipleft, hipright, kneeleft, kneeright, torso_boom
 
   CRAWL(obs);
 
-  (*obs_agent)[ljTorso] = obs[ljTorso];
-  (*obs_agent)[TARGET_OBSERVATION_SIZE/2+ljTorso] = obs[ljNumJoints+ljTorso];
+  // torso index in observation
+  (*obs_agent)[4] = obs[ljTorso];
+  (*obs_agent)[TARGET_OBSERVATION_SIZE/2+4] = obs[ljNumJoints+ljTorso];
 
   if (stl)
   {
@@ -176,8 +177,7 @@ void LeoSymWrapperAgent::parseActionForEnvironment(const Action &act_agent, cons
   }
 
   double actionAnkleLeft, actionAnkleRight;
-  autoActuateAnkles_FixedPos(obs[ljAnkleLeft],  &actionAnkleLeft,
-                             obs[ljAnkleRight], &actionAnkleRight);
+  autoActuateAnkles_FixedPos(obs[ljAnkleLeft], &actionAnkleLeft, obs[ljAnkleRight], &actionAnkleRight);
   (*action)[ljAnkleLeft] = actionAnkleLeft;
   (*action)[ljAnkleRight] = actionAnkleRight;
 

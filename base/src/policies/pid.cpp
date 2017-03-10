@@ -228,6 +228,7 @@ void PIDTrajectoryPolicy::act(double time, const Observation &in, Action *out)
 {
   // Read current setpoint from the trajectory
   trajectory_->read(VectorConstructor(time), &setpoint_);
+  TRACE(setpoint_);
   
   if (setpoint_.size() != inputs_)
     throw bad_param("policy/pidt:inputs");

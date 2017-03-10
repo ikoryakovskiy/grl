@@ -57,21 +57,7 @@ void CLeoBhBase::fillLeoState(const Vector &obs, const Vector &action, CLeoState
     }
   }
 }
-/*
-void CLeoBhBase::parseLeoState(const CLeoState &leoState, Vector &obs)
-{
-  obs[owTorsoAngle]           = leoState.mJointAngles[ljTorso];
-  obs[owTorsoAngleRate]       = leoState.mJointSpeeds[ljTorso];
-  obs[owHipStanceAngle]       = leoState.mJointAngles[mHipStance];
-  obs[owHipStanceAngleRate]   = leoState.mJointSpeeds[mHipStance];
-  obs[owHipSwingAngle]        = leoState.mJointAngles[mHipSwing];
-  obs[owHipSwingAngleRate]    = leoState.mJointSpeeds[mHipSwing];
-  obs[owKneeStanceAngle]      = leoState.mJointAngles[mKneeStance];
-  obs[owKneeStanceAngleRate]  = leoState.mJointSpeeds[mKneeStance];
-  obs[owKneeSwingAngle]       = leoState.mJointAngles[mKneeSwing];
-  obs[owKneeSwingAngleRate]   = leoState.mJointSpeeds[mKneeSwing];
-}
-*/
+
 void CLeoBhBase::setCurrentSTGState(CLeoState *leoState)
 {
   mCurrentSTGState = leoState;
