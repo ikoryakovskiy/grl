@@ -34,6 +34,7 @@ REGISTER_CONFIGURABLE(LeoStateMachineAgent)
 
 void LeoStateMachineAgent::request(ConfigurationRequest *config)
 {
+  LeoBaseAgent::request(config);
   config->push_back(CRP("agent_prepare", "agent", "Prepare agent", agent_prepare_, false));
   config->push_back(CRP("agent_standup", "agent", "Safe standup agent", agent_standup_, false));
   config->push_back(CRP("agent_starter", "agent", "Starting agent", agent_starter_, true));
@@ -42,11 +43,13 @@ void LeoStateMachineAgent::request(ConfigurationRequest *config)
   config->push_back(CRP("upright_trigger", "trigger", "Trigger which finishes stand-up phase and triggers preparation agent", upright_trigger_, false));
   config->push_back(CRP("fc_trigger", "trigger", "Trigger which checks for foot contact to ensure that robot is prepared to walk", foot_contact_trigger_, false));
   config->push_back(CRP("starter_trigger", "trigger", "Trigger which initiates a preprogrammed walking at the beginning", starter_trigger_, true));
-  config->push_back(CRP("sub_ic_signal", "signal/vector", "Subscriber to the contact signal", sub_ic_signal_, true));
+//  config->push_back(CRP("sub_ic_signal", "signal/vector", "Subscriber to the contact signal", sub_ic_signal_, true));
 }
 
 void LeoStateMachineAgent::configure(Configuration &config)
 {
+  LeoBaseAgent::configure(config);
+
   agent_prepare_ = (Agent*)config["agent_prepare"].ptr();
   agent_standup_ = (Agent*)config["agent_standup"].ptr();
   agent_starter_ = (Agent*)config["agent_starter"].ptr();
@@ -55,7 +58,7 @@ void LeoStateMachineAgent::configure(Configuration &config)
   upright_trigger_ = (Trigger*)config["upright_trigger"].ptr();
   foot_contact_trigger_ = (Trigger*)config["fc_trigger"].ptr();
   starter_trigger_ = (Trigger*)config["starter_trigger"].ptr();
-  sub_ic_signal_ = (VectorSignal*)config["sub_ic_signal"].ptr();
+//  sub_ic_signal_ = (VectorSignal*)config["sub_ic_signal"].ptr();
 }
 
 void LeoStateMachineAgent::reconfigure(const Configuration &config)
@@ -125,6 +128,7 @@ void LeoStateMachineAgent::end(double tau, const Observation &obs, double reward
   std::cout << "End should not be called here!" << std::endl;
 }
 
+
 void LeoStateMachineAgent::set_agent(Agent *agent, double tau, const Observation &obs, double reward, Action *action, const char* msg)
 {
   agent_->end(tau, obs, reward);  // finish previous agent
@@ -133,6 +137,7 @@ void LeoStateMachineAgent::set_agent(Agent *agent, double tau, const Observation
   INFO(msg);
 }
 
+/*
 bool LeoStateMachineAgent::failed(const Observation &obs, bool stanceLegLeft) const
 {
   double torsoComstraint = 1; // 1
@@ -168,3 +173,4 @@ bool LeoStateMachineAgent::unpack_ic(int *touchDown, int *groundContact, int *st
   return false;
 }
 
+*/

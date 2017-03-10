@@ -1,5 +1,5 @@
-/** \file leo_preprogrammed.h
- * \brief Leo preprogrammed agent header file.
+/** \file leo_walkdynamic.h
+ * \brief Leo agent header file to walk dynamically (time-based).
  *
  * \author    Ivan Koryakovskiy <i.koryakovskiy@tudelft.nl>
  * \date      2016-07-25
@@ -25,35 +25,40 @@
  * \endverbatim
  */
 
-#ifndef GRL_LEO_PREPROGRAMMED_AGENT_H_
-#define GRL_LEO_PREPROGRAMMED_AGENT_H_
+#ifndef GRL_LEO_WALKDYNAMIC_AGENT_H_
+#define GRL_LEO_WALKDYNAMIC_AGENT_H_
 
-#include <grl/agent.h>
-#include <grl/random_generator.h>
+#include <grl/agents/leo_base.h>
 
 namespace grl
 {
 
-/// Agent.
-class LeoPreprogrammedAgent : public Agent
+class LeoWalkdynamicAgent : public LeoBaseAgent
 {
   public:
-    TYPEINFO("agent/leo_preprogrammed", "Leo preprogrammed agent")
+    TYPEINFO("agent/leo/walkdynamic", "Leo agent to controll leo walking dynamically")
 
   protected:
-    double time_, epsilon_;
-    Vector min_, max_;
-    int swing_leg_prev_touch_;
-    double mSwingTime, mPreProgEarlySwingTime, mPreProgTorsoAngle, mPreProgShoulderAngle,
-           mPreProgHipAngle, mPreProgAnkleAngle, mPreProgStanceKneeAngle;
+    double time_;
 
-    RandomGenerator *rand_gen_;
+    double      mSwingStartTime;
+    double      mParamAnkleStanceAngle, mParamAnklePushoffAngle, mParamInterHipAngle, mParamTransTorqueFactor, mParamTorsoAngle, mParamEarlySwingTime;
+    bool        mEarlySwing;  // if true then earlyswing, if false then lateswing
 
   public:
-    LeoPreprogrammedAgent() :
-      time_(0.), epsilon_(0.05), swing_leg_prev_touch_(0), mSwingTime(0.), mPreProgEarlySwingTime(0.184), mPreProgTorsoAngle(-0.09), mPreProgShoulderAngle(-0.262),
-      mPreProgHipAngle(0.680), mPreProgAnkleAngle(0.065), mPreProgStanceKneeAngle(0.)
-    { }
+    LeoWalkdynamicAgent() : time_(0.0)
+    {
+      mEarlySwing     = false;
+      mSwingStartTime = 0;
+
+      // Parameters
+      mParamAnkleStanceAngle  =  0.02;
+      mParamAnklePushoffAngle =  0.0;
+      mParamInterHipAngle     =  0.65;
+      mParamTransTorqueFactor = -0.60;
+      mParamTorsoAngle        = -0.11; //-0.096;
+      mParamEarlySwingTime    =  0.184;
+    }
   
     // From Configurable    
     virtual void request(ConfigurationRequest *config);
@@ -65,14 +70,11 @@ class LeoPreprogrammedAgent : public Agent
     virtual void step(double tau, const Observation &obs, double reward, Action *action);
     virtual void end(double tau, const Observation &obs, double reward);
 
-    // own
-    virtual void auto_actuate(const Vector &obs, Vector *action);
-    virtual void autoActuateArm(const Vector &obs, double &shoulderVoltage);
-    virtual void autoActuateAnkles_FixedPos(const Vector &obs, double &stanceAnkleVoltage, double &swingAnkleVoltage);
-    virtual void autoActuateKnees(const Vector &obs, double &stanceKneeVoltage, double &swingKneeVoltage);
-    virtual void autoActuateHips2(const Vector &obs, double &stanceHipVoltage, double &swingHipVoltage);
+    // Own
+    virtual void walk(double time, const Vector &obs, Vector *action);
+    virtual bool isShoulderAngleSafe(Vector obs, int leftIsStance, double* safeShoulderAngle);
 };
 
 }
 
-#endif /* GRL_LEO_PREPROGRAMMED_AGENT_H_ */
+#endif /* GRL_LEO_WALKDYNAMIC_AGENT_H_ */

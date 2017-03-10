@@ -192,6 +192,12 @@ agent/leo/fixed:
     optional: 1
 agent/leo/sma:
   description: State-machine agent for Leo
+  sub_ic_signal:
+    type: signal/vector
+    description: Subscriber to the contact signal
+    mutability: configuration
+    default: 0
+    optional: 1
   agent_prepare:
     type: agent
     description: Prepare agent
@@ -234,12 +240,6 @@ agent/leo/sma:
     mutability: configuration
     default: 0
     optional: 1
-  sub_ic_signal:
-    type: signal/vector
-    description: Subscriber to the contact signal
-    mutability: configuration
-    default: 0
-    optional: 1
 agent/leo/sym_wrapper:
   description: Leo agent that symmetrically wraps angles and controls
   agent:
@@ -274,33 +274,13 @@ agent/leo/td:
     mutability: configuration
     default: 0
     optional: 1
-agent/leo_preprogrammed:
-  description: Leo preprogrammed agent
-  rand_gen:
-    type: random_generator
-    description: Random generator for action pertubation
+agent/leo/walkdynamic:
+  description: Leo agent to controll leo walking dynamically
+  sub_ic_signal:
+    type: signal/vector
+    description: Subscriber to the contact signal
     mutability: configuration
     default: 0
-    optional: 0
-  epsilon:
-    type: double
-    description: Exploration rate
-    mutability: configuration
-    default: 0.05
-    optional: 1
-    min: 0
-    max: 1
-  output_min:
-    type: vector.action_min
-    description: Lower limit on outputs
-    mutability: system
-    default: "[  ]"
-    optional: 1
-  output_max:
-    type: vector.action_max
-    description: Upper limit on outputs
-    mutability: system
-    default: "[  ]"
     optional: 1
 agent/master/exclusive:
   description: Master agent that selects one sub-agent to execute

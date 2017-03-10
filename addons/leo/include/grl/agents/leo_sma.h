@@ -1,4 +1,4 @@
-/** \file leo_sma.cpp
+/** \file leo_sma.h
  * \brief State-machine agent header file for Leo
  *
  * \author    Ivan Koryakovskiy <i.koryakovskiy@tudelft.nl>
@@ -28,16 +28,15 @@
 #ifndef GRL_LEO_STATE_MACHINE_AGENT_H_
 #define GRL_LEO_STATE_MACHINE_AGENT_H_
 
-#include <grl/agent.h>
-#include <grl/policy.h>
+#include <grl/agents/leo_base.h>
+//#include <grl/policy.h>
 #include <grl/state_machine.h>
-#include <grl/signal.h>
 
 namespace grl
 {
 
 /// State machine agent.
-class LeoStateMachineAgent : public Agent
+class LeoStateMachineAgent : public LeoBaseAgent
 {
   public:
     TYPEINFO("agent/leo/sma", "State-machine agent for Leo")
@@ -46,11 +45,11 @@ class LeoStateMachineAgent : public Agent
     Agent *agent_prepare_, *agent_standup_, *agent_starter_, *agent_main_;
     Agent *agent_;
     Trigger *upright_trigger_, *foot_contact_trigger_, *starter_trigger_;
-    VectorSignal *sub_ic_signal_;
+//    VectorSignal *sub_ic_signal_;
     double time_;
     
   public:
-    LeoStateMachineAgent() : agent_prepare_(NULL), agent_standup_(NULL), agent_starter_(NULL), agent_main_(NULL), agent_(NULL), upright_trigger_(NULL), foot_contact_trigger_(NULL), starter_trigger_(NULL), sub_ic_signal_(NULL), time_(0.) { }
+    LeoStateMachineAgent() : agent_prepare_(NULL), agent_standup_(NULL), agent_starter_(NULL), agent_main_(NULL), agent_(NULL), upright_trigger_(NULL), foot_contact_trigger_(NULL), starter_trigger_(NULL), /*sub_ic_signal_(NULL),*/ time_(0.) { }
   
     // From Configurable    
     virtual void request(ConfigurationRequest *config);
@@ -63,9 +62,10 @@ class LeoStateMachineAgent : public Agent
     virtual void end(double tau, const Observation &obs, double reward);
 
   protected:
-    virtual bool unpack_ic(int *touchDown, int *groundContact, int *stanceLegLeft) const;
-    virtual bool failed(const Observation &obs, bool stanceLegLeft) const;
+//    virtual bool unpack_ic(int *touchDown, int *groundContact, int *stanceLegLeft) const;
+//    virtual bool failed(const Observation &obs, bool stanceLegLeft) const;
     virtual void set_agent(Agent *agent, double tau, const Observation &obs, double reward, Action *action, const char* msg);
+
 };
 
 }
