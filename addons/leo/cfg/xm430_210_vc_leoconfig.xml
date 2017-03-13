@@ -759,7 +759,7 @@
 					<anchorname>virtualBoomTip</anchorname>
 				</anchor2>
 				<axisX>0</axisX>
-				<axisY>1</axisY>
+				<axisY>-1</axisY>
 				<axisZ>0</axisZ>
 				<dryfriction>0.0</dryfriction>
 				<lowerlimit>mintorsoangle</lowerlimit>

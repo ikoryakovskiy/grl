@@ -69,9 +69,9 @@
 		<!-- Motor settings -->
 		<dxl_type oldvalue="dynamixel">torque</dxl_type>
 		<dxl_dryfriction oldvalue="0.27046">0.20</dxl_dryfriction>
-		<dxl_torqueconstant>0.00992</dxl_torqueconstant>
-		<dxl_terminalresistance>8.6</dxl_terminalresistance>
-		<dxl_gearboxratio>193</dxl_gearboxratio>
+		<dxl_gearboxratio>212.6</dxl_gearboxratio>
+		<dxl_torqueconstant>1.344712182/dxl_gearboxratio</dxl_torqueconstant>
+		<dxl_terminalresistance>4.6</dxl_terminalresistance>
 		<dxl_gearboxefficiency>0.75</dxl_gearboxefficiency>
 		<dxl_armatureinertia>0.864E-7</dxl_armatureinertia>
 		<dxl_servoinertiatrackerK oldvalue="500.0">500.0</dxl_servoinertiatrackerK>
@@ -759,7 +759,7 @@
 					<anchorname>virtualBoomTip</anchorname>
 				</anchor2>
 				<axisX>0</axisX>
-				<axisY>1</axisY>
+				<axisY>-1</axisY>
 				<axisZ>0</axisZ>
 				<dryfriction>0.0</dryfriction>
 				<lowerlimit>mintorsoangle</lowerlimit>

@@ -29,7 +29,6 @@
 #define GRL_LEO_STATE_MACHINE_AGENT_H_
 
 #include <grl/agents/leo_base.h>
-//#include <grl/policy.h>
 #include <grl/state_machine.h>
 
 namespace grl

@@ -43,7 +43,6 @@ void LeoStateMachineAgent::request(ConfigurationRequest *config)
   config->push_back(CRP("upright_trigger", "trigger", "Trigger which finishes stand-up phase and triggers preparation agent", upright_trigger_, false));
   config->push_back(CRP("fc_trigger", "trigger", "Trigger which checks for foot contact to ensure that robot is prepared to walk", foot_contact_trigger_, false));
   config->push_back(CRP("starter_trigger", "trigger", "Trigger which initiates a preprogrammed walking at the beginning", starter_trigger_, true));
-//  config->push_back(CRP("sub_ic_signal", "signal/vector", "Subscriber to the contact signal", sub_ic_signal_, true));
 }
 
 void LeoStateMachineAgent::configure(Configuration &config)
@@ -58,7 +57,6 @@ void LeoStateMachineAgent::configure(Configuration &config)
   upright_trigger_ = (Trigger*)config["upright_trigger"].ptr();
   foot_contact_trigger_ = (Trigger*)config["fc_trigger"].ptr();
   starter_trigger_ = (Trigger*)config["starter_trigger"].ptr();
-//  sub_ic_signal_ = (VectorSignal*)config["sub_ic_signal"].ptr();
 }
 
 void LeoStateMachineAgent::reconfigure(const Configuration &config)
@@ -102,7 +100,7 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
   int touchDown, groundContact, stanceLegLeft;
   unpack_ic(&touchDown, &groundContact, &stanceLegLeft);
 
-  // if Leo fell down and we are not trying to stand up alredy, then try!
+  // if Leo fell down and we are not trying to stand up already, then try!
   if ((agent_ != agent_standup_) && (failed(obs, stanceLegLeft)))
     return set_agent(agent_standup_, tau, obs, reward, action, "Leo fall down, need to stand up!");
 

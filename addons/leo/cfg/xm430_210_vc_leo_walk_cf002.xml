@@ -83,10 +83,10 @@
 		<rewardHipAngleChange>0.0</rewardHipAngleChange>
 		<rewardDoubleStance>0.0</rewardDoubleStance>
 		<rewardStanceSwingFootDist>0.0</rewardStanceSwingFootDist>
-		<rewardTorsoUpright>-1.0</rewardTorsoUpright>
+		<rewardTorsoUpright>0.0</rewardTorsoUpright>
 		<rewardTorsoUprightAngle lastvalue="-0.15">-0.07</rewardTorsoUprightAngle>
-		<rewardTorsoUprightAngleMargin definition="angle deviation [rad] for which reward is 50%">0.4</rewardTorsoUprightAngleMargin>
-		<rewardFootContact>0.0</rewardFootContact>		
+		<rewardTorsoUprightAngleMargin definition="angle deviation [rad] for which reward is 50%">0.1</rewardTorsoUprightAngleMargin>
+		<rewardFootContact>-2.0</rewardFootContact>
 		<trialTimeoutSeconds>25</trialTimeoutSeconds>
 		<continueAfterFall>false</continueAfterFall>
 	

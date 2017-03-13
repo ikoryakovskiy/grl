@@ -26,16 +26,11 @@ void CLeoBhBase::resetState(double time0)
 
 void CLeoBhBase::fillLeoState(const Vector &obs, const Vector &action, CLeoState &leoState)
 {
-  // '-' required to match with Erik's code, but does not matter for learning.
-  // Erik used a rotation matrix which was rotating a unit vector. For torso it seems
-  // the positive direction was not same as for other joints, internally defined in ODE.
-  for (int i = 0; i < ljNumDynamixels; i++)
+  for (int i = 0; i < ljNumJoints; i++)
   {
     leoState.mJointAngles[i] = obs[i];
     leoState.mJointSpeeds[i] = mJointSpeedFilter[i].filter(obs[ljNumJoints+i]);
   }
-  leoState.mJointAngles[ljTorso] = -obs[ljTorso];
-  leoState.mJointSpeeds[ljTorso] = -mJointSpeedFilter[ljTorso].filter(obs[ljNumJoints+ljTorso]);
 
   leoState.mFootContacts  = obs[2*ljNumJoints+lfToeRight]  > 0.5 ? LEO_FOOTSENSOR_RIGHT_TOE  : 0;
   leoState.mFootContacts |= obs[2*ljNumJoints+lfHeelRight] > 0.5 ? LEO_FOOTSENSOR_RIGHT_HEEL : 0;

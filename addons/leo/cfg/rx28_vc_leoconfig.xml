@@ -154,7 +154,7 @@
 					<z>0.0</z>
 				</anchor>
 				<drawinfo>
-					<box comment="virtual boom">
+					<box comment="draw virtual boom">
 						<color>
 							<r>0.0</r>
 							<g>0.8</g>

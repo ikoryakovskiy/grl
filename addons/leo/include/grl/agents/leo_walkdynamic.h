@@ -56,7 +56,7 @@ class LeoWalkdynamicAgent : public LeoBaseAgent
       mParamAnklePushoffAngle =  0.0;
       mParamInterHipAngle     =  0.65;
       mParamTransTorqueFactor = -0.60;
-      mParamTorsoAngle        = -0.11; //-0.096;
+      mParamTorsoAngle        = -0.11; //-0.096; // torso should lean forward
       mParamEarlySwingTime    =  0.184;
     }
   
