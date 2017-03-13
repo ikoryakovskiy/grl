@@ -4,7 +4,8 @@ experiment:
   trials: 0
   steps: 0
   rate: 0
-  test_interval: 0
+  test_interval: 300
+  output: leo_sym_output_tc
   environment: 
     type: environment/leo_walk
     behavior: 
@@ -13,10 +14,10 @@ experiment:
     target_env: 
       type: environment/ode
       xml: ../../xml
-      randomize: 0
+      randomize: 1
       visualize: 1
     observe: torso_boom, hipright, hipleft, kneeright, kneeleft
-    actuate: hipright, hipleft, kneeleft
+    actuate: hipright, hipleft, stanceknee
   agent: 
     type: agent/zeromq
     communicator: 
@@ -41,5 +42,5 @@ experiment:
     action_min: []
     action_max: []
     test: 1
-  load_file: /home/divyam/rl-agent/model1.ckpt
-  save_every: never
+  load_file: none
+  save_every: test

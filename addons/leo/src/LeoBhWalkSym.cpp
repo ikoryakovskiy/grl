@@ -197,11 +197,11 @@ void CLeoBhWalkSym::updateDerivedStateVars(CLeoState* currentSTGState)
   double rightHeelZ         = rightAnkleZ + ankleHeelDZ*cos(rightAnkleAbsAngle) + ankleHeelDX*sin(rightAnkleAbsAngle);
   double rightToeZ          = rightAnkleZ + ankleToeDZ*cos(rightAnkleAbsAngle) + ankleToeDX*sin(rightAnkleAbsAngle);
 
-  double hipHeight          = std::max(std::max(leftHeelZ, leftToeZ), std::max(rightHeelZ, rightToeZ));
-  leftHeelZ  = hipHeight - leftHeelZ;
-  leftToeZ   = hipHeight - leftToeZ;
-  rightHeelZ = hipHeight - rightHeelZ;
-  rightToeZ  = hipHeight - rightToeZ;
+  mHipHeight          = std::max(std::max(leftHeelZ, leftToeZ), std::max(rightHeelZ, rightToeZ));
+  leftHeelZ  = mHipHeight - leftHeelZ;
+  leftToeZ   = mHipHeight - leftToeZ;
+  rightHeelZ = mHipHeight - rightHeelZ;
+  rightToeZ  = mHipHeight - rightToeZ;
   mLogDebugLn("leftHeelZ:" << leftHeelZ << ", leftToeZ:" << leftToeZ << ", rightHeelZ:" << rightHeelZ << ", rightToeZ:" << rightToeZ);
 
   bool leftIsStance;
@@ -418,8 +418,8 @@ double CLeoBhWalkSym::calculateReward()
   }
 
   // Foot contact penalty
-  if (mFootContactNum <= 1)
-    reward += -2;
+//  if (mFootContactNum <= 1)
+//    reward += -2;
 
   // Footstep reward (calculation is a little bit more complicated -> separate function)
   reward += getFootstepReward();
@@ -496,11 +496,14 @@ bool CLeoBhWalkSym::isDoomedToFall(CLeoState* state, bool report)
 {
   double torsoComstraint = 1; // 1
   double stanceComstraint = 0.36*M_PI; // 0.36*M_PI
+  double ankleComstraint = 0.25*M_PI;
 
   if (!mContinueAfterFall)
   {
+    // Divyam's termination condition
+    if ((fabs(state->mJointAngles[ljTorso]) > torsoComstraint) || (fabs(state->mJointAngles[ljAnkleLeft]) > ankleComstraint) || (fabs(state->mJointAngles[ljAnkleRight]) > ankleComstraint) || (mHipHeight < 0.15))
     // Torso angle out of 'range'
-    if (fabs(state->mJointAngles[ljTorso]) > torsoComstraint)
+    //if (fabs(state->mJointAngles[ljTorso]) > torsoComstraint)
     {
       if (report)
         mLogNoticeLn("[TERMINATION] Torso angle too large");
@@ -523,13 +526,13 @@ bool CLeoBhWalkSym::isDoomedToFall(CLeoState* state, bool report)
      */
 
     // Stance leg angle out of 'range'
-    if (fabs(state->mJointAngles[ljTorso] + state->mJointAngles[mHipStance]) > stanceComstraint)
-    {
-      if (report)
-        mLogNoticeLn("[TERMINATION] Stance leg angle too large");
-      //std::cout << "[TERMINATION] Stance leg angle too large" << std::endl;
-      return true;
-    }
+//    if (fabs(state->mJointAngles[ljTorso] + state->mJointAngles[mHipStance]) > stanceComstraint)
+//    {
+//      if (report)
+//        mLogNoticeLn("[TERMINATION] Stance leg angle too large");
+//      //std::cout << "[TERMINATION] Stance leg angle too large" << std::endl;
+//      return true;
+//    }
   }
 
   return false;
