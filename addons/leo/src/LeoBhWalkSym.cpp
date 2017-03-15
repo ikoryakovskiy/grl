@@ -501,7 +501,7 @@ bool CLeoBhWalkSym::isDoomedToFall(CLeoState* state, bool report)
   if (!mContinueAfterFall)
   {
     // Divyam's termination condition
-    if ((fabs(state->mJointAngles[ljTorso]) > torsoComstraint) || (fabs(state->mJointAngles[ljAnkleLeft]) > ankleComstraint) || (fabs(state->mJointAngles[ljAnkleRight]) > ankleComstraint) || (mHipHeight < 0.15))
+    if ((fabs(state->mJointAngles[ljTorso]) > torsoComstraint) || (fabs(state->mJointAngles[ljAnkleLeft]) > stanceComstraint) || (fabs(state->mJointAngles[ljAnkleRight]) > stanceComstraint) || (mHipHeight < 0.15))
     // Torso angle out of 'range'
     //if (fabs(state->mJointAngles[ljTorso]) > torsoComstraint)
     {
