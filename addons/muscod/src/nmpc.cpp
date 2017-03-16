@@ -91,8 +91,8 @@ void NMPCPolicy::configure(Configuration &config)
   initial_qc_ = ConstantVector(nmpc_->NU(), 0);
   final_sd_   = ConstantVector(nmpc_->NXD(), 0);
 
-  grl_assert(nmpc_->NU() == action_max_.size());
-  grl_assert(nmpc_->NU() == action_min_.size());
+  grl_assert(nmpc_->NU() == action_max_.size() || nmpc_->NU() == action_max_.size());
+  grl_assert(nmpc_->NU() == action_min_.size() || nmpc_->NU() == action_max_.size());
 
   // run single SQP iteration to be able to write a restart file
   nmpc_->feedback();

@@ -1,4 +1,4 @@
-/** \file rbdl_leo.cpp
+/** \file rbdl_leo_task.cpp
  * \brief RBDL file for C++ description of Leo task.
  *
  * \author    Ivan Koryakovskiy <i.koryakovskiy@tudelft.nl>
@@ -35,6 +35,8 @@
 #include <grl/lua_utils.h>
 #include <grl/environments/leo/rbdl_leo_task.h>
 
+#include <DynamixelSpecs.h>
+
 using namespace grl;
 
 REGISTER_CONFIGURABLE(LeoSquattingTask)
@@ -58,7 +60,6 @@ void LeoSquattingTask::configure(Configuration &config)
   toVector(obs_max, target_obs_max_);
 
   // Observations and actions exposed to an agent
-  dof_ = rlsDofDim;
   config.set("observation_dims", 2*dof_+1);
   Vector observation_min, observation_max;
   observation_min.resize(2*dof_+1);
@@ -71,19 +72,20 @@ void LeoSquattingTask::configure(Configuration &config)
   config.set("observation_max", observation_max);
 
   config.set("action_dims", dof_);
-  config.set("action_min", VectorConstructor(-10.7, -10.7, -10.7));
-  config.set("action_max", VectorConstructor( 10.7,  10.7,  10.7));
+  config.set("action_min", ConstantVector(dof_, -LEO_MAX_DXL_VOLTAGE));
+  config.set("action_max", ConstantVector(dof_, LEO_MAX_DXL_VOLTAGE));
   config.set("reward_min", VectorConstructor(-1000));
   config.set("reward_max", VectorConstructor( 1000));
 
-  std::cout << observation_min << std::endl;
-  std::cout << observation_max << std::endl;
+  std::cout << "observation_min: " << config["observation_min"].v() << std::endl;
+  std::cout << "observation_max: " << config["observation_max"].v() << std::endl;
+  std::cout << "action_min: " << config["action_min"].v() << std::endl;
+  std::cout << "action_max: " << config["action_max"].v() << std::endl;
 }
 
 void LeoSquattingTask::start(int test, Vector *state) const
 {
-/*
-  *state = ConstantVector(2*rlsDofDim+1, 0);
+  *state = ConstantVector(2*(dof_+1)+1, 0);
 
   // sitted pose
   *state <<
@@ -96,31 +98,19 @@ void LeoSquattingTask::start(int test, Vector *state) const
         -0.0,
         -0.0,  // end of rlsDofDim
          0.0;  // rlsTime
-*/
-
-  *state = ConstantVector(2*rlsDofDim+1, 0);
-
-  // sitted pose
-  *state <<
-         1.0586571916803691E+00,
-        -2.1266836153365212E+00,
-         1.0680264236561250E+00,
-        -0.0,
-        -0.0,
-        -0.0,  // end of rlsDofDim
-         0.0;  // rlsTime
 
   if (rand_init_)
   {
     // sample angles
     const double upLegLength  = 0.1160; // length of the thigh
     const double loLegLength  = 0.1045; // length of the shin
-    double a, b, c, hh;
+    double a, b, c, d, hh;
     do
     {
       a = RandGen::getUniform(-1.65,  1.48);
       b = RandGen::getUniform(-2.53,  0.00);
       c = RandGen::getUniform(-0.61,  2.53);
+      d = RandGen::getUniform(-0.10,  0.10);
       hh = loLegLength*cos(a) + upLegLength*cos(a+b);
     }
     while (fabs(a + b + c) > 3.1415/2.0 || hh < 0.07);
@@ -128,6 +118,7 @@ void LeoSquattingTask::start(int test, Vector *state) const
     (*state)[rlsAnkleAngle] = a;
     (*state)[rlsKneeAngle] = b;
     (*state)[rlsHipAngle] = c;
+    (*state)[rlsArmAngle] = d;
 
     TRACE("Hip height: " << hh);
   }
@@ -139,11 +130,10 @@ void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *termi
 {
   grl_assert(state.size() == stsStateDim);
 
-  // arm is not actuated => exclude angle and angle rate from observations
+  // arm is auto-actuated => exclude angle and angle rate from observations
   obs->v.resize(2*dof_+1);
-  obs->v << state.block(0, rlsAnkleAngle, 1, rlsHipAngle-rlsAnkleAngle+1),
-            state.block(0, rlsAnkleAngleRate, 1, rlsHipAngleRate-rlsAnkleAngleRate+1),
-            state[rlsRefRootZ];
+  obs->v << state[rlsAnkleAngle], state[rlsKneeAngle], state[rlsHipAngle],
+            state[rlsAnkleAngleRate], state[rlsKneeAngleRate], state[rlsHipAngleRate], state[rlsRefRootZ];
 
   if ((timeout_> 0) && (state[rlsTime] >= timeout_))
     *terminal = 1;
@@ -156,7 +146,7 @@ void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *termi
 void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const
 {
   grl_assert(state.size() == stsStateDim);
-  grl_assert(action.size() == rlsDofDim || action.size() == rlsDofDim-1); // if auto-actuated, action is shorter
+  grl_assert(action.size() == dof_);
   grl_assert(next.size() == stsStateDim);
 
   if (failed(next))
@@ -240,8 +230,8 @@ int LeoSquattingTask::failed(const Vector &state) const
       (state[rlsKneeAngleRate]  > target_obs_max_[rlsKneeAngleRate])  ||
       (state[rlsHipAngleRate]   < target_obs_min_[rlsHipAngleRate])   ||
       (state[rlsHipAngleRate]   > target_obs_max_[rlsHipAngleRate])   ||
-//      (state[rlsArmAngleRate]   < target_obs_min_[rlsArmAngleRate])   ||
-//      (state[rlsArmAngleRate]   > target_obs_max_[rlsArmAngleRate])   ||
+      (state[rlsArmAngleRate]   < target_obs_min_[rlsArmAngleRate])   ||
+      (state[rlsArmAngleRate]   > target_obs_max_[rlsArmAngleRate])   ||
       (state[rlsRootZ] < 0)
       )
     return 1;

@@ -27,6 +27,7 @@
 
 #include <grl/environments/leo/rbdl_leo_model.h>
 #include <grl/environments/leo/rbdl_leo_task.h>
+#include <DynamixelSpecs.h>
 
 using namespace grl;
 
@@ -116,8 +117,8 @@ void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
 
   // Unknown bug in GRL call/Lua/RBDL: need to call eom, then 'finalize' works correctly
   Vector xd;
-  action_step_.resize(target_dof_);
-  dynamics_->eom(*state, action_step_, &xd);
+  target_action_.resize(target_dof_);
+  dynamics_->eom(*state, target_action_, &xd);
 
   // Fill parts of a state such as Center of Mass, Angular Momentum
   dynamics_->finalize(*state, rbdl_addition_);
@@ -134,23 +135,23 @@ void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
 
 double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
 {
-  state_step_.resize(2*target_dof_+1);
-  next_step_.resize(2*target_dof_+1);
-  action_step_.resize(target_dof_);
+  target_state_.resize(2*target_dof_+1);
+  target_state_next_.resize(2*target_dof_+1);
+  target_action_.resize(target_dof_);
   next->resize(state_.size());
 
   // reduce state
-  state_step_ << state_.block(0, 0, 1, 2*target_dof_+1);
+  target_state_ << state_.block(0, 0, 1, 2*target_dof_+1);
 
   // auto-actuate arm
   if (action.size() == target_dof_-1)
   {
-    //double armVoltage = (14.0/3.3) * 5.0*(-0.26 - state_[rlsArmAngle]);
-    //armVoltage = fmin(10.7, fmax(armVoltage, -10.7)); // ensure voltage within limits
-    //action_step_ << action, armVoltage;
+    double armVoltage = XM430_VS_RX28_COEFF*(14.0/3.3) * 5.0*(-0.26 - state_[rlsArmAngle]);
+    armVoltage = fmin(LEO_MAX_DXL_VOLTAGE, fmax(armVoltage, -LEO_MAX_DXL_VOLTAGE)); // ensure voltage within limits
+    target_action_ << action, armVoltage;
   }
   else
-    action_step_ << action;
+    target_action_ << action;
 
 //  action_step_ << ConstantVector(target_dof_, 0);
 
@@ -163,37 +164,37 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   {
     Observation obs;
   
-    tau = target_env_->step(action_step_, &obs, NULL, NULL);
-    next_step_ = obs.v;
+    tau = target_env_->step(target_action_, &obs, NULL, NULL);
+    target_state_next_ = obs.v;
     
-    next_step_[rlsTime] = state_step_[rlsTime] + tau;
+    target_state_next_[rlsTime] = target_state_[rlsTime] + tau;
   }
   else
-    tau = dm_.step(state_step_, action_step_, &next_step_);
+    tau = dm_.step(target_state_, target_action_, &target_state_next_);
 
-  dynamics_->finalize(next_step_, rbdl_addition_);
+  dynamics_->finalize(target_state_next_, rbdl_addition_);
 
   // Compose the next state
-  (*next) << next_step_, VectorConstructor(state_[rlsRefRootZ]),
+  (*next) << target_state_next_, VectorConstructor(state_[rlsRefRootZ]),
       rbdl_addition_, VectorConstructor(state_[stsSquats]);
 
   // Switch setpoint if needed
-  if ( fabs((*next)[rlsComVelocityZ] - 0.0) < 0.01)
+  if (fabs((*next)[rlsComVelocityZ] - 0.0) < 0.01)
   {
-    if ( fabs((*next)[rlsRootZ] - lower_height_) < 0.01)
+    if (fabs((*next)[rlsRootZ] - lower_height_) < 0.01)
       (*next)[rlsRefRootZ] = upper_height_;
-    else if ( fabs((*next)[rlsRootZ] - upper_height_) < 0.01)
+    else if (fabs((*next)[rlsRootZ] - upper_height_) < 0.01)
       (*next)[rlsRefRootZ] = lower_height_;
   }
 
-  // Increase number of squats if needed
+  // Increase number of half-squats if needed
   if ((*next)[rlsRefRootZ] != state_[rlsRefRootZ])
     (*next)[stsSquats] = state_[stsSquats] + 1;
 
 //  std::cout << "  > Height: " << (*next)[rlsRootZ] << std::endl;
 //  std::cout << "  > Next state: " << *next << std::endl;
 
-  export_meshup_animation(*next, action_step_);
+  export_meshup_animation(*next, target_action_);
 
   state_ = *next;
   return tau;

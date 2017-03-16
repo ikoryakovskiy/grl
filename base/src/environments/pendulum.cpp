@@ -73,21 +73,33 @@ void PendulumSwingupTask::request(ConfigurationRequest *config)
 
   config->push_back(CRP("timeout", "Episode timeout", T_, CRP::Configuration, 0., DBL_MAX));
   config->push_back(CRP("randomization", "Level of start state randomization", randomization_, CRP::Configuration, 0., 1.));
+  config->push_back(CRP("wrap_angle", "Wrap angle of the pendulum", wrap_angle_, CRP::Configuration, 0, 1));
 }
 
 void PendulumSwingupTask::configure(Configuration &config)
 {
   T_ = config["timeout"];
   randomization_ = config["randomization"];
+  wrap_angle_ = config["wrap_angle"];
 
   config.set("observation_dims", 2);
-  config.set("observation_min", VectorConstructor(0., -12*M_PI));
-  config.set("observation_max", VectorConstructor(2*M_PI, 12*M_PI));
   config.set("action_dims", 1);
   config.set("action_min", VectorConstructor(-3));
   config.set("action_max", VectorConstructor(3));
-  config.set("reward_min", -5*pow(M_PI, 2) - 0.1*pow(12*M_PI, 2) - 1*pow(3, 2));
   config.set("reward_max", 0);
+
+  if (wrap_angle_)
+  {
+    config.set("observation_min", VectorConstructor(0., -12*M_PI));
+    config.set("observation_max", VectorConstructor(2*M_PI, 12*M_PI));
+    config.set("reward_min", -5*pow(M_PI, 2) - 0.1*pow(12*M_PI, 2) - 1*pow(3, 2));
+  }
+  else
+  {
+    config.set("observation_min", VectorConstructor(-M_PI, -12*M_PI));
+    config.set("observation_max", VectorConstructor(2*M_PI, 12*M_PI));
+    config.set("reward_min", -5*pow(2*M_PI, 2) - 0.1*pow(12*M_PI, 2) - 1*pow(3, 2));
+  }
 }
 
 void PendulumSwingupTask::reconfigure(const Configuration &config)
@@ -107,9 +119,13 @@ void PendulumSwingupTask::observe(const Vector &state, Observation *obs, int *te
   if (state.size() != 3)
     throw Exception("task/pendulum/swingup requires dynamics/pendulum");
 
-  double a = fmod(state[0]+M_PI, 2*M_PI);
-  if (a < 0) a += 2*M_PI;
-  
+  double a = state[0];
+  if (wrap_angle_)
+  {
+    a = fmod(state[0]+M_PI, 2*M_PI);
+    if (a < 0) a += 2*M_PI;
+  }
+
   obs->v.resize(2);
   (*obs)[0] = a;
   (*obs)[1] = state[1];
@@ -126,8 +142,12 @@ void PendulumSwingupTask::evaluate(const Vector &state, const Action &action, co
   if (state.size() != 3 || action.size() != 1 || next.size() != 3)
     throw Exception("task/pendulum/swingup requires dynamics/pendulum");
 
-  double a = fmod(fabs(next[0]), 2*M_PI);
-  if (a > M_PI) a -= 2*M_PI;
+  double a = next[0];
+  if (wrap_angle_)
+  {
+    a = fmod(fabs(next[0]), 2*M_PI);
+    if (a > M_PI) a -= 2*M_PI;
+  }
 
   *reward = -5*pow(a, 2) - 0.1*pow(next[1], 2) - 1*pow(action[0], 2);
 }
@@ -135,7 +155,8 @@ void PendulumSwingupTask::evaluate(const Vector &state, const Action &action, co
 bool PendulumSwingupTask::invert(const Observation &obs, Vector *state) const
 {
   *state = obs;
-  (*state)[0] -= M_PI;
+  if (wrap_angle_)
+    (*state)[0] -= M_PI;
   *state = extend(*state, VectorConstructor(0.));
   
   return true;

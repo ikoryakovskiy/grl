@@ -103,7 +103,8 @@
 
 // Define the maximum allowable Dynamixel voltage that can be guaranteed
 // under all temperature compensation situations.
-#define LEO_MAX_DXL_VOLTAGE             (LEO_SUPPLY_VOLTAGE/LEO_DXL_VOLTAGE_TEMP_FACT_FULL) // = 10.69 V @ RX-28;
+ // = 10.69 V @ RX-28; = 10.7745 V @ XM-430
+#define LEO_MAX_DXL_VOLTAGE             (LEO_SUPPLY_VOLTAGE/LEO_DXL_VOLTAGE_TEMP_FACT_FULL)
 
 
 

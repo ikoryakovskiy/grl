@@ -65,7 +65,7 @@ class EpsilonGreedySampler : public GreedySampler
     TYPEINFO("sampler/epsilon_greedy", "Maximum search with a uniform random chance of non-maximums")
 
   protected:
-    LargeVector epsilon_, distribution_;
+    mutable LargeVector epsilon_, distribution_, decay_;
     double distribution_sum_;
 
   public:

@@ -1,4 +1,4 @@
-/** \file leotask.h
+/** \file rbdl_leo_task.h
  * \brief RBDL file for C++ description of Leo task.
  *
  * \author    Ivan Koryakovskiy <i.koryakovskiy@tudelft.nl>
@@ -40,14 +40,12 @@ enum RbdlLeoState
   rlsAnkleAngle,
   rlsKneeAngle,
   rlsHipAngle,
-//  rlsArmAngle,                    // might not be used
+  rlsArmAngle,
 
-  rlsDofDim = rlsHipAngle + 1,
-
-  rlsAnkleAngleRate = rlsDofDim,
+  rlsAnkleAngleRate,
   rlsKneeAngleRate,
   rlsHipAngleRate,
-//  rlsArmAngleRate,                // might not be used
+  rlsArmAngleRate,
 
   rlsTime,
   rlsRefRootZ,
@@ -90,7 +88,7 @@ enum SquattingTaskState
 class LeoSquattingTask : public Task
 {
   public:
-    TYPEINFO("task/leo_squatting", "Task specification for Leo squatting with a fixed arm")
+    TYPEINFO("task/leo_squatting", "Task specification for Leo squatting with an auto-actuated arm")
 
   public:
     LeoSquattingTask() : timeout_(0), rand_init_(0), dof_(3) { }

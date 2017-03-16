@@ -16,9 +16,8 @@
 #include <rbdl/rbdl.h>
 #include <rbdl/rbdl_utils.h>
 #include <rbdl/addons/luamodel/luamodel.h>
-//#include <rbdl/addons/luamodel/luatables.h>
+#include <DynamixelSpecs.h>
 
-//#include "LuaBasic.h"
 #include "LuaTypes.h"
 
 // -----------------------------------------------------------------------------
@@ -77,9 +76,9 @@ struct LeoModel {
     void updateInverseDynamics();
 
     // conversion of torques to/from voltages for given angular velocity of dynamixel
-    const double Kt = 0.00992;
-    const double G = 193.0;
-    const double R = 8.6;
+    const double Kt = DXL_TORQUE_CONST;
+    const double G = DXL_GEARBOX_RATIO;
+    const double R = DXL_RESISTANCE;
     double torque_from_voltage_and_angular_velocity (const double V, const double w);
     double voltage_from_torque_and_angular_velocity (const double tau, const double w);
 

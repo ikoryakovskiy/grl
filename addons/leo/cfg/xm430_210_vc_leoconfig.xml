@@ -16,7 +16,7 @@
 		<handwheelringradius>0.0035</handwheelringradius>
 		<shoulderoffsety>0.11975</shoulderoffsety>
 		<upleglength>0.116</upleglength>
-		<loleglength>0.1045</loleglength>
+		<loleglength>0.1085</loleglength>
 		<interlegdist>0.06390</interlegdist>
 		<footlength>0.081</footlength>
 		<footwheelradius>0.013</footwheelradius>
@@ -31,7 +31,7 @@
 		<torsoHipDistZ>-torsoheight/2</torsoHipDistZ>>
 		<!-- specific mass and inertia constants that are needed later -->
 		<!-- raw torso properties, excluding boom influences -->
-		<torsoMass>0.91326</torsoMass>
+		<torsoMass>0.94226</torsoMass>
 		<torsoCMX>-0.00102</torsoCMX>
 		<torsoCMZ>0.009945</torsoCMZ>
 		<torsoIYY>0.004676374</torsoIYY>
@@ -367,7 +367,7 @@
 			</body>
 			<body>
 				<name>upperlegleft</name>
-				<mass>0.17978</mass>
+				<mass>0.19978</mass>
 				<IXX>inertiadontcare</IXX>
 				<IYY>0.000273133</IYY>
 				<IZZ>inertiadontcare</IZZ>
@@ -433,7 +433,7 @@
 			</body>
 			<body>
 				<name>upperlegright</name>
-				<mass>0.17978</mass>
+				<mass>0.19978</mass>
 				<IXX>inertiadontcare</IXX>
 				<IYY>0.000273133</IYY>
 				<IZZ>inertiadontcare</IZZ>
@@ -499,7 +499,7 @@
 			</body>
 			<body>
 				<name>lowerlegleft</name>
-				<mass>0.12691</mass>
+				<mass>0.13691</mass>
 				<IXX>inertiadontcare</IXX>
 				<IYY>0.000153379</IYY>
 				<IZZ>inertiadontcare</IZZ>
@@ -563,7 +563,7 @@
 			</body>
 			<body>
 				<name>lowerlegright</name>
-				<mass>0.12691</mass>
+				<mass>0.13691</mass>
 				<IXX>inertiadontcare</IXX>
 				<IYY>0.000153379</IYY>
 				<IZZ>inertiadontcare</IZZ>

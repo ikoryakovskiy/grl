@@ -4670,6 +4670,12 @@ sampler/epsilon_greedy:
     mutability: online
     default: "[ 0.05 ]"
     optional: 1
+  decay:
+    type: vector
+    description: Exploration rate (can be defined per action)
+    mutability: online
+    default: "[  ]"
+    optional: 1
 sampler/epsilon_ornstein_ohlenbeck:
   description: Exploitations are done by greedy action selection without constraints, as in e-greedy. Explorations are done with time-correlated noise, as it is in OU.
   rand_max:
@@ -4733,6 +4739,12 @@ sampler/epsilon_pada:
     description: Exploration rate (can be defined per action)
     mutability: online
     default: "[ 0.05 ]"
+    optional: 1
+  decay:
+    type: vector
+    description: Exploration rate (can be defined per action)
+    mutability: online
+    default: "[  ]"
     optional: 1
   discretizer:
     type: discretizer.action
@@ -4837,6 +4849,12 @@ sampler/pada:
     description: Exploration rate (can be defined per action)
     mutability: online
     default: "[ 0.05 ]"
+    optional: 1
+  decay:
+    type: vector
+    description: Exploration rate (can be defined per action)
+    mutability: online
+    default: "[  ]"
     optional: 1
   discretizer:
     type: discretizer.action
@@ -6039,7 +6057,7 @@ task/flyer2d/regulator:
     min: 0
     max: 1.797693134862316e+308
 task/leo_squatting:
-  description: Task specification for Leo squatting with a fixed arm
+  description: Task specification for Leo squatting with an auto-actuated arm
   observation_dims:
     type: int.observation_dims
     description: Number of observation dimensions
@@ -6345,6 +6363,14 @@ task/pendulum/swingup:
     description: Level of start state randomization
     mutability: configuration
     default: 0
+    optional: 1
+    min: 0
+    max: 1
+  wrap_angle:
+    type: int
+    description: Wrap angle of the pendulum
+    mutability: configuration
+    default: 1
     optional: 1
     min: 0
     max: 1

@@ -60,9 +60,10 @@ class PendulumSwingupTask : public Task
   
   public:
     double T_, randomization_;
+    int wrap_angle_;
   
   public:
-    PendulumSwingupTask() : T_(2.99), randomization_(0.) { }
+    PendulumSwingupTask() : T_(2.99), randomization_(0.), wrap_angle_(1) { }
   
     // From Configurable
     virtual void request(ConfigurationRequest *config);

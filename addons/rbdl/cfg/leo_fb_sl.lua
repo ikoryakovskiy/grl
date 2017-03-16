@@ -162,9 +162,9 @@ end
 
 function control(state, action)
     -- Convert voltage to torque
-    Kt = 0.00992
-    G = 193.0
-    R = 8.6
+    Kt = 0.006325081
+    G = 212.6
+    R = 4.6
     dof = 4
     for ii = 0, dof-1 do
 --      print(action[ii])

@@ -81,6 +81,7 @@ void EpsilonGreedySampler::request(ConfigurationRequest *config)
 {
   GreedySampler::request(config);
   config->push_back(CRP("epsilon", "Exploration rate (can be defined per action)", epsilon_, CRP::Online));
+  config->push_back(CRP("decay", "Exploration rate (can be defined per action)", decay_, CRP::Online));
 }
 
 void EpsilonGreedySampler::configure(Configuration &config)
@@ -88,10 +89,14 @@ void EpsilonGreedySampler::configure(Configuration &config)
   GreedySampler::configure(config);
   
   epsilon_ = config["epsilon"].v();
+  decay_ = config["decay"].v();
   
   if (epsilon_.size() < 1)
     throw bad_param("sampler/epsilon_greedy:epsilon");
-    
+
+  if (decay_.size() != epsilon_.size() && decay_.size() != 0)
+    throw bad_param("sampler/epsilon_greedy:decay");
+
   if (epsilon_.size() > 1)
   {
     distribution_ = calculateBaseDistribution(epsilon_);
@@ -102,6 +107,7 @@ void EpsilonGreedySampler::configure(Configuration &config)
 void EpsilonGreedySampler::reconfigure(const Configuration &config)
 {
   config.get("epsilon", epsilon_);
+  config.get("epsilon", decay_);
   
   if (epsilon_.size() < 1)
     throw bad_param("sampler/epsilon_greedy:epsilon");
@@ -115,6 +121,11 @@ void EpsilonGreedySampler::reconfigure(const Configuration &config)
 
 size_t EpsilonGreedySampler::sample(const LargeVector &values, ActionType *at) const
 {
+  // decay epsilon
+  if (decay_.size() == epsilon_.size())
+    for (size_t ii=0; ii < epsilon_.size(); ++ii)
+      epsilon_[ii] = fmax(0, epsilon_[ii] - decay_[ii]);
+
   double r = rand_->get();
   
   if (epsilon_.size() > 1)
