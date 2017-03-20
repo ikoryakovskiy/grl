@@ -35,10 +35,11 @@ REGISTER_CONFIGURABLE(PendulumRegulatorTask)
 
 void PendulumDynamics::request(ConfigurationRequest *config)
 {
+  config->push_back(CRP("param", "Model parameters", std::string(""), CRP::Configuration));
 }
 
 void PendulumDynamics::configure(Configuration &config)
-{
+{ 
   J_ = 0.000191;
   m_ = 0.055;
   g_ = 9.81;
@@ -46,6 +47,48 @@ void PendulumDynamics::configure(Configuration &config)
   b_ = 0.000003;
   K_ = 0.0536;
   R_ = 9.5;
+
+  std::string param = config["param"];
+
+  if (config["param"].str() == "random")
+  {
+    J_ += 0.1*J_*RandGen::getUniform(-1.0, 1.0);
+    m_ += 0.1*m_*RandGen::getUniform(-1.0, 1.0);
+    l_ += 0.1*l_*RandGen::getUniform(-1.0, 1.0);
+    b_ += 0.1*b_*RandGen::getUniform(-1.0, 1.0);
+    K_ += 0.1*K_*RandGen::getUniform(-1.0, 1.0);
+    R_ += 0.1*R_*RandGen::getUniform(-1.0, 1.0);
+  }
+  else
+  {
+    int pos = param.find_last_of(':');
+    if (pos != std::string::npos)
+    {
+      std::string file = param.substr(0, pos);
+      std::string sn = param.substr(pos+1, param.length()-pos);
+
+      char* p;
+      long n = strtol(sn.c_str(), &p, 10);
+      if (*p == NULL)
+      {
+        // load file and read parameters from the specified line
+        std::ifstream infile(file);
+
+        std::string line;
+        int i = 0;
+        while (std::getline(infile, line))
+        {
+          std::istringstream iss(line);
+          if (i == n)
+          {
+            iss >> J_ >> m_ >> l_ >> b_ >> K_ >> R_;
+            break;
+          }
+          i++;
+        }
+      }
+    }
+  }
 }
 
 void PendulumDynamics::reconfigure(const Configuration &config)
@@ -131,7 +174,9 @@ void PendulumSwingupTask::observe(const Vector &state, Observation *obs, int *te
   (*obs)[1] = state[1];
   obs->absorbing = false;
   
-  if (state[2] > T_)
+  if (state[0] > 2*M_PI || state[0] < -M_PI)
+    *terminal = 2;
+  else if (state[2] > T_)
     *terminal = 1;
   else
     *terminal = 0;

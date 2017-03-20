@@ -122,35 +122,36 @@
 			<max>0</max>
 		</reward>
 
+		<!-- Angles measured on the real Leo -->
 		<statevar comment="Left hip angle">
 			<expression>robot.hipleft.angle</expression>
-			<min>-pi</min>
-			<max>pi</max>
+			<min>-0.8080704</min>
+			<max>2.5454294</max>
 		</statevar>
 		<statevar comment="Right hip angle">
 			<expression>robot.hipright.angle</expression>
-			<min>-pi</min>
-			<max>pi</max>
+			<min>-0.8080704</min>
+			<max>2.5454294</max>
 		</statevar>
 		<statevar comment="Left knee angle">
 			<expression>robot.kneeleft.angle</expression>
-			<min>-pi</min>
-			<max>pi</max>
+			<min>-2.8331919</min>
+			<max>-0.0120786</max>
 		</statevar>
 		<statevar comment="Right knee angle">
 			<expression>robot.kneeright.angle</expression>
-			<min>-pi</min>
-			<max>pi</max>
+			<min>-2.8331919</min>
+			<max>-0.0120786</max>
 		</statevar>
 		<statevar comment="Left ankle angle">
 			<expression>robot.ankleleft.angle</expression>
-			<min>-pi</min>
-			<max>pi</max>
+			<min>-1.8834507</min>
+			<max>1.5280429</max>
 		</statevar>
 		<statevar comment="Right ankle angle">
 			<expression>robot.ankleright.angle</expression>
-			<min>-pi</min>
-			<max>pi</max>
+			<min>-1.8834507</min>
+			<max>1.5280429</max>
 		</statevar>
 		<statevar comment="Left arm angle">
 			<expression>robot.shoulder.angle</expression>

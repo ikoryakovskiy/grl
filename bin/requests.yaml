@@ -812,6 +812,12 @@ dynamics/mountain:
     optional: 0
 dynamics/pendulum:
   description: Pendulum dynamics based on the DCSC MOPS
+  param:
+    type: string
+    description: Model parameters
+    mutability: configuration
+    default: ""
+    optional: 1
 dynamics/rbdl:
   description: RBDL rigid body dynamics
   file:
@@ -4671,11 +4677,13 @@ sampler/epsilon_greedy:
     default: "[ 0.05 ]"
     optional: 1
   decay:
-    type: vector
-    description: Exploration rate (can be defined per action)
+    type: double
+    description: Per-episode decay of the exploration rate
     mutability: online
-    default: "[  ]"
+    default: 1
     optional: 1
+    min: 0
+    max: 1
 sampler/epsilon_ornstein_ohlenbeck:
   description: Exploitations are done by greedy action selection without constraints, as in e-greedy. Explorations are done with time-correlated noise, as it is in OU.
   rand_max:
@@ -4741,11 +4749,13 @@ sampler/epsilon_pada:
     default: "[ 0.05 ]"
     optional: 1
   decay:
-    type: vector
-    description: Exploration rate (can be defined per action)
+    type: double
+    description: Per-episode decay of the exploration rate
     mutability: online
-    default: "[  ]"
+    default: 1
     optional: 1
+    min: 0
+    max: 1
   discretizer:
     type: discretizer.action
     description: Action discretizer
@@ -4851,11 +4861,13 @@ sampler/pada:
     default: "[ 0.05 ]"
     optional: 1
   decay:
-    type: vector
-    description: Exploration rate (can be defined per action)
+    type: double
+    description: Per-episode decay of the exploration rate
     mutability: online
-    default: "[  ]"
+    default: 1
     optional: 1
+    min: 0
+    max: 1
   discretizer:
     type: discretizer.action
     description: Action discretizer
