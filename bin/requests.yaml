@@ -6118,6 +6118,14 @@ task/leo_squatting:
     optional: 1
     min: 0
     max: 1
+  weight:
+    type: double.weight
+    description: Weight on the cost, shaping is not included
+    mutability: system
+    default: 0.0001
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
 task/lua:
   description: User-provided task specification in LUA
   observation_dims:

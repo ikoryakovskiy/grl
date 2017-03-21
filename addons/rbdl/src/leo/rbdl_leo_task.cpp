@@ -46,12 +46,15 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
   Task::request(config);
   config->push_back(CRP("timeout", "double.timeout", "Task timeout", timeout_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
+  config->push_back(CRP("weight", "double.weight", "Weight on the cost, shaping is not included", weight_, CRP::System, 0.0, DBL_MAX));
+
 }
 
 void LeoSquattingTask::configure(Configuration &config)
 {
   timeout_ = config["timeout"];
   randomize_ = config["randomize"];
+  weight_ = config["weight"];
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-M_PI, -M_PI, -M_PI, -M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
@@ -198,22 +201,17 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
 
   double w = 10.0;
   double F1, F0;
-/*  if (state[rlsRefRootZ] == next[rlsRefRootZ])
-    F0 = - pow(w * (state[rlsRootZ] - state[rlsRefRootZ]), 2);
-  else
-    F0 = - pow(w * (state[rlsRootZ] - next [rlsRefRootZ]), 2);
-*/
 
-  F0 = - pow(w * (state[rlsRootZ] - next[rlsRefRootZ]), 2);
-  F1 = - pow(w * (next [rlsRootZ] - next[rlsRefRootZ]), 2);
+  F0 = pow(w * (state[rlsRootZ] - next[rlsRefRootZ]), 2); // distance to setpoint at time (t)
+  F1 = pow(w * (next [rlsRootZ] - next[rlsRefRootZ]), 2); // distance to setpoint at time (t+1)
 
-  shaping += F1 - F0;
+  shaping += F0 - F1; // positive reward for getting closer to the setpoint
 
   TRACE(state[rlsRootZ] << ", " << next[rlsRootZ] << " -> " << next[rlsRefRootZ]);
   TRACE(F1 << " - " << F0 << " = " << shaping);
 
   // reward is a negative of cost
-  *reward = -0.0001*cost + shaping;
+  *reward = -weight_*cost + shaping;
 }
 
 int LeoSquattingTask::failed(const Vector &state) const
@@ -222,7 +220,7 @@ int LeoSquattingTask::failed(const Vector &state) const
     ERROR("NaN value of root, try to reduce integration period to cope with this.");
 
   double torsoAngle = state[rlsAnkleAngle] + state[rlsKneeAngle] + state[rlsHipAngle];
-  if ((torsoAngle < -1.7) || (torsoAngle > 1.7) ||
+  if (fabs(torsoAngle) > 1.0 || // > 57 deg
       // penalty for high joint velocities
       (state[rlsAnkleAngleRate] < target_obs_min_[rlsAnkleAngleRate]) ||
       (state[rlsAnkleAngleRate] > target_obs_max_[rlsAnkleAngleRate]) ||
