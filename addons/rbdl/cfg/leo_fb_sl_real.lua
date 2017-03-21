@@ -26,7 +26,7 @@ armICangle = -0.26 -- = -15*degtorad
 torsoheight = (0.24155)
 torsoHipDistX = (0.00273)
 torsoHipDistZ = (-torsoheight/2)
-torsoMass = 1.050249 --0.91326
+torsoMass = 1.083599 --0.94226
 boomMass = 0.860
 boomCMY = 0.835
 boomLength = 1.70
@@ -54,7 +54,7 @@ armJointZ = (0.091275)
 upleglength = (0.116)
 interlegdist = (0.06390)
 
-uplegMass = 0.17978
+uplegMass = 0.19978
 uplegCMX = 0.00285
 uplegCMZ = -0.00481 - upleglength/2
 uplegIYY = 0.000273133
@@ -67,9 +67,9 @@ uplegRightJointX = (torsoHipDistX)
 uplegRightJointY = (-interlegdist/2)
 uplegRightJointZ = (torsoHipDistZ)
 
-loleglength = (0.1045)
+loleglength = 0.1085
 
-lolegMass = 0.12691
+lolegMass = 0.13691
 lolegCMX = 0.00804 + 0.00405
 lolegCMZ = -0.00867 - loleglength/2
 lolegIYY = 0.000153379

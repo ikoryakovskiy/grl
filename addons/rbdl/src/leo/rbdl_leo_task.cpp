@@ -45,13 +45,13 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
 {
   Task::request(config);
   config->push_back(CRP("timeout", "double.timeout", "Task timeout", timeout_, CRP::System, 0.0, DBL_MAX));
-  config->push_back(CRP("rand_init", "int.rand_init", "Initialization from a random pose", rand_init_, CRP::System, 0, 1));
+  config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
 }
 
 void LeoSquattingTask::configure(Configuration &config)
 {
   timeout_ = config["timeout"];
-  rand_init_ = config["rand_init"];
+  randomize_ = config["randomize"];
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-M_PI, -M_PI, -M_PI, -M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
@@ -99,18 +99,18 @@ void LeoSquattingTask::start(int test, Vector *state) const
         -0.0,  // end of rlsDofDim
          0.0;  // rlsTime
 
-  if (rand_init_)
+  if (randomize_)
   {
     // sample angles
-    const double upLegLength  = 0.1160; // length of the thigh
-    const double loLegLength  = 0.1045; // length of the shin
+    const double upLegLength  = 0.1160;
+    const double loLegLength  = 0.1085;
     double a, b, c, d, hh;
     do
     {
-      a = RandGen::getUniform(-1.65,  1.48);
-      b = RandGen::getUniform(-2.53,  0.00);
-      c = RandGen::getUniform(-0.61,  2.53);
-      d = RandGen::getUniform(-0.10,  0.10);
+      a = RandGen::getUniform(-1.65,  1.48)*randomize_;
+      b = RandGen::getUniform(-2.53,  0.00)*randomize_;
+      c = RandGen::getUniform(-0.61,  2.53)*randomize_;
+      d = RandGen::getUniform(-0.10,  0.10)*randomize_;
       hh = loLegLength*cos(a) + upLegLength*cos(a+b);
     }
     while (fabs(a + b + c) > 3.1415/2.0 || hh < 0.07);

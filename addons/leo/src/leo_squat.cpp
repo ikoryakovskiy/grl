@@ -107,8 +107,8 @@ void CLeoBhSquat::getHipHeight(const double *x, double &hipHeight, double &hipPo
 {
   // Determine foot position relative to the hip axis
   const double torsoHeight  = 0.24155;
-  const double upLegLength  = 0.116;  // length of the thigh
-  const double loLegLength  = 0.1045; // length of the shin
+  const double upLegLength  = 0.1160;  // length of the thigh
+  const double loLegLength  = 0.1085; // length of the shin
 
 
   double leftHipAbsAngle    = x[ljTorso] + x[ljHipLeft];
@@ -152,7 +152,7 @@ void CLeoBhSquat::getCOM(const double *x, double &hipHeight, double &hipPos) con
   //const double shoulderLength = ;
 
 
-  const double torsoMass = 0.91326;
+  const double torsoMass = 0.94226;
   const double torsoCMZ  = 0.009945;
   const double boomCMY = 0.835;
   const double boomMass = 0.860;
@@ -169,8 +169,8 @@ void CLeoBhSquat::getCOM(const double *x, double &hipHeight, double &hipPos) con
   const double shoulderAnchorZ = 0.091275;
 
   const double torsoBoomMass  = torsoMass + boomVirtualMassX;
-  const double upLegMass  = 0.17978;
-  const double loLegMass  = 0.12691;
+  const double upLegMass  = 0.19978;
+  const double loLegMass  = 0.13691;
   const double footMass = 0.07319;
   const double shoulderMass = 0.095;
 

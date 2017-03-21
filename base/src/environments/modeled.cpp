@@ -49,7 +49,7 @@ void ModeledEnvironment::configure(Configuration &config)
   
   // Register fields to be exported
   if (exporter_)
-    exporter_->init({"time", "state", "observation", "action", "reward", "terminal"});
+    exporter_->init({"time", "state0", "state1", "action", "reward", "terminal"});
   
   state_obj_ = new VectorSignal();
   
@@ -107,7 +107,7 @@ double ModeledEnvironment::step(const Action &action, Observation *obs, double *
   double &time = test_?time_test_:time_learn_;
   
   if (exporter_)
-    exporter_->write({VectorConstructor(time), state_, *obs, action, VectorConstructor(*reward), VectorConstructor((double)*terminal)});
+    exporter_->write({VectorConstructor(time), state_, next, action, VectorConstructor(*reward), VectorConstructor((double)*terminal)});
 
   time += tau;
 

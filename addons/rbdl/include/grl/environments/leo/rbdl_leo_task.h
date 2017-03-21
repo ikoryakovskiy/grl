@@ -91,7 +91,7 @@ class LeoSquattingTask : public Task
     TYPEINFO("task/leo_squatting", "Task specification for Leo squatting with an auto-actuated arm")
 
   public:
-    LeoSquattingTask() : timeout_(0), rand_init_(0), dof_(3) { }
+    LeoSquattingTask() : timeout_(0), randomize_(0), dof_(3) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -108,7 +108,7 @@ class LeoSquattingTask : public Task
 
   protected:
     double timeout_;
-    int rand_init_;
+    int randomize_;
     int dof_;
     Vector target_obs_min_, target_obs_max_;
 };

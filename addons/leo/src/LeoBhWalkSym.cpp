@@ -157,8 +157,8 @@ void CLeoBhWalkSym::updateDerivedStateVars(CLeoState* currentSTGState)
   mFootContactNum = std::bitset<8>(currentSTGState->mFootContacts).count();
 
   // Determine foot position relative to the hip axis
-  double upLegLength        = 0.116;  // length of the thigh
-  double loLegLength        = 0.1045; // length of the shin
+  double upLegLength        = 0.1160;  // length of the thigh
+  double loLegLength        = 0.1085; // length of the shin
   double leftHipAbsAngle    = currentSTGState->mJointAngles[ljTorso] + currentSTGState->mJointAngles[ljHipLeft];
   double leftKneeAbsAngle   = leftHipAbsAngle + currentSTGState->mJointAngles[ljKneeLeft];
   double leftAnkleAbsAngle  = leftKneeAbsAngle + currentSTGState->mJointAngles[ljAnkleLeft];

@@ -41,7 +41,8 @@ void LeoStateMachineAgent::request(ConfigurationRequest *config)
   config->push_back(CRP("agent_main", "agent", "Main agent", agent_main_, false));
 
   config->push_back(CRP("upright_trigger", "trigger", "Trigger which finishes stand-up phase and triggers preparation agent", upright_trigger_, false));
-  config->push_back(CRP("fc_trigger", "trigger", "Trigger which checks for foot contact to ensure that robot is prepared to walk", foot_contact_trigger_, false));
+  config->push_back(CRP("feet_on_trigger", "trigger", "Trigger which checks for foot contact to ensure that robot is prepared to walk", feet_on_trigger_, false));
+  config->push_back(CRP("feet_off_trigger", "trigger", "Trigger which checks for foot contact to detect lifts of the robot", feet_off_trigger_, false));
   config->push_back(CRP("starter_trigger", "trigger", "Trigger which initiates a preprogrammed walking at the beginning", starter_trigger_, true));
 }
 
@@ -55,7 +56,8 @@ void LeoStateMachineAgent::configure(Configuration &config)
   agent_main_ = (Agent*)config["agent_main"].ptr();
 
   upright_trigger_ = (Trigger*)config["upright_trigger"].ptr();
-  foot_contact_trigger_ = (Trigger*)config["fc_trigger"].ptr();
+  feet_on_trigger_ = (Trigger*)config["feet_on_trigger"].ptr();
+  feet_off_trigger_ = (Trigger*)config["feet_off_trigger"].ptr();
   starter_trigger_ = (Trigger*)config["starter_trigger"].ptr();
 }
 
@@ -96,20 +98,39 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
 {
   // obtain contact information for symmetrical switching
   // note that groundContact is not reliable when Leo is moving,
-  // but is reliable when Leo is standing still
+  // but is reliable when Leo is standing still.
+  // Therefore we use a trigger to make sure the contact is lost over some amount of time.
   int touchDown, groundContact, stanceLegLeft;
   unpack_ic(&touchDown, &groundContact, &stanceLegLeft);
+  Vector gc = VectorConstructor(groundContact);
+
+  if (agent_ != agent_standup_ && agent_ != agent_prepare_)
+    if (!groundContact)
+      ERROR("Lost contact");
+
+  // if Leo looses ground contact
+  if (feet_off_trigger_->check(time_, gc))
+  {
+    if (failed(obs, stanceLegLeft))
+      // lost contact due to fall => try to standup
+      set_agent(agent_standup_, tau, obs, reward, action, "Lost ground contact, need to stand up!");
+    else
+    {
+      // lost contact due to lift => move prepare to continue walking
+      if (agent_ != agent_standup_) // wait for standing up if needed
+        set_agent(agent_prepare_, tau, obs, reward, action, "Lost ground contact, already upright!");
+    }
+  }
 
   // if Leo fell down and we are not trying to stand up already, then try!
-  if ((agent_ != agent_standup_) && (failed(obs, stanceLegLeft)))
+  if (failed(obs, stanceLegLeft))
     return set_agent(agent_standup_, tau, obs, reward, action, "Leo fall down, need to stand up!");
 
   if (agent_ == agent_prepare_)
   {
     // if Leo is in the upright position wait for the contact before we start the starter
     // or the main agent
-    Vector gc = VectorConstructor(groundContact);
-    if (foot_contact_trigger_->check(time_, gc))
+    if (feet_on_trigger_->check(time_, gc))
     {
       if (agent_starter_ && starter_trigger_ && !starter_trigger_->check(time_, Vector()))
         return set_agent(agent_starter_, tau, obs, reward, action, "Starter!");
@@ -137,9 +158,12 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
 
 void LeoStateMachineAgent::set_agent(Agent *agent, double tau, const Observation &obs, double reward, Action *action, const char* msg)
 {
-  agent_->end(tau, obs, reward);  // finish previous agent
-  agent_ = agent;                 // switch to the new agent
-  agent_->start(obs, action);     // start it to obtain action
-  INFO(msg);
+  if (agent_ != agent)
+  {
+    agent_->end(tau, obs, reward);  // finish previous agent
+    agent_ = agent;                 // switch to the new agent
+    agent_->start(obs, action);     // start it to obtain action
+    INFO(msg);
+  }
 }
 
