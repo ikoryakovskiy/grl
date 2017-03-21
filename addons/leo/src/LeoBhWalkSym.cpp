@@ -279,7 +279,7 @@ void CLeoBhWalkSym::updateDerivedStateVars(CLeoState* currentSTGState)
       mNumFootsteps--;
 
     // Adjust walked length
-    mWalkedDistance += mFootstepLength;
+        mWalkedDistance += mFootstepLength;
 
     mLogInfoLn("Number of footsteps increased to " << mNumFootsteps << "! Walked " << mWalkedDistance << " meters!");
   }
@@ -368,7 +368,9 @@ double CLeoBhWalkSym::getEnergyUsage()
   double rightHipWork  = getJointMotorWork(ljHipRight);
   double leftKneeWork  = getJointMotorWork(ljKneeLeft);
   double rightKneeWork = getJointMotorWork(ljKneeRight);
-  return leftHipWork + rightHipWork + leftKneeWork + rightKneeWork;
+  double leftAnkleWork = getJointMotorWork(ljAnkleLeft);
+  double rightAnkleWork = getJointMotorWork(ljAnkleRight);
+  return leftHipWork + rightHipWork + leftKneeWork + rightKneeWork + leftAnkleWork + rightAnkleWork;
 }
 
 double CLeoBhWalkSym::getFootstepReward()
@@ -397,7 +399,7 @@ double CLeoBhWalkSym::getFootstepReward()
   {
     double footDistChangeReward = mRwFootstepDistCont*(clip(mFootstepLength, -mRwFootstepMaxLength, mRwFootstepMaxLength) - clip(mLastFootstepLength, -mRwFootstepMaxLength, mRwFootstepMaxLength));
     reward += footDistChangeReward;
-    mLogInfoLn("Foot distance change reward: " << footDistChangeReward);
+    NOTICE("Foot distance change reward: " << footDistChangeReward);
   }
 
   return reward;
