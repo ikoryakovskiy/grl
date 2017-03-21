@@ -399,7 +399,7 @@ double CLeoBhWalkSym::getFootstepReward()
   {
     double footDistChangeReward = mRwFootstepDistCont*(clip(mFootstepLength, -mRwFootstepMaxLength, mRwFootstepMaxLength) - clip(mLastFootstepLength, -mRwFootstepMaxLength, mRwFootstepMaxLength));
     reward += footDistChangeReward;
-    NOTICE("Foot distance change reward: " << footDistChangeReward);
+    mLogNoticeLn("Foot distance change reward: " << footDistChangeReward);
   }
 
   return reward;
