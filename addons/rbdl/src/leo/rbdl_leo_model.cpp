@@ -181,6 +181,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   // Switch setpoint if needed
   if (fabs((*next)[rlsComVelocityZ] - 0.0) < 0.01)
   {
+//    std::cout << "Setpoint reached" << std::endl;
     if (fabs((*next)[rlsRootZ] - lower_height_) < 0.01)
       (*next)[rlsRefRootZ] = upper_height_;
     else if (fabs((*next)[rlsRootZ] - upper_height_) < 0.01)

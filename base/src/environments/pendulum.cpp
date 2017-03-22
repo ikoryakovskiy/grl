@@ -78,13 +78,12 @@ void PendulumDynamics::configure(Configuration &config)
         int i = 0;
         while (std::getline(infile, line))
         {
-          std::istringstream iss(line);
-          if (i == n)
+          if (i++ == n)
           {
+            std::istringstream iss(line);
             iss >> J_ >> m_ >> l_ >> b_ >> K_ >> R_;
             break;
           }
-          i++;
         }
       }
     }
