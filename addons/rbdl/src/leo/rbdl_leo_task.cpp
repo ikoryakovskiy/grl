@@ -46,8 +46,8 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
   Task::request(config);
   config->push_back(CRP("timeout", "double.timeout", "Task timeout", timeout_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
-  config->push_back(CRP("weight", "double.weight", "Weight on the cost, shaping is not included", weight_, CRP::System, 0.0, DBL_MAX));
-
+  config->push_back(CRP("weight", "double.weight", "Weight on the NMPC cost (excluding shaping)", weight_, CRP::System, 0.0, DBL_MAX));
+  config->push_back(CRP("weight2", "double.weight", "Weight on the part of NMPC cost (excluding regularizations)", weight2_, CRP::System, 0.0, DBL_MAX));
 }
 
 void LeoSquattingTask::configure(Configuration &config)
@@ -55,6 +55,7 @@ void LeoSquattingTask::configure(Configuration &config)
   timeout_ = config["timeout"];
   randomize_ = config["randomize"];
   weight_ = config["weight"];
+  weight2_ = config["weight2"];
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-M_PI, -M_PI, -M_PI, -M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
@@ -158,16 +159,16 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
     return;
   }
 
-  double cost = 0;
+  double cost_nmpc = 0, cost_nmpc_reg = 0;
 
   // calculate support center from feet positions
   double suppport_center = 0.5 * (next[rlsLeftTipX] + next[rlsLeftHeelX]);
 
   // track: || root_z - h_ref ||_2^2
-  cost +=  pow(50.0 * (next[rlsRootZ] - next[rlsRefRootZ]), 2);
+  cost_nmpc +=  pow(50.0 * (next[rlsRootZ] - next[rlsRefRootZ]), 2);
 
-  // track: || com_x,y - support center_x,y ||_2^2
-  cost +=  pow( 100.00 * (next[rlsComX] - suppport_center), 2);
+  // track: || com_x - support center_x ||_2^2
+  cost_nmpc +=  pow( 100.00 * (next[rlsComX] - suppport_center), 2);
 
   //double velW = 10.0; // 10.0
   //cost +=  pow( velW * next[rlsComVelocityX], 2);
@@ -178,7 +179,7 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   // NOTE: sum of lower body angles is equal to angle between ground slope
   //       and torso. Minimizing deviation from zero keeps torso upright
   //       during motion execution.
-  cost += pow(30.00 * ( next[rlsAnkleAngle] + next[rlsKneeAngle] + next[rlsHipAngle] - (0.15) ), 2); // desired torso angle
+  cost_nmpc_reg += pow(30.00 * ( next[rlsAnkleAngle] + next[rlsKneeAngle] + next[rlsHipAngle] - (0.15) ), 2); // desired torso angle
 
   // regularize torso
   // is this a good way for torso? Results in a very high penalty, and very weird behaviour
@@ -187,9 +188,9 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   // regularize: || qdot ||_2^2
   // res[res_cnt++] = 6.00 * sd[QDOTS["arm"]]; // arm
   double rateW = 5.0; // 6.0
-  cost += pow(rateW * next[rlsHipAngleRate], 2); // hip_left
-  cost += pow(rateW * next[rlsKneeAngleRate], 2); // knee_left
-  cost += pow(rateW * next[rlsAnkleAngleRate], 2); // ankle_left
+  cost_nmpc_reg += pow(rateW * next[rlsHipAngleRate], 2); // hip_left
+  cost_nmpc_reg += pow(rateW * next[rlsKneeAngleRate], 2); // knee_left
+  cost_nmpc_reg += pow(rateW * next[rlsAnkleAngleRate], 2); // ankle_left
 
   // regularize: || u ||_2^2
   // res[res_cnt++] = 0.01 * u[TAUS["arm"]]; // arm
@@ -211,7 +212,7 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   TRACE(F1 << " - " << F0 << " = " << shaping);
 
   // reward is a negative of cost
-  *reward = -weight_*cost + shaping;
+  *reward = -weight_*(cost_nmpc + weight2_*cost_nmpc_reg) + shaping;
 }
 
 int LeoSquattingTask::failed(const Vector &state) const

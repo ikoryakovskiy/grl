@@ -2111,6 +2111,18 @@ mapping/policy/post/noise:
     mutability: configuration
     default: "[  ]"
     optional: 1
+  output_min:
+    type: vector.action_min
+    description: Lower limit on outputs
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  output_max:
+    type: vector.action_max
+    description: Upper limit on outputs
+    mutability: system
+    default: "[  ]"
+    optional: 1
   policy:
     type: mapping/policy
     description: Policy to inject noise into
@@ -6120,9 +6132,17 @@ task/leo_squatting:
     max: 1
   weight:
     type: double.weight
-    description: Weight on the cost, shaping is not included
+    description: Weight on the NMPC cost (excluding shaping)
     mutability: system
     default: 0.0001
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  weight2:
+    type: double.weight
+    description: Weight on the part of NMPC cost (excluding regularizations)
+    mutability: system
+    default: 1
     optional: 1
     min: 0
     max: 1.797693134862316e+308

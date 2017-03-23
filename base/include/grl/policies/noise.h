@@ -44,6 +44,7 @@ class NoisePolicy : public Policy
     
     mutable Vector sigma_;
     Vector theta_, n_;
+    Vector min_, max_, scale_;
 
   public:
     NoisePolicy() : policy_(NULL) { }
