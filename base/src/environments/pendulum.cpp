@@ -193,14 +193,7 @@ void PendulumSwingupTask::evaluate(const Vector &state, const Action &action, co
     if (a > M_PI) a -= 2*M_PI;
   }
 
-  //double F0 = -5*pow(state[0], 2) - 0.1*pow(state[1], 2);
-  //double F1 = -5*pow(next[0], 2) - 0.1*pow(next[1], 2);
-  double F0 = -5*sqrt(fabs(state[0])) - 0.1*sqrt(fabs(state[1]));
-  double F1 = -5*sqrt(fabs(next[0])) - 0.1*sqrt(fabs(next[1]));
-
-  *reward = 0.97*F1 - F0;
-
-  //*reward = -5*pow(a, 2) - 0.1*pow(next[1], 2) - 1*pow(action[0], 2);
+  *reward = -5*pow(a, 2) - 0.1*pow(next[1], 2) - 1*pow(action[0], 2);
 }
 
 bool PendulumSwingupTask::invert(const Observation &obs, Vector *state) const
