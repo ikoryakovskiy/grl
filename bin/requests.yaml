@@ -6130,7 +6130,7 @@ task/leo_squatting:
     optional: 1
     min: 0
     max: 1
-  weight:
+  weight_nmpc:
     type: double.weight
     description: Weight on the NMPC cost (excluding shaping)
     mutability: system
@@ -6138,9 +6138,17 @@ task/leo_squatting:
     optional: 1
     min: 0
     max: 1.797693134862316e+308
-  weight2:
+  weight_nmpc_aux:
     type: double.weight
-    description: Weight on the part of NMPC cost (excluding regularizations)
+    description: "Weight on the part of NMPC cost with auxilary "
+    mutability: system
+    default: 1
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  weight_shaping:
+    type: double.weight
+    description: Weight on the shaping cost
     mutability: system
     default: 1
     optional: 1

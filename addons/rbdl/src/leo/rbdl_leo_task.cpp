@@ -46,16 +46,18 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
   Task::request(config);
   config->push_back(CRP("timeout", "double.timeout", "Task timeout", timeout_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
-  config->push_back(CRP("weight", "double.weight", "Weight on the NMPC cost (excluding shaping)", weight_, CRP::System, 0.0, DBL_MAX));
-  config->push_back(CRP("weight2", "double.weight", "Weight on the part of NMPC cost (excluding regularizations)", weight2_, CRP::System, 0.0, DBL_MAX));
+  config->push_back(CRP("weight_nmpc", "double.weight", "Weight on the NMPC cost (excluding shaping)", weight_nmpc_, CRP::System, 0.0, DBL_MAX));
+  config->push_back(CRP("weight_nmpc_aux", "double.weight", "Weight on the part of NMPC cost with auxilary ", weight_nmpc_aux_, CRP::System, 0.0, DBL_MAX));
+  config->push_back(CRP("weight_shaping", "double.weight", "Weight on the shaping cost", weight_shaping_, CRP::System, 0.0, DBL_MAX));
 }
 
 void LeoSquattingTask::configure(Configuration &config)
 {
   timeout_ = config["timeout"];
   randomize_ = config["randomize"];
-  weight_ = config["weight"];
-  weight2_ = config["weight2"];
+  weight_nmpc_ = config["weight_nmpc"];
+  weight_nmpc_aux_ = config["weight_nmpc_aux"];
+  weight_shaping_ = config["weight_shaping"];
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-M_PI, -M_PI, -M_PI, -M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
@@ -198,21 +200,21 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
 //  cost += pow(0.01 * action[1], 2); // knee_left
 //  cost += pow(0.01 * action[2], 2); // ankle_left
 
-  double shaping = 0;
-
+/*
   double w = 10.0;
-  double F1, F0;
-
   F0 = pow(w * (state[rlsRootZ] - next[rlsRefRootZ]), 2); // distance to setpoint at time (t)
   F1 = pow(w * (next [rlsRootZ] - next[rlsRefRootZ]), 2); // distance to setpoint at time (t+1)
+*/
+  double F0 = -fabs(state[rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t)
+  double F1 = -fabs(next [rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t+1)
 
-  shaping += F0 - F1; // positive reward for getting closer to the setpoint
+  double shaping = 0.9962*F1 - F0; // positive reward for getting closer to the setpoint
 
   TRACE(state[rlsRootZ] << ", " << next[rlsRootZ] << " -> " << next[rlsRefRootZ]);
   TRACE(F1 << " - " << F0 << " = " << shaping);
 
   // reward is a negative of cost
-  *reward = -weight_*(cost_nmpc + weight2_*cost_nmpc_reg) + shaping;
+  *reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*cost_nmpc_reg) + weight_shaping_*shaping;
 }
 
 int LeoSquattingTask::failed(const Vector &state) const
