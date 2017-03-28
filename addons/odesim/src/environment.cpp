@@ -26,7 +26,6 @@ bool ODESTGEnvironment::configure(Configuration &config)
   struct stat buffer;
   if (stat (xml.c_str(), &buffer) != 0)
     xml = std::string(CONFIG_DIR) + "/" + config["xml"].str();
-
   if (config.has("randomize"))
   {
     randomize_ = config["randomize"];
@@ -168,7 +167,11 @@ bool ODESTGEnvironment::configure(Configuration &config)
 
 void ODESTGEnvironment::start(int test, Observation *obs)
 {
-  simulator_.setInitialCondition(randomize_?time(NULL):0);
+//Added no randomize for test agent
+  if (test)
+    simulator_.setInitialCondition(0);
+  else
+    simulator_.setInitialCondition(randomize_?time(NULL):0);
   //double com[3];
   //simulator_.read("robot.com", com);
   simulator_.resetActuationValues();
