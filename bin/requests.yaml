@@ -567,7 +567,7 @@ agent/zeromq:
     default: 0
     optional: 1
     min: 0
-    max: 1
+    max: 2147483647
 behavior/leo_squat_sym:
   description: Leo squatting behavior with symmetrical switchers of observations
 behavior/leo_walk:
@@ -834,6 +834,14 @@ environment/leo_squat:
     mutability: configuration
     default: 0
     optional: 0
+  randomize:
+    type: double
+    description: Amount of initial state randomization
+    mutability: configuration
+    default: 0.0872639
+    optional: 1
+    min: 0
+    max: 1
   xml:
     type: string
     description: XML configuration filename
@@ -902,6 +910,14 @@ environment/leo_walk:
     mutability: configuration
     default: 0
     optional: 0
+  randomize:
+    type: double
+    description: Amount of initial state randomization
+    mutability: configuration
+    default: 0.0872639
+    optional: 1
+    min: 0
+    max: 1
   xml:
     type: string
     description: XML configuration filename
@@ -1000,14 +1016,6 @@ environment/ode:
     mutability: configuration
     default: ../addons/odesim/cfg/robot.xml
     optional: 1
-  randomize:
-    type: int
-    description: Randomize initial state
-    mutability: configuration
-    default: 0
-    optional: 1
-    min: 0
-    max: 2147483647
   visualize:
     type: int
     description: Whether to display 3D visualization
@@ -1558,7 +1566,7 @@ mapping/policy/feed_forward:
     type: mapping
     description: Maps time to controls
     mutability: configuration
-    default: 0x1b574d0
+    default: 0x26e7fb0
     optional: 1
 mapping/policy/mcts:
   description: Monte-Carlo Tree Search policy

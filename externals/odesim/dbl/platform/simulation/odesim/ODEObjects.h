@@ -185,7 +185,7 @@ class CODEObject: public CODELoggable
 		void						clearJoints();
 		void						clearExternalForces();
 		void						clearAll();
-    void            genRandState(std::map<std::string, double> &jointMap);
+    void            genRandState(std::map<std::string, double> &jointMap, double randomize);
 
 	protected:
 		std::string					mName;
@@ -203,7 +203,7 @@ class CODEObject: public CODELoggable
 		virtual bool		init(dWorld& world);
 		virtual void		deinit();
 		// Pass true to setInitialCondition() to ranzomize initial condition. Otherwise, the IC's are assumed to be set.
-		void				setInitialCondition(bool randomize=true);
+        void				setInitialCondition(double randomize=0);
 
 		const std::string&	name() const;
 

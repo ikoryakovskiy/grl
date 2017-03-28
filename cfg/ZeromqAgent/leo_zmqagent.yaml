@@ -4,17 +4,16 @@ experiment:
   trials: 0
   steps: 0
   rate: 0
-  test_interval: 10
-  output: leo_full_output_vc_1
+  test_interval: 1
   environment: 
     type: environment/leo_walk
     behavior: 
       type: behavior/leo_walk
+    randomize: 0.0872639
     xml: ../../leo/cfg/xm430_210_vc_leo_walk_ankle_bound.xml
     target_env: 
       type: environment/ode
       xml: experiment/environment/xml
-      randomize: 1
       visualize: 1
     observe: torso_boom, hipright, hipleft, kneeright, kneeleft, ankleright, ankleleft
     actuate: hipright, hipleft, kneeright, kneeleft, ankleright, ankleleft
@@ -44,4 +43,5 @@ experiment:
     action_min: []
     action_max: []
     test: 1
-  save_every: run
+  load_file: /home/divyam/rl-agent/grlDocker/PythonFiles/model-mp-PoolWorker-1
+  save_every: never

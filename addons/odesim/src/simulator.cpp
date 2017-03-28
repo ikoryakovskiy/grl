@@ -164,9 +164,9 @@ int ODESimulator::activateActions(const uint64_t& stateID)
   return 0;	// 0 means success
 }
 
-void ODESimulator::setInitialCondition(long int seed)
+void ODESimulator::setInitialCondition(double randomize)
 {
-  CGenericODESim::setInitialCondition(seed);
+  CGenericODESim::setInitialCondition(randomize?time(NULL):0);
 
   // Acquire sim access so that we are not altering ODE objects while they are drawn, for example
   CODESimAccess simAccess(getSim());
@@ -178,5 +178,5 @@ void ODESimulator::setInitialCondition(long int seed)
     return; // Something bad is going on
   }
 
-  robot->setInitialCondition(seed);
+  robot->setInitialCondition(randomize);
 }

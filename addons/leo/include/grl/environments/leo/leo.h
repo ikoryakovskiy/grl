@@ -188,6 +188,7 @@ class LeoBaseEnvironment: public Environment
     Environment *target_env_;
     std::string xml_;
     CLeoBhBase *bh_;
+    double randomize_;
 
     int observation_dims_, action_dims_;
     Observation target_obs_;

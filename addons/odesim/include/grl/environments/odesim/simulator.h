@@ -19,7 +19,7 @@ class ODESimulator: public CGenericODESim, private PosixNonRealTimeThread, prote
   protected:
     uint64_t    mStepCounter;
     CWaitEvent  mEvtActuation;
-    int         mRandomize;
+    double         mRandomize;
     double			mActuationDelay;	// In seconds
 
     //void      resetBindData();
@@ -40,14 +40,14 @@ class ODESimulator: public CGenericODESim, private PosixNonRealTimeThread, prote
             return running();
     }
 
-    virtual void setInitialCondition(long int seed=0);
+    virtual void setInitialCondition(double randomize=0);
 
     virtual bool readConfig(const CConfigSection &configSection, bool noObjects=false);
 
     // Call activateActions() at a moment of your choosing to put the new control actions into effect
     virtual int activateActions(const uint64_t& stateID);
 
-    void setRandomize(int randomize) { mRandomize = randomize; }
+    void setRandomize(double randomize) { mRandomize = randomize; }
 };
 
 }
