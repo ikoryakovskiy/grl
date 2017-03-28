@@ -27,12 +27,6 @@ bool ODESTGEnvironment::configure(Configuration &config)
   if (stat (xml.c_str(), &buffer) != 0)
     xml = std::string(CONFIG_DIR) + "/" + config["xml"].str();
 
-  if (config.has("randomize"))
-  {
-    randomize_ = config["randomize"];
-    simulator_.setRandomize(randomize_);
-  }
-
   CXMLConfiguration xmlConfig;
 
   if (!xmlConfig.loadFile(xml))
@@ -166,9 +160,18 @@ bool ODESTGEnvironment::configure(Configuration &config)
   return true;
 }
 
+bool ODESTGEnvironment::reconfigure(const Configuration &config)
+{
+  if (config.has("randomize"))
+  {
+    randomize_ = config["randomize"].d();
+    simulator_.setRandomize(randomize_);
+  }
+}
+
 void ODESTGEnvironment::start(int test, Observation *obs)
 {
-  simulator_.setInitialCondition(randomize_?time(NULL):0);
+  simulator_.setInitialCondition(randomize_);
   //double com[3];
   //simulator_.read("robot.com", com);
   simulator_.resetActuationValues();
@@ -252,7 +255,6 @@ ODEEnvironment::~ODEEnvironment()
 void ODEEnvironment::request(ConfigurationRequest *config)
 {
   config->push_back(CRP("xml", "XML configuration filename", xml_));
-  config->push_back(CRP("randomize", "Randomize initial state", 0));
   config->push_back(CRP("visualize", "Whether to display 3D visualization", visualize_, CRP::Configuration, 0, 1));
   
   config->push_back(CRP("observation_dims", "int.observation_dims", "Number of observation dimensions", CRP::Provided));
@@ -284,6 +286,8 @@ void ODEEnvironment::configure(Configuration &config)
 
 void ODEEnvironment::reconfigure(const Configuration &config)
 {
+  if (env_)
+    env_->reconfigure(config);
 }
 
 void ODEEnvironment::run()

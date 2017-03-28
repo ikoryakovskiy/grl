@@ -52,7 +52,7 @@ class LeoWalkEnvironment: public LeoBaseEnvironment
     // From Configurable
     virtual void request(ConfigurationRequest *config);
     virtual void configure(Configuration &config);
-    
+
     // From Environment
     virtual void start(int test, Observation *obs);
     virtual double step(const Action &action, Observation *obs, double *reward, int *terminal);

@@ -118,6 +118,7 @@ std::string CLeoBhBase::jointIndexToName(int jointIndex) const
 LeoBaseEnvironment::LeoBaseEnvironment() :
   target_env_(NULL),
   bh_(NULL),
+  randomize_(0.087263889),  // = +/- 5 deg randomization
   observation_dims_(2*ljNumJoints),
   action_dims_(2*ljNumDynamixels),
   exporter_(NULL),
@@ -134,6 +135,7 @@ LeoBaseEnvironment::LeoBaseEnvironment() :
 void LeoBaseEnvironment::request(ConfigurationRequest *config)
 {
   config->push_back(CRP("behavior", "behavior", "Behavior type", bh_));
+  config->push_back(CRP("randomize", "Amount of initial state randomization", randomize_));
 
   config->push_back(CRP("xml", "XML configuration filename", xml_));
   config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_));
@@ -158,6 +160,7 @@ void LeoBaseEnvironment::configure(Configuration &config)
   target_env_ = (Environment*)config["target_env"].ptr();
 
   bh_ = (CLeoBhBase*)config["behavior"].ptr();
+  randomize_ = config["randomize"];
   sub_transition_type_ = (VectorSignal*)config["sub_transition_type"].ptr();
   pub_ic_signal_ = (VectorSignal*)config["pub_ic_signal"].ptr();
   measurement_noise_ = config["measurement_noise"];
@@ -206,14 +209,22 @@ void LeoBaseEnvironment::configure(Configuration &config)
 }
 
 void LeoBaseEnvironment::reconfigure(const Configuration &config)
-{
-  time_test_ = time_learn_ = time0_ = 0;
+{ 
+  if (target_env_)
+    target_env_->reconfigure(config);
 }
 
 void LeoBaseEnvironment::start(int test)
 {
   test_ = test;
   bh_->resetState(0);
+
+  Configuration randomize_config;
+  if (test)
+    randomize_config.set("randomize", 0.0);
+  else
+    randomize_config.set("randomize", randomize_);
+  reconfigure(randomize_config);
 
   if (exporter_)
     exporter_->open((test_?"test":"learn"), (test_?time_test_:time_learn_) != 0.0);

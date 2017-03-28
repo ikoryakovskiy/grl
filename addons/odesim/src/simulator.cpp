@@ -102,7 +102,7 @@ void ODESimulator::run()
   // Broadcast the initial state of the robot so that the policy
   // can calculate the initial actuation signals.
   // shouldStep() will wait for the initial actuation signals from the policy (it is reset in start())
-  setInitialCondition(mRandomize?time(NULL):0);
+  setInitialCondition(mRandomize);
 
   mLogNoticeLn("Simulator settings:\n      step time: " << mSim.getTotalStepTime() << ", subsamplingfactor: " << mSim.getSubsamplingFactor());
 
@@ -164,9 +164,9 @@ int ODESimulator::activateActions(const uint64_t& stateID)
   return 0;	// 0 means success
 }
 
-void ODESimulator::setInitialCondition(long int seed)
+void ODESimulator::setInitialCondition(double randomize)
 {
-  CGenericODESim::setInitialCondition(seed);
+  CGenericODESim::setInitialCondition(randomize?time(NULL):0);
 
   // Acquire sim access so that we are not altering ODE objects while they are drawn, for example
   CODESimAccess simAccess(getSim());
@@ -178,5 +178,5 @@ void ODESimulator::setInitialCondition(long int seed)
     return; // Something bad is going on
   }
 
-  robot->setInitialCondition(seed);
+  robot->setInitialCondition(randomize);
 }

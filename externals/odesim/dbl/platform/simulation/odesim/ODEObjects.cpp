@@ -301,9 +301,9 @@ void CODEObject::genRandState(std::map<std::string, double> &jointMap)
 }
 */
 
-void CODEObject::genRandState(std::map<std::string, double> &jointMap)
+void CODEObject::genRandState(std::map<std::string, double> &jointMap, double randomize)
 {
-  const double C = 1*0.087263889; // 0.087263889 = +/- 5 deg
+  const double C = randomize;
 
   jointMap[std::string("virtualBoom")] = 0;
 
@@ -322,17 +322,17 @@ void CODEObject::genRandState(std::map<std::string, double> &jointMap)
 
   double dal = mRand.getUniform(-C, C)+dkl;
   double dar = mRand.getUniform(-C, C)+dkr;
-  jointMap[std::string("footleft")] = 0;
+  jointMap[std::string("footleft")] = 0;  // left foot is a pivot, always assumed on the ground and parallel
   jointMap[std::string("footright")] = dar;
 
   jointMap[std::string("arm")] = mRand.getUniform(-C, C);
 }
 
-void CODEObject::setInitialCondition(bool randomize)
+void CODEObject::setInitialCondition(double randomize)
 {
   std::map<std::string, double> jointMap;
   if (randomize)
-    genRandState(jointMap);
+    genRandState(jointMap, randomize);
 
 	// Process body ICs
 	for (unsigned int iBodyIC=0; iBodyIC<mBodyICs.size(); iBodyIC++)
@@ -347,6 +347,8 @@ void CODEObject::setInitialCondition(bool randomize)
 		{
 			if (randomize)
         mBodyICs[iBodyIC]->randomize(jointMap[mBodyICs[iBodyIC]->getBodyName()]);
+      else
+        mBodyICs[iBodyIC]->randomize(0.0); // Important line. Otherwice, previous trial initialization is applied
 			body->setRotation(mBodyICs[iBodyIC]->getRotation());
 		}
 	}

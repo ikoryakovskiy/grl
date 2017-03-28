@@ -121,7 +121,7 @@ void OnlineLearningExperiment::run()
       loadconfig.set("file", load_file );
       agent_->walk(loadconfig);
     }
-    
+
     for (size_t ss=0, tt=0; (!trials_ || tt < trials_) && (!steps_ || ss < steps_); ++tt)
     { 
       Observation obs;
