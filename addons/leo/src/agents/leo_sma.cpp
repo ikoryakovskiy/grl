@@ -41,8 +41,8 @@ void LeoStateMachineAgent::request(ConfigurationRequest *config)
   config->push_back(CRP("agent_main", "agent", "Main agent", agent_main_, false));
 
   config->push_back(CRP("upright_trigger", "trigger", "Trigger which finishes stand-up phase and triggers preparation agent", upright_trigger_, false));
-  config->push_back(CRP("feet_on_trigger", "trigger", "Trigger which checks for foot contact to ensure that robot is prepared to walk", feet_on_trigger_, false));
-  config->push_back(CRP("feet_off_trigger", "trigger", "Trigger which checks for foot contact to detect lifts of the robot", feet_off_trigger_, false));
+  config->push_back(CRP("feet_on_trigger", "trigger", "Trigger which checks for foot contact to ensure that robot is prepared to walk", feet_on_trigger_, true));
+  config->push_back(CRP("feet_off_trigger", "trigger", "Trigger which checks for foot contact to detect lifts of the robot", feet_off_trigger_, true));
   config->push_back(CRP("starter_trigger", "trigger", "Trigger which initiates a preprogrammed walking at the beginning", starter_trigger_, true));
 }
 
@@ -76,6 +76,9 @@ void LeoStateMachineAgent::start(const Observation &obs, Action *action)
     agent_ = agent_prepare_; // prepare from hanging position
 
   agent_->start(obs, action);
+
+  for (int i = 0; i < action_max_.size(); i++)
+    (*action)[i] = fmin(action_max_[i], fmax((*action)[i], action_min_[i]));
 }
 
 void LeoStateMachineAgent::step(double tau, const Observation &obs, double reward, Action *action)
@@ -84,8 +87,7 @@ void LeoStateMachineAgent::step(double tau, const Observation &obs, double rewar
 
   act(tau, obs, reward, action);
 
-  // ensure limits
-  for (int i = 0; i < ljNumDynamixels; i++)
+  for (int i = 0; i < action_max_.size(); i++)
     (*action)[i] = fmin(action_max_[i], fmax((*action)[i], action_min_[i]));
 }
 
@@ -100,16 +102,13 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
   // note that groundContact is not reliable when Leo is moving,
   // but is reliable when Leo is standing still.
   // Therefore we use a trigger to make sure the contact is lost over some amount of time.
-  int touchDown, groundContact, stanceLegLeft;
+  // Also, note that if "sub_ic_signal_" is not used, then robot is assumed to be on the ground (i.e. ready for operation)
+  int touchDown = 0, groundContact = 1, stanceLegLeft = 1;
   unpack_ic(&touchDown, &groundContact, &stanceLegLeft);
   Vector gc = VectorConstructor(groundContact);
 
-  if (agent_ != agent_standup_ && agent_ != agent_prepare_)
-    if (!groundContact)
-      ERROR("Lost contact");
-
   // if Leo looses ground contact
-  if (feet_off_trigger_->check(time_, gc))
+  if (feet_off_trigger_ && feet_off_trigger_->check(time_, gc))
   {
     if (failed(obs, stanceLegLeft))
       // lost contact due to fall => try to standup

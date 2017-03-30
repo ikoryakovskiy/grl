@@ -42,6 +42,9 @@ void LeoBaseAgent::configure(Configuration &config)
   sub_ic_signal_ = (VectorSignal*)config["sub_ic_signal"].ptr();
   action_min_ = config["action_min"].v();
   action_max_ = config["action_max"].v();
+
+  if (action_max_.size() != action_min_.size())
+    throw bad_param("agent/leo/base:{action_min,action_max}");
 }
 
 bool LeoBaseAgent::failed(const Observation &obs, bool stanceLegLeft) const
@@ -49,6 +52,7 @@ bool LeoBaseAgent::failed(const Observation &obs, bool stanceLegLeft) const
   double torsoComstraint = 1; // 1
   double stanceComstraint = 0.36*M_PI; // 0.36*M_PI
 
+  /*
   // Torso angle out of range
   if (fabs(obs[ljTorso]) > torsoComstraint)
   {
@@ -63,6 +67,14 @@ bool LeoBaseAgent::failed(const Observation &obs, bool stanceLegLeft) const
     std::cout << "[TERMINATION] Stance leg angle too large" << std::endl;
     return true;
   }
+  */
+
+  if (fabs(obs[0]+obs[1]+obs[2]) > torsoComstraint)
+  {
+    std::cout << "[TERMINATION] Torso angle too large" << std::endl;
+    return true;
+  }
+
   return false;
 }
 

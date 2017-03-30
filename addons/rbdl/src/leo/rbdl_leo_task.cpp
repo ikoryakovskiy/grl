@@ -44,6 +44,7 @@ REGISTER_CONFIGURABLE(LeoSquattingTask)
 void LeoSquattingTask::request(ConfigurationRequest *config)
 {
   Task::request(config);
+  config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_, true));
   config->push_back(CRP("timeout", "double.timeout", "Task timeout", timeout_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
   config->push_back(CRP("weight_nmpc", "double.weight", "Weight on the NMPC cost (excluding shaping)", weight_nmpc_, CRP::System, 0.0, DBL_MAX));
@@ -54,6 +55,7 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
 
 void LeoSquattingTask::configure(Configuration &config)
 {
+  target_env_ = (Environment*)config["target_env"].ptr(); // Select a real enviromnent if needed
   timeout_ = config["timeout"];
   randomize_ = config["randomize"];
   weight_nmpc_ = config["weight_nmpc"];
@@ -95,40 +97,50 @@ void LeoSquattingTask::start(int test, Vector *state) const
 {
   *state = ConstantVector(2*(dof_+1)+1, 0);
 
-  // sitted pose
-  *state <<
-         1.0586571916803691E+00,
-        -2.1266836153365212E+00,
-         1.0680264236561250E+00,
-        -2.5999999999984957E-01,
-        -0.0,
-        -0.0,
-        -0.0,
-        -0.0,  // end of rlsDofDim
-         0.0;  // rlsTime
-
-  if (randomize_)
+  if (target_env_)
   {
-    // sample angles
-    const double upLegLength  = 0.1160;
-    const double loLegLength  = 0.1085;
-    double a, b, c, d, hh;
-    do
+    // Obtain initial state from real Leo
+    Observation obs;
+    target_env_->start(0, &obs);
+    *state << obs.v, VectorConstructor(0.0);
+  }
+  else
+  {
+    // Default initialization in a sitted pose
+    *state <<
+           1.0586571916803691E+00,
+          -2.1266836153365212E+00,
+           1.2680264236561250E+00, // 1.0680264236561250E+00,
+          -2.5999999999984957E-01,
+          -0.0,
+          -0.0,
+          -0.0,
+          -0.0,  // end of rlsDofDim
+           0.0;  // rlsTime
+
+    if (randomize_)
     {
-      a = RandGen::getUniform(-1.65,  1.48)*randomize_;
-      b = RandGen::getUniform(-2.53,  0.00)*randomize_;
-      c = RandGen::getUniform(-0.61,  2.53)*randomize_;
-      d = RandGen::getUniform(-0.10,  0.10)*randomize_;
-      hh = loLegLength*cos(a) + upLegLength*cos(a+b);
+      // sample angles
+      const double upLegLength  = 0.1160;
+      const double loLegLength  = 0.1085;
+      double a, b, c, d, hh;
+      do
+      {
+        a = RandGen::getUniform(-1.65,  1.48)*randomize_;
+        b = RandGen::getUniform(-2.53,  0.00)*randomize_;
+        c = RandGen::getUniform(-0.61,  2.53)*randomize_;
+        d = RandGen::getUniform(-0.10,  0.10)*randomize_;
+        hh = loLegLength*cos(a) + upLegLength*cos(a+b);
+      }
+      while (fabs(a + b + c) > 3.1415/2.0 || hh < 0.07);
+
+      (*state)[rlsAnkleAngle] = a;
+      (*state)[rlsKneeAngle] = b;
+      (*state)[rlsHipAngle] = c;
+      (*state)[rlsArmAngle] = d;
+
+      TRACE("Hip height: " << hh);
     }
-    while (fabs(a + b + c) > 3.1415/2.0 || hh < 0.07);
-
-    (*state)[rlsAnkleAngle] = a;
-    (*state)[rlsKneeAngle] = b;
-    (*state)[rlsHipAngle] = c;
-    (*state)[rlsArmAngle] = d;
-
-    TRACE("Hip height: " << hh);
   }
 
   CRAWL("Initial state: " << *state);
@@ -203,17 +215,13 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
 //  cost += pow(0.01 * action[2], 2); // ankle_left
 
 /*
-  double w = 10.0;
-  F0 = pow(w * (state[rlsRootZ] - next[rlsRefRootZ]), 2); // distance to setpoint at time (t)
-  F1 = pow(w * (next [rlsRootZ] - next[rlsRefRootZ]), 2); // distance to setpoint at time (t+1)
-*/
   double F0 = -fabs(state[rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t)
   double F1 = -fabs(next [rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t+1)
-
   double shaping = gamma_*F1 - F0; // positive reward for getting closer to the setpoint
-
   TRACE(state[rlsRootZ] << ", " << next[rlsRootZ] << " -> " << next[rlsRefRootZ]);
   TRACE(F1 << " - " << F0 << " = " << shaping);
+*/
+  double shaping = -fabs(next [rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t+1)
 
   // reward is a negative of cost
   *reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*cost_nmpc_reg) + weight_shaping_*shaping;
@@ -223,7 +231,7 @@ int LeoSquattingTask::failed(const Vector &state) const
 {
   if (std::isnan(state[rlsRootZ]))
     ERROR("NaN value of root, try to reduce integration period to cope with this.");
-
+/*
   double torsoAngle = state[rlsAnkleAngle] + state[rlsKneeAngle] + state[rlsHipAngle];
   if (fabs(torsoAngle) > 1.0 || // > 57 deg
       // penalty for high joint velocities
@@ -239,6 +247,7 @@ int LeoSquattingTask::failed(const Vector &state) const
       )
     return 1;
   else
+*/
   {
     return 0;
   }

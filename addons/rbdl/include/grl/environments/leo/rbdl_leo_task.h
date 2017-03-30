@@ -91,7 +91,7 @@ class LeoSquattingTask : public Task
     TYPEINFO("task/leo_squatting", "Task specification for Leo squatting with an auto-actuated arm")
 
   public:
-    LeoSquattingTask() : timeout_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_shaping_(0.0), randomize_(0), dof_(3), gamma_(0.95) { }
+    LeoSquattingTask() : target_env_(NULL), timeout_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_shaping_(0.0), randomize_(0), dof_(3), gamma_(0.95) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -107,11 +107,12 @@ class LeoSquattingTask : public Task
     virtual int failed(const Vector &state) const;
 
   protected:
+    Environment *target_env_;
     double timeout_;
     double weight_nmpc_, weight_nmpc_aux_, weight_shaping_;
-    double gamma_;
     int randomize_;
     int dof_;
+    double gamma_;
     Vector target_obs_min_, target_obs_max_;
 };
 

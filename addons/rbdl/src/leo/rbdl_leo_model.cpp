@@ -28,6 +28,7 @@
 #include <grl/environments/leo/rbdl_leo_model.h>
 #include <grl/environments/leo/rbdl_leo_task.h>
 #include <DynamixelSpecs.h>
+#include <iomanip>
 
 using namespace grl;
 
@@ -107,25 +108,21 @@ void LeoSquattingSandboxModel::configure(Configuration &config)
 
 void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
 {
-  // Obtain an actual state from a target environment, not from task
-  if (target_env_)
-  {
-    Observation obs;
-    target_env_->start(0, &obs);
-    *state = obs.v;
-  }
-
+/*
   // Unknown bug in GRL call/Lua/RBDL: need to call eom, then 'finalize' works correctly
   Vector xd;
   target_action_.resize(target_dof_);
   dynamics_->eom(*state, target_action_, &xd);
+*/
+  Vector xdd = ConstantVector(target_dof_, 0);
+  dynamics_->updateKinematics(*state, xdd);
 
   // Fill parts of a state such as Center of Mass, Angular Momentum
   dynamics_->finalize(*state, rbdl_addition_);
 
   // Compose a complete state <state, time, height, com, ..., squats>
   state_.resize(stsStateDim);
-  state_ << *state, VectorConstructor(lower_height_), rbdl_addition_, VectorConstructor(0.0);
+  state_ << *state, VectorConstructor(lower_height_), rbdl_addition_, VectorConstructor(0);
   *state = state_;
 
   export_meshup_animation(state_, ConstantVector(target_dof_, 0));
@@ -163,11 +160,8 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   if (target_env_)
   {
     Observation obs;
-  
     tau = target_env_->step(target_action_, &obs, NULL, NULL);
-    target_state_next_ = obs.v;
-    
-    target_state_next_[rlsTime] = target_state_[rlsTime] + tau;
+    target_state_next_ <<  obs.v, VectorConstructor(target_state_[rlsTime] + tau);
   }
   else
     tau = dm_.step(target_state_, target_action_, &target_state_next_);
@@ -192,8 +186,8 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   if ((*next)[rlsRefRootZ] != state_[rlsRefRootZ])
     (*next)[stsSquats] = state_[stsSquats] + 1;
 
-//  std::cout << "  > Height: " << (*next)[rlsRootZ] << std::endl;
-//  std::cout << "  > Next state: " << *next << std::endl;
+  std::cout << "  > Height: " << (*next)[rlsRootZ] << std::endl;
+  std::cout << "  > Next state: " << std::fixed << std::setprecision(3) << std::right << std::setw(10) << *next << std::endl;
 
   export_meshup_animation(*next, target_action_);
 

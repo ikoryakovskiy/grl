@@ -245,13 +245,13 @@ agent/leo/sma:
     description: Trigger which checks for foot contact to ensure that robot is prepared to walk
     mutability: configuration
     default: 0
-    optional: 0
+    optional: 1
   feet_off_trigger:
     type: trigger
     description: Trigger which checks for foot contact to detect lifts of the robot
     mutability: configuration
     default: 0
-    optional: 0
+    optional: 1
   starter_trigger:
     type: trigger
     description: Trigger which initiates a preprogrammed walking at the beginning
@@ -6122,6 +6122,12 @@ task/leo_squatting:
     type: double.reward_max
     description: Upper limit on immediate reward
     mutability: provided
+  target_env:
+    type: environment
+    description: Interaction environment
+    mutability: configuration
+    default: 0
+    optional: 1
   timeout:
     type: double.timeout
     description: Task timeout

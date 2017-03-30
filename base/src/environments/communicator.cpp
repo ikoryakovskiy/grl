@@ -72,10 +72,6 @@ void CommunicatorEnvironment::start(int test, Observation *obs)
 {
   if (started_)
   {
-    // always need to reply with a dummy action
-//    communicator_->send(ConstantVector(target_action_dims_, 0.0));
-
-//    usleep(2000000); // sleep to ensure
     Configuration config;
     config.set("action", "restart");
     communicator_->reconfigure(config);
