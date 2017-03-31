@@ -6176,6 +6176,14 @@ task/leo_squatting:
     optional: 1
     min: 0
     max: 1
+  continue_after_fall:
+    type: int.continue_after_fall
+    description: Continue exectution of the environemnt even after a fall of Leo
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
 task/lua:
   description: User-provided task specification in LUA
   observation_dims:

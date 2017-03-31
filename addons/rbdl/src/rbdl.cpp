@@ -126,7 +126,7 @@ void RBDLDynamics::eom(const Vector &state, const Vector &actuation, Vector *xd)
   (*xd)[2*dim] = 1.;
 }
 
-void RBDLDynamics::updateKinematics(const Vector &state, Vector &xdd) const
+void RBDLDynamics::updateKinematics(const Vector &state) const
 {
   RBDLState *rbdl = rbdl_state_.instance();
 
@@ -137,16 +137,13 @@ void RBDLDynamics::updateKinematics(const Vector &state, Vector &xdd) const
 
   RigidBodyDynamics::Math::VectorNd q = RigidBodyDynamics::Math::VectorNd::Zero(dim);
   RigidBodyDynamics::Math::VectorNd qd = RigidBodyDynamics::Math::VectorNd::Zero(dim);
-  //RigidBodyDynamics::Math::VectorNd qdd = RigidBodyDynamics::Math::VectorNd::Zero(dim);
 
   for (size_t ii=0; ii < dim; ++ii)
   {
     q[ii] = state[ii];
     qd[ii] = state[ii + dim];
-    //qdd[ii] = xdd[ii];
   }
   RigidBodyDynamics::UpdateKinematicsCustom(*rbdl->model, &q, &qd, NULL);
-  //RigidBodyDynamics::UpdateKinematics(*rbdl->model, q, qd, qdd);
 }
 
 void RBDLDynamics::finalize(const Vector &state, Vector &out) const

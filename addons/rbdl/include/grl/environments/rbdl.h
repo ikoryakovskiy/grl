@@ -82,7 +82,7 @@ class RBDLDynamics : public Dynamics
     virtual void finalize(const Vector &state, Vector &out) const;
 
     // Update kinematics without making a step
-    virtual void updateKinematics(const Vector &state, Vector &xdd) const;
+    virtual void updateKinematics(const Vector &state) const;
 
   protected:
     // own

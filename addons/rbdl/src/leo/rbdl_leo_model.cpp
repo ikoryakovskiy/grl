@@ -108,16 +108,8 @@ void LeoSquattingSandboxModel::configure(Configuration &config)
 
 void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
 {
-/*
-  // Unknown bug in GRL call/Lua/RBDL: need to call eom, then 'finalize' works correctly
-  Vector xd;
-  target_action_.resize(target_dof_);
-  dynamics_->eom(*state, target_action_, &xd);
-*/
-  Vector xdd = ConstantVector(target_dof_, 0);
-  dynamics_->updateKinematics(*state, xdd);
-
   // Fill parts of a state such as Center of Mass, Angular Momentum
+  dynamics_->updateKinematics(*state);
   dynamics_->finalize(*state, rbdl_addition_);
 
   // Compose a complete state <state, time, height, com, ..., squats>
@@ -162,6 +154,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
     Observation obs;
     tau = target_env_->step(target_action_, &obs, NULL, NULL);
     target_state_next_ <<  obs.v, VectorConstructor(target_state_[rlsTime] + tau);
+    dynamics_->updateKinematics(target_state_next_); // update kinematics if rbdl integration is not used
   }
   else
     tau = dm_.step(target_state_, target_action_, &target_state_next_);
@@ -175,18 +168,24 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   // Switch setpoint if needed
   if (fabs((*next)[rlsComVelocityZ] - 0.0) < 0.01)
   {
-//    std::cout << "Setpoint reached" << std::endl;
     if (fabs((*next)[rlsRootZ] - lower_height_) < 0.01)
+    {
       (*next)[rlsRefRootZ] = upper_height_;
+      std::cout << "Lower setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
+    }
     else if (fabs((*next)[rlsRootZ] - upper_height_) < 0.01)
+    {
       (*next)[rlsRefRootZ] = lower_height_;
+      std::cout << "Upper setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
+    }
   }
 
   // Increase number of half-squats if needed
   if ((*next)[rlsRefRootZ] != state_[rlsRefRootZ])
     (*next)[stsSquats] = state_[stsSquats] + 1;
 
-  //std::cout << "  > Height: " << (*next)[rlsRootZ] << std::endl;
+  //std::cout << "  > Next state: " << std::fixed << std::setprecision(3) << std::right;
+  //std::cout << "  > Height: " << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ] << std::endl;
   //std::cout << "  > Next state: " << std::fixed << std::setprecision(3) << std::right << std::setw(10) << *next << std::endl;
 
   export_meshup_animation(*next, target_action_);

@@ -51,6 +51,7 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("weight_nmpc_aux", "double.weight", "Weight on the part of NMPC cost with auxilary ", weight_nmpc_aux_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("weight_shaping", "double.weight", "Weight on the shaping cost", weight_shaping_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("gamma", "Discount rate used for correct shaping", gamma_));
+  config->push_back(CRP("continue_after_fall", "int.continue_after_fall", "Continue exectution of the environemnt even after a fall of Leo", continue_after_fall_, CRP::System, 0, 1));
 }
 
 void LeoSquattingTask::configure(Configuration &config)
@@ -62,6 +63,7 @@ void LeoSquattingTask::configure(Configuration &config)
   weight_nmpc_aux_ = config["weight_nmpc_aux"];
   weight_shaping_ = config["weight_shaping"];
   gamma_ = config["gamma"];
+  continue_after_fall_ = config["continue_after_fall"];
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-M_PI, -M_PI, -M_PI, -M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
@@ -232,6 +234,9 @@ int LeoSquattingTask::failed(const Vector &state) const
   if (std::isnan(state[rlsRootZ]))
     ERROR("NaN value of root, try to reduce integration period to cope with this.");
 
+  if (continue_after_fall_)
+    return 0;
+
   double torsoAngle = state[rlsAnkleAngle] + state[rlsKneeAngle] + state[rlsHipAngle];
   if (fabs(torsoAngle) > 1.0 || // > 57 deg
       // penalty for high joint velocities
@@ -247,9 +252,7 @@ int LeoSquattingTask::failed(const Vector &state) const
       )
     return 1;
   else
-  {
     return 0;
-  }
 }
 
 void LeoSquattingTask::report(std::ostream &os, const Vector &state) const
