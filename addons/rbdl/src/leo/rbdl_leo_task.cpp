@@ -231,7 +231,7 @@ int LeoSquattingTask::failed(const Vector &state) const
 {
   if (std::isnan(state[rlsRootZ]))
     ERROR("NaN value of root, try to reduce integration period to cope with this.");
-/*
+
   double torsoAngle = state[rlsAnkleAngle] + state[rlsKneeAngle] + state[rlsHipAngle];
   if (fabs(torsoAngle) > 1.0 || // > 57 deg
       // penalty for high joint velocities
@@ -247,7 +247,6 @@ int LeoSquattingTask::failed(const Vector &state) const
       )
     return 1;
   else
-*/
   {
     return 0;
   }
