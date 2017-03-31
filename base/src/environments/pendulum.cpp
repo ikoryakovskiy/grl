@@ -81,8 +81,8 @@ void PendulumSwingupTask::configure(Configuration &config)
   randomization_ = config["randomization"];
 
   config.set("observation_dims", 2);
-  config.set("observation_min", VectorConstructor(0., -12*M_PI));
-  config.set("observation_max", VectorConstructor(2*M_PI, 12*M_PI));
+  config.set("observation_min", VectorConstructor(-M_PI, -12*M_PI));
+  config.set("observation_max", VectorConstructor(M_PI, 12*M_PI));
   config.set("action_dims", 1);
   config.set("action_min", VectorConstructor(-3));
   config.set("action_max", VectorConstructor(3));
@@ -97,7 +97,8 @@ void PendulumSwingupTask::reconfigure(const Configuration &config)
 void PendulumSwingupTask::start(int test, Vector *state) const
 {
   state->resize(3);
-  (*state)[0] = M_PI+randomization_*(test==0)*RandGen::get()*2*M_PI;
+  //(*state)[0] = M_PI+randomization_*(test==0)*RandGen::get()*2*M_PI;
+  (*state)[0] = (test==0)*RandGen::getUniform(-M_PI,M_PI) + (test==1)*M_PI;
   (*state)[1] = (test==0)*RandGen::getUniform(-1,1);
   (*state)[2] = 0;
 }
@@ -107,8 +108,11 @@ void PendulumSwingupTask::observe(const Vector &state, Observation *obs, int *te
   if (state.size() != 3)
     throw Exception("task/pendulum/swingup requires dynamics/pendulum");
 
-  double a = fmod(state[0]+M_PI, 2*M_PI);
-  if (a < 0) a += 2*M_PI;
+//  double a = fmod(state[0]+M_PI, 2*M_PI);
+//  if (a < 0) a += 2*M_PI;
+
+  double a = fmod(fabs(state[0]), 2*M_PI);
+  if (a > M_PI) a -= 2*M_PI;
 
   double b;
 
@@ -119,12 +123,12 @@ void PendulumSwingupTask::observe(const Vector &state, Observation *obs, int *te
   (*obs)[1] = b;
   obs->absorbing = false;
   
-  if (state[1] > 20 || state[1] < -20)
-  {
-    *terminal = 2;
-    obs->absorbing = true;
-  }
-  else if (state[2] > T_)
+//  if (state[1] > 20 || state[1] < -20)
+//  {
+//    *terminal = 1;
+//    obs->absorbing = true;
+//  }
+  if (state[2] > T_)
     *terminal = 1;
   else
     *terminal = 0;
@@ -135,13 +139,13 @@ void PendulumSwingupTask::evaluate(const Vector &state, const Action &action, co
   if (state.size() != 3 || action.size() != 1 || next.size() != 3)
     throw Exception("task/pendulum/swingup requires dynamics/pendulum");
 
-  double a = fmod(fabs(state[0]), 2*M_PI);
+  double a = fmod(fabs(next[0]), 2*M_PI);
   if (a > M_PI) a -= 2*M_PI;
 
   double b;
-  b = state[1];
+  b = next[1];
 
-  *reward = -5*pow(a, 2) - .1*pow(b, 2) - 1*pow(action[0], 2);
+  *reward = -5*pow(a, 2) - .1*pow(b, 2) - .01*pow(action[0], 2);
 
 }
 

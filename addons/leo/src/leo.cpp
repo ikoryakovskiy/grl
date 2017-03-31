@@ -256,7 +256,7 @@ void LeoBaseEnvironment::start(int test)
     randomize_config.set("randomize", 0.0);
   else
     randomize_config.set("randomize", randomize_);
-    reconfigure(randomize_config);
+  reconfigure(randomize_config);
 
   if (exporter_)
     exporter_->open((test_?"test":"learn"), (test_?time_test_:time_learn_) != 0.0);
