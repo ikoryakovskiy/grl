@@ -50,6 +50,7 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("weight_nmpc", "double.weight", "Weight on the NMPC cost (excluding shaping)", weight_nmpc_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("weight_nmpc_aux", "double.weight", "Weight on the part of NMPC cost with auxilary ", weight_nmpc_aux_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("weight_shaping", "double.weight", "Weight on the shaping cost", weight_shaping_, CRP::System, 0.0, DBL_MAX));
+  config->push_back(CRP("setpoint_reward", "int.setpoint_reward", "If zero, reward at setpoint is given for setpoint at time t, otherwise - at t+1", setpoint_reward_, CRP::System, 0, 1));
   config->push_back(CRP("gamma", "Discount rate used for correct shaping", gamma_));
   config->push_back(CRP("continue_after_fall", "int.continue_after_fall", "Continue exectution of the environemnt even after a fall of Leo", continue_after_fall_, CRP::System, 0, 1));
 }
@@ -62,6 +63,7 @@ void LeoSquattingTask::configure(Configuration &config)
   weight_nmpc_ = config["weight_nmpc"];
   weight_nmpc_aux_ = config["weight_nmpc_aux"];
   weight_shaping_ = config["weight_shaping"];
+  setpoint_reward_ = config["setpoint_reward"];
   gamma_ = config["gamma"];
   continue_after_fall_ = config["continue_after_fall"];
 
@@ -179,11 +181,13 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
 
   double cost_nmpc = 0, cost_nmpc_reg = 0;
 
+  double refRootZ = setpoint_reward_ ? next[rlsRefRootZ] : state[rlsRefRootZ];
+
   // calculate support center from feet positions
   double suppport_center = 0.5 * (next[rlsLeftTipX] + next[rlsLeftHeelX]);
 
   // track: || root_z - h_ref ||_2^2
-  cost_nmpc +=  pow(50.0 * (next[rlsRootZ] - next[rlsRefRootZ]), 2);
+  cost_nmpc +=  pow(50.0 * (next[rlsRootZ] - refRootZ), 2);
 
   // track: || com_x - support center_x ||_2^2
   cost_nmpc +=  pow( 100.00 * (next[rlsComX] - suppport_center), 2);
@@ -223,7 +227,8 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   TRACE(state[rlsRootZ] << ", " << next[rlsRootZ] << " -> " << next[rlsRefRootZ]);
   TRACE(F1 << " - " << F0 << " = " << shaping);
 */
-  double shaping = -fabs(next [rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t+1)
+
+  double shaping = -fabs(next [rlsRootZ] - refRootZ); // distance to setpoint at time (t) or (t+1)
 
   // reward is a negative of cost
   *reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*cost_nmpc_reg) + weight_shaping_*shaping;

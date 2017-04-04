@@ -180,7 +180,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
     }
   }
 
-  // Increase number of half-squats if needed
+  // Increase number of half-squats if setpoint changed
   if ((*next)[rlsRefRootZ] != state_[rlsRefRootZ])
     (*next)[stsSquats] = state_[stsSquats] + 1;
 
