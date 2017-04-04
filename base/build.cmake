@@ -16,6 +16,7 @@ add_library(${TARGET} SHARED
             ${SRC}/agents/dyna.cpp
             ${SRC}/agents/sequential.cpp
             ${SRC}/agents/smdp_master.cpp
+            ${SRC}/agents/selective.cpp
             ${SRC}/agents/compartmentalized.cpp
             ${SRC}/agents/voluntary.cpp
             ${SRC}/agents/solver.cpp

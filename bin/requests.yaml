@@ -432,6 +432,20 @@ agent/master/random:
     mutability: configuration
     default: 0
     optional: 0
+agent/master/selective:
+  description: Selective agent which decides wich agent to run based on agents' confidence
+  agent1:
+    type: agent/sub
+    description: First subagent
+    mutability: configuration
+    default: 0
+    optional: 0
+  agent2:
+    type: agent/sub
+    description: Second subagent
+    mutability: configuration
+    default: 0
+    optional: 0
 agent/master/sequential:
   description: Master agent that executes sub-agents sequentially
   predictor:
@@ -6168,6 +6182,14 @@ task/leo_squatting:
     optional: 1
     min: 0
     max: 1.797693134862316e+308
+  setpoint_reward:
+    type: int.setpoint_reward
+    description: If zero, reward at setpoint is given for setpoint at time t, otherwise - at t+1
+    mutability: system
+    default: 1
+    optional: 1
+    min: 0
+    max: 1
   gamma:
     type: double
     description: Discount rate used for correct shaping
