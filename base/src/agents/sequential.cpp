@@ -60,6 +60,12 @@ void SequentialMasterAgent::reconfigure(const Configuration &config)
 {
 }
 
+void SequentialMasterAgent::report(std::ostream &os)
+{
+  agent_[0]->report(os);
+  agent_[1]->report(os);
+}
+
 void SequentialMasterAgent::start(const Observation &obs, Action *action)
 {
   time_ = 0;

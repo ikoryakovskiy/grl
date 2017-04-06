@@ -59,6 +59,7 @@ class SequentialMasterAgent : public Agent
     virtual void request(ConfigurationRequest *config);
     virtual void configure(Configuration &config);
     virtual void reconfigure(const Configuration &config);
+    virtual void report(std::ostream &os);
 
     // From Agent
     virtual void start(const Observation &obs, Action *action);

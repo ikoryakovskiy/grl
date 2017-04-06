@@ -43,6 +43,9 @@ void LeoSandboxModel::request(ConfigurationRequest *config)
   config->push_back(CRP("target_dof", "int.target_dof", "Number of degrees of freedom of the target model", target_dof_, CRP::Configuration, 0, INT_MAX));
   config->push_back(CRP("animation", "Save current state or full animation", animation_, CRP::Configuration, {"nope", "full", "immediate"}));
   config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_, true));
+
+  condition_ = VectorConstructor(0.01, 0.01);
+  config->push_back(CRP("condition", "vector.condition", "Box-like conditions for switching direction of squat", condition_));
 }
 
 void LeoSandboxModel::configure(Configuration &config)
@@ -53,6 +56,7 @@ void LeoSandboxModel::configure(Configuration &config)
   target_env_ = (Environment*)config["target_env"].ptr(); // Select a real enviromnent if needed
   target_dof_ = config["target_dof"];
   animation_ = config["animation"].str();
+  condition_ = config["condition"].v();
 }
 
 void LeoSandboxModel::export_meshup_animation(const Vector &state, const Vector &action) const
@@ -113,8 +117,9 @@ void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
   dynamics_->finalize(*state, rbdl_addition_);
 
   // Compose a complete state <state, time, height, com, ..., squats>
+  // Immediately try to stand up
   state_.resize(stsStateDim);
-  state_ << *state, VectorConstructor(lower_height_), rbdl_addition_, VectorConstructor(0);
+  state_ << *state, VectorConstructor(upper_height_), rbdl_addition_, VectorConstructor(0);
   *state = state_;
 
   export_meshup_animation(state_, ConstantVector(target_dof_, 0));
@@ -166,14 +171,14 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
       rbdl_addition_, VectorConstructor(state_[stsSquats]);
 
   // Switch setpoint if needed
-  if (fabs((*next)[rlsComVelocityZ] - 0.0) < 0.01)
+  if (fabs((*next)[rlsComVelocityZ] - 0.0) < condition_[1])
   {
-    if (fabs((*next)[rlsRootZ] - lower_height_) < 0.01)
+    if (fabs((*next)[rlsRootZ] - lower_height_) < condition_[0])
     {
       (*next)[rlsRefRootZ] = upper_height_;
       std::cout << "Lower setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
     }
-    else if (fabs((*next)[rlsRootZ] - upper_height_) < 0.01)
+    else if (fabs((*next)[rlsRootZ] - upper_height_) < condition_[0])
     {
       (*next)[rlsRefRootZ] = lower_height_;
       std::cout << "Upper setpoint is reached at " << (*next)[rlsRootZ] << std::endl;

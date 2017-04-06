@@ -56,6 +56,7 @@ class LeoSandboxModel: public Sandbox
     DynamicalModel dm_;
     RBDLDynamics *dynamics_;
     std::string animation_;
+    Vector condition_;
 };
 
 class LeoSquattingSandboxModel : public LeoSandboxModel

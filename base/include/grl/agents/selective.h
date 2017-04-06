@@ -42,11 +42,13 @@ class SelectiveMasterAgent : public Agent
 
   protected:
     std::vector<SubAgent*> agent_;
+    std::vector<double> total_rewards_;
     SubAgent *current_agent_;
+    double total_reward_;
     double time_;
     
   public:
-    SelectiveMasterAgent() : agent_(2), current_agent_(NULL), time_(0)
+    SelectiveMasterAgent() : agent_(2), total_rewards_(0), current_agent_(NULL), total_reward_(0), time_(0)
     {
       agent_[0] = agent_[1] = NULL;
     }
@@ -55,6 +57,7 @@ class SelectiveMasterAgent : public Agent
     virtual void request(ConfigurationRequest *config);
     virtual void configure(Configuration &config);
     virtual void reconfigure(const Configuration &config);
+    virtual void report(std::ostream &os);
 
     // From Agent
     virtual void start(const Observation &obs, Action *action);

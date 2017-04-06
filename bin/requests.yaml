@@ -5070,6 +5070,12 @@ sandbox_model/leo_squatting:
     mutability: configuration
     default: 0
     optional: 1
+  condition:
+    type: vector.condition
+    description: Box-like conditions for switching direction of squat
+    mutability: configuration
+    default: "[ 0.01, 0.01 ]"
+    optional: 1
   lower_height:
     type: double.lower_height
     description: Lower bound of root height to switch direction

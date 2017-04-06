@@ -26,6 +26,8 @@
  */
 
 #include <grl/agents/selective.h>
+#include <cmath>
+#include <iomanip>
 
 using namespace grl;
 
@@ -50,6 +52,30 @@ void SelectiveMasterAgent::reconfigure(const Configuration &config)
 
 }
 
+void SelectiveMasterAgent::report(std::ostream &os)
+{
+  const int pw = 15;
+  std::stringstream progressString;
+  progressString << std::fixed << std::setprecision(3) << std::right;
+
+  std::cout << "   " << &total_rewards_ << std::endl;
+
+  // append cumulative reward in case of timeout termination
+  if (total_reward_ != 0)
+    total_rewards_.push_back(total_reward_);
+
+  int max_size = 10;
+  int size = std::min(max_size, static_cast<int>(total_rewards_.size()));
+
+  for (int i = 0; i < size; i++)
+    progressString << std::setw(pw) << total_rewards_[i];
+
+  for (int i = size; i < max_size; i++)
+    progressString << std::setw(pw) << std::numeric_limits<double>::quiet_NaN();
+
+  os << progressString.str();
+}
+
 void SelectiveMasterAgent::start(const Observation &obs, Action *action)
 {
   int idx = selectSubAgent(0, obs, action);
@@ -58,6 +84,8 @@ void SelectiveMasterAgent::start(const Observation &obs, Action *action)
   current_agent_->start(obs, action);
 
   time_ = 0;
+  total_reward_ = 0;
+  total_rewards_.clear();
 }
 
 void SelectiveMasterAgent::step(double tau, const Observation &obs, double reward, Action *action)
@@ -70,6 +98,9 @@ void SelectiveMasterAgent::step(double tau, const Observation &obs, double rewar
 void SelectiveMasterAgent::end(double tau, const Observation &obs, double reward)
 {
   current_agent_->end(tau, obs, reward);
+  total_reward_ += reward;
+  total_rewards_.push_back(total_reward_);
+  total_reward_ = 0;
 }
 
 size_t SelectiveMasterAgent::selectSubAgent(double time, const Observation &obs, Action *action)
@@ -92,11 +123,22 @@ size_t SelectiveMasterAgent::selectSubAgent(double time, const Observation &obs,
 
 void SelectiveMasterAgent::executeSubAgent(SubAgent *agent, double tau, const Observation &obs, double reward, Action *action)
 {
+  total_reward_ += reward;
+
+  // Calculate previous reward for debugging purpose
+  double tr = total_reward_;
+  for (int i = 0; i < total_rewards_.size(); i++)
+    tr += total_rewards_[i];
+  //std::cout << "Selective reward: " << tr << std::endl;
+  //std::cout << "   " << &total_rewards_ << std::endl;
+
   if (current_agent_ != agent)
   {
     current_agent_->end(tau, obs, reward);          // finish previous agent
     current_agent_ = agent;                         // switch to the new agent
     current_agent_->start(obs, action);             // start it to obtain action
+    total_rewards_.push_back(total_reward_);
+    total_reward_ = 0;
     INFO("Changing subAgents");
   }
   else

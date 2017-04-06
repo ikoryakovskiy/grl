@@ -132,7 +132,8 @@ void OnlineLearningExperiment::run()
       timer step_timer;
 
       Agent *agent = agent_;      
-      if (test) agent = test_agent_;
+      if (test)
+        agent = test_agent_;
       
       environment_->start(test, &obs);
 
@@ -159,8 +160,9 @@ void OnlineLearningExperiment::run()
         current_time += tau;
 
         CRAWL(action << " - " << reward << " -> " << obs);
-        
+
         total_reward += reward;
+        //std::cout << "Total reward: " << total_reward << std::endl;
 
         if (obs.size())
         {
@@ -176,13 +178,14 @@ void OnlineLearningExperiment::run()
         }
       } while (!terminal);
 
+      //std::cout << "Final total reward: " << total_reward << std::endl;
       if (test_interval_ >= 0)
       {
         if (test)
         {
           std::ostringstream oss;
           oss << std::setw(15) << tt+1-(tt+1)/(test_interval_+1) << std::setw(15) << ss << std::setw(15) << std::setprecision(3) << std::fixed << total_reward;
-          agent_->report(oss);
+          agent->report(oss);
           environment_->report(oss);
           curve_->set(VectorConstructor(total_reward));
         
@@ -195,10 +198,10 @@ void OnlineLearningExperiment::run()
       {
         std::ostringstream oss;
         oss << std::setw(15) << tt << std::setw(15) << ss << std::setw(15) << std::setprecision(3) << std::fixed << total_reward;
-        agent_->report(oss);
+        agent->report(oss);
         environment_->report(oss);
         curve_->set(VectorConstructor(total_reward));
-        
+
         INFO(oss.str());
         if (ofs.is_open())
           ofs << oss.str() << std::endl;
