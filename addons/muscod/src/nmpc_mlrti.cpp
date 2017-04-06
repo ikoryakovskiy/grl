@@ -271,6 +271,8 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
     std::cout << "                          param: [ " << initial_pf_ << "]" << std::endl;
   }
 
+  NMPCProblem* tmp_nmpc;
+
   // switch statement implementing the above mentioned finite state machine
   // 0: idle_call
   //    call idle_ at current state, retrieve feedback, start
@@ -443,8 +445,9 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
 
     // use pointers to identify different controllers
     // switch controllers cntl_ <-> idle_
-    cntl_ = nmpc_B_;
-    idle_ = nmpc_A_;
+    tmp_nmpc = cntl_; // bug 1 fix
+    cntl_ = idle_;
+    idle_ = tmp_nmpc;
 
     // set proper mode of controller
     // NOTE nmpc_mode 0 => provide feedback but then re-linearize controller
@@ -462,7 +465,7 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
     // change state:
     //   state -> 0 (idle_call)
     current_state_ = idle_call;
-
+    this->act(time, in, out); // bug 2 fix
     break; //optional
 
   default : //Optional
