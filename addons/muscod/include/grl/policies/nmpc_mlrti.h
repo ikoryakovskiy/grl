@@ -21,7 +21,7 @@ class NMPCPolicyMLRTI: public NMPCBase
 {
   public:
     TYPEINFO(
-        "policy/nmpc_mlrti",
+        "mapping/policy/nmpc_mlrti",
         "Thread-based nonlinear model predictive control policy using the MUSCOD library and implementing a multi-level real-time iteration "
     )
 
@@ -102,14 +102,14 @@ class NMPCPolicyMLRTI: public NMPCBase
   public:
     NMPCPolicyMLRTI():
         nmpc_ninit_(10),
+        muscod_A_(NULL),
+        nmpc_A_(NULL),
+        muscod_B_(NULL),
+        nmpc_B_(NULL),
         idle_iv_provided_ (true),
         idle_qc_retrieved_ (true),
         cntl_iv_provided_ (true),
-        cntl_qc_retrieved_ (true),
-        nmpc_A_(NULL),
-        nmpc_B_(NULL),
-        muscod_A_(NULL),
-        muscod_B_(NULL)
+        cntl_qc_retrieved_ (true)
     {}
 
     ~NMPCPolicyMLRTI();

@@ -267,10 +267,10 @@ struct MUSCODProblem {
     MUSCOD* muscod = NULL
   ) :
     m_verbose (false),
+    thread_id (""),
     cond_iv_ready_ (NULL),
     mutex_ (NULL),
-    m_extern_muscod(false),
-    thread_id ("")
+    m_extern_muscod(false)
   {
     // assign model and problem path
     m_problem_path = problem_path;

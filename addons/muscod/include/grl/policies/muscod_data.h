@@ -81,9 +81,9 @@ struct MuscodData {
     NXA(0),
     NU(0),
     NP(0),
-    quit(false),
     is_initialized(false),
-    got_dimensions(false)
+    got_dimensions(false),
+    quit(false)
   {}
 };
 

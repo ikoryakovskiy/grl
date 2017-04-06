@@ -162,7 +162,6 @@ void OnlineLearningExperiment::run()
         CRAWL(action << " - " << reward << " -> " << obs);
 
         total_reward += reward;
-        //std::cout << "Total reward: " << total_reward << std::endl;
 
         if (obs.size())
         {
@@ -178,7 +177,6 @@ void OnlineLearningExperiment::run()
         }
       } while (!terminal);
 
-      //std::cout << "Final total reward: " << total_reward << std::endl;
       if (test_interval_ >= 0)
       {
         if (test)

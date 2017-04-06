@@ -249,7 +249,7 @@ void *muscod_run (void *indata)
 
     // instantiate values of NMPC structure
     pthread_mutex_lock(nmpc.mutex_);
-    unsigned long NMSN = nmpc.NMSN();
+    //unsigned long NMSN = nmpc.NMSN();
     unsigned long NXD = nmpc.NXD();
     unsigned long NP = nmpc.NP();
     unsigned long NU = nmpc.NU();
@@ -527,8 +527,8 @@ void retrieve_qc (
     bool wait,
     bool verbose
 ) {
-    double total_time = 0.0;
-    unsigned long cnt;
+    //double total_time = 0.0;
+    //unsigned long cnt;
 
     // want to retrieve feedback?
     if ( !(*qc_retrieved) ) {

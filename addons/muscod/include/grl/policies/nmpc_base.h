@@ -44,8 +44,8 @@ class NMPCBase : public Policy
 
   //-------------------------------------- GRL -----------------------------------//
   protected:
-    int verbose_;
     int initFeedback_;
+    int verbose_;
     std::string model_name_, lua_model_, nmpc_model_name_, model_path_;
     Vector action_min_, action_max_;
 

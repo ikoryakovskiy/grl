@@ -246,7 +246,7 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
   cntl_->set_nmpc_mode(1);
 
   // define current state
-  STATE current_state = idle_call;
+  current_state_ = idle_call;
 
   if (verbose_)
     std::cout << "MUSCOD is reseted!" << std::endl;
