@@ -180,6 +180,12 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
     std::cout << "restoring MUSCOD-II state to" << std::endl;
     std::cout << "  " << nmpc_A_->m_options->modelDirectory << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
   }
+
+  //-------------------- Stop MLRTI NMPC threads --------------------- //
+  stop_thread(*nmpc_A_, &thread_A_, verbose_);
+  stop_thread(*nmpc_B_, &thread_B_, verbose_);
+
+  //------------------- Initialize MLRTI NMPC data ------------------- //
   nmpc_A_->m_muscod->readRestartFile(restart_path_.c_str(), restart_name_.c_str());
   nmpc_A_->m_muscod->nmpcInitialize (
       4, // guess_type = 4 for warm start
@@ -230,6 +236,19 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
     // 3) Preparation
     nmpc_B_->preparation();
   }
+
+  //-------------------- Start MLRTI NMPC threads -------------------- //
+  nmpc_A_->m_quit = false;
+  initialize_thread(
+    &thread_A_, muscod_run, static_cast<void*> (nmpc_A_),
+    &cond_iv_ready_A_, &mutex_A_, true
+  );
+
+  nmpc_B_->m_quit = false;
+  initialize_thread(
+    &thread_B_, muscod_run, static_cast<void*> (nmpc_B_),
+    &cond_iv_ready_B_, &mutex_B_, true
+  );
 
   //------------------- Define state of MLRTI NMPC ------------------- //
 

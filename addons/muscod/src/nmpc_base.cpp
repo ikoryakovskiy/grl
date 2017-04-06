@@ -160,6 +160,10 @@ void stop_thread (
 
     // join thread, which closes the thread
     pthread_join(*muscod_thread_, NULL);
+
+    // destroy mutexes, because reinitialization without destroy results in undefined behaviour
+    pthread_mutex_destroy(data_.mutex_);
+    pthread_cond_destroy (data_.cond_iv_ready_);
 }
 // run MUSCOD-II NMPC for several iterations to initialize controller for
 // current initial sd/pf, first qc is optional
