@@ -41,16 +41,17 @@ class SelectiveMasterAgent : public Agent
     TYPEINFO("agent/master/selective", "Selective agent which decides wich agent to run based on agents' confidence")
 
   protected:
-    std::vector<SubAgent*> agent_;
+    std::vector<SubAgent*> agents_;
     std::vector<double> total_rewards_;
     SubAgent *current_agent_;
+    int current_idx_;
     double total_reward_;
     double time_;
     
   public:
-    SelectiveMasterAgent() : agent_(2), total_rewards_(0), current_agent_(NULL), total_reward_(0), time_(0)
+    SelectiveMasterAgent() : agents_(2), total_rewards_(0), current_agent_(NULL), current_idx_(0), total_reward_(0), time_(0)
     {
-      agent_[0] = agent_[1] = NULL;
+      agents_[0] = agents_[1] = NULL;
     }
   
     // From Configurable    
@@ -65,7 +66,7 @@ class SelectiveMasterAgent : public Agent
     virtual void end(double tau, const Observation &obs, double reward);
     
     virtual size_t selectSubAgent(double time, const Observation &obs, Action *action);
-    virtual void executeSubAgent(SubAgent *agent, double tau, const Observation &obs, double reward, Action *action);
+    virtual void executeSubAgent(int idx, double tau, const Observation &obs, double reward, Action *action);
 };
 
 }

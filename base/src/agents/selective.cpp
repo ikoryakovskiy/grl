@@ -37,14 +37,14 @@ REGISTER_CONFIGURABLE(SelectiveMasterAgent)
 
 void SelectiveMasterAgent::request(ConfigurationRequest *config)
 {
-  config->push_back(CRP("agent1", "agent/sub", "First subagent", agent_[0]));
-  config->push_back(CRP("agent2", "agent/sub", "Second subagent", agent_[1]));
+  config->push_back(CRP("agent1", "agent/sub", "First subagent", agents_[0]));
+  config->push_back(CRP("agent2", "agent/sub", "Second subagent", agents_[1]));
 }
 
 void SelectiveMasterAgent::configure(Configuration &config)
 {
-  agent_[0] = (SubAgent*)config["agent1"].ptr();
-  agent_[1] = (SubAgent*)config["agent2"].ptr();
+  agents_[0] = (SubAgent*)config["agent1"].ptr();
+  agents_[1] = (SubAgent*)config["agent2"].ptr();
 }
 
 void SelectiveMasterAgent::reconfigure(const Configuration &config)
@@ -78,9 +78,9 @@ void SelectiveMasterAgent::report(std::ostream &os)
 
 void SelectiveMasterAgent::start(const Observation &obs, Action *action)
 {
-  int idx = selectSubAgent(0, obs, action);
+  current_idx_ = selectSubAgent(0, obs, action);
 
-  current_agent_ = agent_[idx];
+  current_agent_ = agents_[current_idx_];
   current_agent_->start(obs, action);
 
   time_ = 0;
@@ -92,7 +92,7 @@ void SelectiveMasterAgent::step(double tau, const Observation &obs, double rewar
 {
   time_ += tau;
   int idx = selectSubAgent(time_, obs, action);
-  executeSubAgent(agent_[idx], tau, obs, reward, action);
+  executeSubAgent(idx, tau, obs, reward, action);
 }
 
 void SelectiveMasterAgent::end(double tau, const Observation &obs, double reward)
@@ -106,12 +106,12 @@ void SelectiveMasterAgent::end(double tau, const Observation &obs, double reward
 size_t SelectiveMasterAgent::selectSubAgent(double time, const Observation &obs, Action *action)
 {
   // Find most confident agent
-  double maxconf = agent_[0]->confidence(obs);
+  double maxconf = agents_[0]->confidence(obs);
   size_t maxconfa = 0;
 
-  for (size_t ii=1; ii < agent_.size(); ++ii)
+  for (size_t ii=1; ii < agents_.size(); ++ii)
   {
-    double confidence = agent_[ii]->confidence(obs);
+    double confidence = agents_[ii]->confidence(obs);
     if (confidence > maxconf)
     {
       maxconf = confidence;
@@ -121,26 +121,26 @@ size_t SelectiveMasterAgent::selectSubAgent(double time, const Observation &obs,
   return maxconfa;
 }
 
-void SelectiveMasterAgent::executeSubAgent(SubAgent *agent, double tau, const Observation &obs, double reward, Action *action)
+void SelectiveMasterAgent::executeSubAgent(int idx, double tau, const Observation &obs, double reward, Action *action)
 {
-  total_reward_ += reward;
-
-  // Calculate previous reward for debugging purpose
-  double tr = total_reward_;
-  for (int i = 0; i < total_rewards_.size(); i++)
-    tr += total_rewards_[i];
-  //std::cout << "Selective reward: " << tr << std::endl;
-  //std::cout << "   " << &total_rewards_ << std::endl;
-
+  SubAgent *agent = agents_[idx];
   if (current_agent_ != agent)
   {
     current_agent_->end(tau, obs, reward);          // finish previous agent
     current_agent_ = agent;                         // switch to the new agent
     current_agent_->start(obs, action);             // start it to obtain action
-    total_rewards_.push_back(total_reward_);
-    total_reward_ = 0;
     INFO("Changing subAgents");
   }
   else
     current_agent_->step(tau, obs, reward, action); // or simply continue
+
+  // record rewards based on changes of the index
+  // therefore, also allow to use the same agent, but record it's performance at each stage
+  total_reward_ += reward;
+  if (current_idx_ != idx)
+  {
+    total_rewards_.push_back(total_reward_);
+    total_reward_ = 0;
+    current_idx_ = idx;
+  }
 }

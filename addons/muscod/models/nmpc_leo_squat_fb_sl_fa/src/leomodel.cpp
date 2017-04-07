@@ -62,11 +62,18 @@ void LeoModel::updateState (
 		qdot[i] = sd[i + nDof];
 	}
 
+  //double mu_c = -0.2937;
+  //double mu_v = 0.2424;
+  //double v_st = 1.025;
+
 	assert (nDof == nActuatedDof);
 	for (unsigned int i = 0; i < nActuatedDof; i++) {
 		// TODO control on voltage level
     tau[i] = torque_from_voltage_and_angular_velocity (u[i], qdot[i]);
-    //tau[i] = tau[i] - 0.1*qdot[i];  // friction
+    // friction
+    //tau[i] = tau[i] - 0.1*qdot[i];
+    //double friction = (( mu_c + (0.13*fabs(tanh(10000*qdot[i])) - mu_c) * exp( -(pow(qdot[i] / v_st, 2) ) ) ) + mu_v*fabs(qdot[i]));
+    //tau[i] = copysign(fmax(fabs(tau[i]) - friction, 0), tau[i]);
 	}
 }
 

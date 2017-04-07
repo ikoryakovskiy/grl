@@ -160,17 +160,39 @@ local function get_point_by_name (container, name)
     print('container does not contain point with name: ', name)
 end
 
+function math.sign(x)
+   if x<0 then
+     return -1
+   elseif x>0 then
+     return 1
+   else
+     return 0
+   end
+end
+
 function control(state, action)
     -- Convert voltage to torque
     Kt = 0.006325081
     G = 212.6
     R = 4.6
+    mu_c = -0.2937
+    mu_v = 0.2424
+    v_st = 1.025
     dof = 4
     for ii = 0, dof-1 do
---      print(action[ii])
+--    from https://www.ram.ewi.utwente.nl/aigaion/attachments/single/1015
+--    mu_c = -0.2937 (-3.865, 3.278)
+--    mu_v = 0.2424 (-1.523, 2.008)
+--    v_st = 1.025 (-1.224, 3.273)
+--    fittedfriction2 = (( mu_c + (0.13*abs(tanh(10000*x)) - mu_c) .* exp( -((x / v_st).^2 ) ) ) .* sign(x) + mu_v*x)
+--
       action[ii] = Kt*G*(action[ii] - Kt*G*state[dof + ii])/R;
 --      print(action[ii])
-      -- action[ii] = action[ii] - 0.0*state[dof + ii]; -- Friction
+      --action[ii] = action[ii] - 0.5*state[dof + ii]; -- Friction
+      --x = state[dof + ii]
+      --friction = (( mu_c + (0.13*math.abs(math.tanh(10000*x)) - mu_c) * math.exp( -(math.pow(x / v_st, 2) ) ) ) + mu_v*math.abs(x))
+      --action[ii] = math.sign(x) * math.max(math.abs(action[ii]) - friction, 0)
+      --print(friction, action[ii])
     end
     return {action[0], action[1], action[2], action[3]}
 end
