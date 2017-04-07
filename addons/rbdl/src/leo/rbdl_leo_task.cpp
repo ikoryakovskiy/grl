@@ -233,7 +233,7 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   //double shaping = -fabs(next [rlsRootZ] - refRootZ); // distance to setpoint at time (t) or (t+1)
 
   // reward is a negative of cost
-  *reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*cost_nmpc_reg) + weight_shaping_*shaping;
+  *reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*cost_nmpc_reg) - weight_shaping_*shaping;
 }
 
 int LeoSquattingTask::failed(const Vector &state) const
