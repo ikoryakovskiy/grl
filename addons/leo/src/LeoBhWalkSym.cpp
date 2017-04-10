@@ -73,7 +73,6 @@ CLeoBhWalkSym::CLeoBhWalkSym(ISTGActuation *actuationInterface):
   mScaleFactKneeStanceAngleRate = 0.15;
   mScaleFactKneeSwingAngle      = 1.33;
   mScaleFactKneeSwingAngleRate  = 0.15;
-  mMultiResScaleFact            = -1.0;
   mContinueAfterFall            = false;
 
   for (int iAction=0; iAction<LEOBHWALKSYM_MAX_NUM_ACTIONS; iAction++)
@@ -131,11 +130,10 @@ bool CLeoBhWalkSym::readConfig(const CConfigSection &xmlRoot)
   configresult &= mLogAssert(configNode.get("scaleFactKneeSwingAngle", 		&mScaleFactKneeSwingAngle));
   configresult &= mLogAssert(configNode.get("scaleFactKneeSwingAngleRate",	&mScaleFactKneeSwingAngleRate));
   configresult &= mLogAssert(configNode.get("continueAfterFall",	&mContinueAfterFall));
-  configNode.get("multiResScaleFact", &mMultiResScaleFact);
 
   /////////////
   configNode = xmlRoot.section("ode");
-  configNode.get("steptime", &mTotalStepTime);
+  configresult &= mLogAssert(configNode.get("steptime", &mTotalStepTime));
 
   /////////////
   configNode = xmlRoot.section("constants");
