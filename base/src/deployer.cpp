@@ -14,16 +14,18 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * \endverbatim
  */
+
+#include <getopt.h>
 
 #include <grl/grl.h>
 #include <grl/configurable.h>
@@ -54,7 +56,7 @@ int main(int argc, char **argv)
         user_config = true;
         break;
       default:
-        return 1;    
+        return 1;
     }
   }
 
@@ -63,7 +65,7 @@ int main(int argc, char **argv)
     ERROR("Usage: " << endl << "  " << argv[0] << " [-v] [-c] [-s seed] <yaml file> [yaml file...]");
     return 1;
   }
-  
+
   if (seed)
   {
     srand(seed);
@@ -74,27 +76,27 @@ int main(int argc, char **argv)
     srand(time(NULL));
     srand48(time(NULL));
   }
-  
+
   // Load plugins
   loadPlugins();
-  
+
   Configurator *temp=NULL;
   for (; optind < argc; ++optind)
   {
     NOTICE("Loading configuration from '" << argv[optind] << "'");
     temp = loadYAML(argv[optind], "", temp);
   }
-  
+
   if (!temp)
   {
     ERROR("Could not load configuration");
     return 1;
   }
-  
+
   NOTICE("Instantiating configuration");
   configurator_ = temp->instantiate();
   delete temp;
-  
+
   if (!configurator_)
   {
     ERROR("Could not instantiate configuration");
@@ -102,22 +104,22 @@ int main(int argc, char **argv)
   }
 
   Configurator *expconf = configurator_->find("experiment");
-  
+
   if (!expconf)
   {
     ERROR("YAML configuration does not specify an experiment");
     return 1;
   }
-  
+
   Configurable *obj = expconf->ptr();
   Experiment *experiment = dynamic_cast<Experiment*>(obj);
-  
+
   if (!experiment)
   {
     ERROR("Specified experiment has wrong type");
     return 1;
   }
-  
+
   if (user_config)
     reconfigure();
 
@@ -134,11 +136,11 @@ int main(int argc, char **argv)
     ERROR(e.what());
     ERROR("Stack trace:\n" << e.trace());
   }
-  
+
   NOTICE("Cleaning up");
-  
+
   delete configurator_;
-  
+
   NOTICE("Exiting");
 
   return 0;
