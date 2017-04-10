@@ -565,7 +565,7 @@ void retrieve_qc (
         pthread_mutex_unlock(nmpc->mutex_);
 
         if (verbose) {
-            std::cout << "MAIN: qc = " << first_qc->transpose() << std::endl;
+            std::cout << "MAIN: qc = " << first_qc << std::endl;
         }
 
         // signal back that control was provided
