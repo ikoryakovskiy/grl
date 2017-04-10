@@ -32,10 +32,10 @@ void CLeoBhBase::fillLeoState(const Vector &obs, const Vector &action, CLeoState
     leoState.mJointSpeeds[i] = mJointSpeedFilter[i].filter(obs[ljNumJoints+i]);
   }
 
-  leoState.mFootContacts  = obs[2*ljNumJoints+lfToeRight]  > 0.5 ? LEO_FOOTSENSOR_RIGHT_TOE  : 0;
-  leoState.mFootContacts |= obs[2*ljNumJoints+lfHeelRight] > 0.5 ? LEO_FOOTSENSOR_RIGHT_HEEL : 0;
-  leoState.mFootContacts |= obs[2*ljNumJoints+lfToeLeft]   > 0.5 ? LEO_FOOTSENSOR_LEFT_TOE   : 0;
-  leoState.mFootContacts |= obs[2*ljNumJoints+lfHeelLeft]  > 0.5 ? LEO_FOOTSENSOR_LEFT_HEEL  : 0;
+  leoState.mFootContacts  = (obs[2*ljNumJoints+lfToeRight]  > 0.5) ? LEO_FOOTSENSOR_RIGHT_TOE  : 0;
+  leoState.mFootContacts |= (obs[2*ljNumJoints+lfHeelRight] > 0.5) ? LEO_FOOTSENSOR_RIGHT_HEEL : 0;
+  leoState.mFootContacts |= (obs[2*ljNumJoints+lfToeLeft]   > 0.5) ? LEO_FOOTSENSOR_LEFT_TOE   : 0;
+  leoState.mFootContacts |= (obs[2*ljNumJoints+lfHeelLeft]  > 0.5) ? LEO_FOOTSENSOR_LEFT_HEEL  : 0;
 
   // required for the correct energy calculation in the reward function
   if (action.size())
