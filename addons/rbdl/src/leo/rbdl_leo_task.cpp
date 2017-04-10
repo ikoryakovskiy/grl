@@ -50,6 +50,7 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("weight_nmpc", "double.weight_nmpc", "Weight on the NMPC cost (excluding shaping)", weight_nmpc_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("weight_nmpc_aux", "double.weight_nmpc_aux", "Weight on the part of NMPC cost with auxilary ", weight_nmpc_aux_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("weight_shaping", "double.weight_shaping", "Weight on the shaping cost", weight_shaping_, CRP::System, 0.0, DBL_MAX));
+  config->push_back(CRP("power", "double.power", "Power of objective functions comprising cost", power_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("setpoint_reward", "int.setpoint_reward", "If zero, reward at setpoint is given for setpoint at time t, otherwise - at t+1", setpoint_reward_, CRP::System, 0, 1));
   config->push_back(CRP("gamma", "double.gamma" "Discount rate used for correct shaping", gamma_));
   config->push_back(CRP("continue_after_fall", "int.continue_after_fall", "Continue exectution of the environemnt even after a fall of Leo", continue_after_fall_, CRP::System, 0, 1));
@@ -63,6 +64,7 @@ void LeoSquattingTask::configure(Configuration &config)
   weight_nmpc_ = config["weight_nmpc"];
   weight_nmpc_aux_ = config["weight_nmpc_aux"];
   weight_shaping_ = config["weight_shaping"];
+  power_ = config["power"];
   setpoint_reward_ = config["setpoint_reward"];
   gamma_ = config["gamma"];
   continue_after_fall_ = config["continue_after_fall"];
@@ -179,7 +181,7 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
     return;
   }
 
-  double cost_nmpc = 0, cost_nmpc_reg = 0;
+  double cost_nmpc = 0, cost_nmpc_aux = 0;
 
   double refRootZ = setpoint_reward_ ? next[rlsRefRootZ] : state[rlsRefRootZ];
 
@@ -187,10 +189,10 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   double suppport_center = 0.5 * (next[rlsLeftTipX] + next[rlsLeftHeelX]);
 
   // track: || root_z - h_ref ||_2^2
-  cost_nmpc +=  pow(50.0 * (next[rlsRootZ] - refRootZ), 2);
+  cost_nmpc +=  pow(50.0 * fabs(next[rlsRootZ] - refRootZ), power_);
 
   // track: || com_x - support center_x ||_2^2
-  cost_nmpc +=  pow( 100.00 * (next[rlsComX] - suppport_center), 2);
+  cost_nmpc_aux +=  pow( 100.00 * fabs(next[rlsComX] - suppport_center), power_);
 
   //double velW = 10.0; // 10.0
   //cost +=  pow( velW * next[rlsComVelocityX], 2);
@@ -201,7 +203,7 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   // NOTE: sum of lower body angles is equal to angle between ground slope
   //       and torso. Minimizing deviation from zero keeps torso upright
   //       during motion execution.
-  cost_nmpc_reg += pow(30.00 * ( next[rlsAnkleAngle] + next[rlsKneeAngle] + next[rlsHipAngle] - (0.15) ), 2); // desired torso angle
+  cost_nmpc_aux += pow(30.00 * fabs( next[rlsAnkleAngle] + next[rlsKneeAngle] + next[rlsHipAngle] - (0.15) ), power_); // desired torso angle
 
   // regularize torso
   // is this a good way for torso? Results in a very high penalty, and very weird behaviour
@@ -210,18 +212,17 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   // regularize: || qdot ||_2^2
   // res[res_cnt++] = 6.00 * sd[QDOTS["arm"]]; // arm
   double rateW = 5.0; // 6.0
-  cost_nmpc_reg += pow(rateW * next[rlsHipAngleRate], 2); // hip_left
-  cost_nmpc_reg += pow(rateW * next[rlsKneeAngleRate], 2); // knee_left
-  cost_nmpc_reg += pow(rateW * next[rlsAnkleAngleRate], 2); // ankle_left
+  cost_nmpc_aux += pow(rateW * fabs(next[rlsHipAngleRate]), power_); // hip_left
+  cost_nmpc_aux += pow(rateW * fabs(next[rlsKneeAngleRate]), power_); // knee_left
+  cost_nmpc_aux += pow(rateW * fabs(next[rlsAnkleAngleRate]), power_); // ankle_left
 
   // regularize: || u ||_2^2
   // res[res_cnt++] = 0.01 * u[TAUS["arm"]]; // arm
 
   double shaping = 0;
-  shaping += pow(0.01 * action[0], 2); // hip_left
-  shaping += pow(0.01 * action[1], 2); // knee_left
-  shaping += pow(0.01 * action[2], 2); // ankle_left
-
+  shaping += pow(0.01 * fabs(action[0]), power_); // hip_left
+  shaping += pow(0.01 * fabs(action[1]), power_); // knee_left
+  shaping += pow(0.01 * fabs(action[2]), power_); // ankle_left
 /*
   double F0 = -fabs(state[rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t)
   double F1 = -fabs(next [rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t+1)
@@ -233,7 +234,7 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   //double shaping = -fabs(next [rlsRootZ] - refRootZ); // distance to setpoint at time (t) or (t+1)
 
   // reward is a negative of cost
-  *reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*cost_nmpc_reg) - weight_shaping_*shaping;
+  *reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*cost_nmpc_aux) - weight_shaping_*shaping;
 }
 
 int LeoSquattingTask::failed(const Vector &state) const

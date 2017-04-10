@@ -6188,6 +6188,14 @@ task/leo_squatting:
     optional: 1
     min: 0
     max: 1.797693134862316e+308
+  power:
+    type: double.power
+    description: Power of objective functions comprising cost
+    mutability: system
+    default: 2
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
   setpoint_reward:
     type: int.setpoint_reward
     description: If zero, reward at setpoint is given for setpoint at time t, otherwise - at t+1
