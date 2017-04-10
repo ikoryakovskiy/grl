@@ -18,7 +18,9 @@
 class CLeoBhWalkSym: public CSTGAgentQLeo
 {
   protected:
+    // Constants
     double        mTotalStepTime;
+    double        mUpLegLength, mLoLegLength;
 
     // Learning algorithm options
     bool          mUseEffectiveAction;        // Calculate the effectively executed action to improve convergence
@@ -85,6 +87,7 @@ class CLeoBhWalkSym: public CSTGAgentQLeo
     double        mLeftAnklePos, mRightAnklePos;
     uint64_t      mSwingTime;                 // Time since last footstep [us]
     int           mFootContactNum;
+    double        mHipHeight;
 
     // Performance variables
     int           mNumFootsteps;              // Number of footsteps since last reset

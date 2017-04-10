@@ -137,6 +137,11 @@ bool CLeoBhWalkSym::readConfig(const CConfigSection &xmlRoot)
   configNode = xmlRoot.section("ode");
   configNode.get("steptime", &mTotalStepTime);
 
+  /////////////
+  configNode = xmlRoot.section("constants");
+  configresult &= mLogAssert(configNode.get("upleglength", &mUpLegLength));
+  configresult &= mLogAssert(configNode.get("loleglength", &mLoLegLength));
+
   return configresult;
 }
 
@@ -157,8 +162,8 @@ void CLeoBhWalkSym::updateDerivedStateVars(CLeoState* currentSTGState)
   mFootContactNum = std::bitset<8>(currentSTGState->mFootContacts).count();
 
   // Determine foot position relative to the hip axis
-  double upLegLength        = 0.1160;  // length of the thigh
-  double loLegLength        = 0.1085; // length of the shin
+  double upLegLength        = mUpLegLength; // length of the thigh
+  double loLegLength        = mLoLegLength; // length of the shin
   double leftHipAbsAngle    = currentSTGState->mJointAngles[ljTorso] + currentSTGState->mJointAngles[ljHipLeft];
   double leftKneeAbsAngle   = leftHipAbsAngle + currentSTGState->mJointAngles[ljKneeLeft];
   double leftAnkleAbsAngle  = leftKneeAbsAngle + currentSTGState->mJointAngles[ljAnkleLeft];
@@ -182,11 +187,11 @@ void CLeoBhWalkSym::updateDerivedStateVars(CLeoState* currentSTGState)
   double rightHeelZ         = rightAnkleZ + ankleHeelDZ*cos(rightAnkleAbsAngle) + ankleHeelDX*sin(rightAnkleAbsAngle);
   double rightToeZ          = rightAnkleZ + ankleToeDZ*cos(rightAnkleAbsAngle) + ankleToeDX*sin(rightAnkleAbsAngle);
 
-  double hipHeight          = std::max(std::max(leftHeelZ, leftToeZ), std::max(rightHeelZ, rightToeZ));
-  leftHeelZ  = hipHeight - leftHeelZ;
-  leftToeZ   = hipHeight - leftToeZ;
-  rightHeelZ = hipHeight - rightHeelZ;
-  rightToeZ  = hipHeight - rightToeZ;
+  mHipHeight                = std::max(std::max(leftHeelZ, leftToeZ), std::max(rightHeelZ, rightToeZ));
+  leftHeelZ  = mHipHeight - leftHeelZ;
+  leftToeZ   = mHipHeight - leftToeZ;
+  rightHeelZ = mHipHeight - rightHeelZ;
+  rightToeZ  = mHipHeight - rightToeZ;
   mLogDebugLn("leftHeelZ:" << leftHeelZ << ", leftToeZ:" << leftToeZ << ", rightHeelZ:" << rightHeelZ << ", rightToeZ:" << rightToeZ);
 
   bool leftIsStance;
@@ -354,7 +359,9 @@ double CLeoBhWalkSym::getEnergyUsage()
   double rightHipWork  = getJointMotorWork(ljHipRight);
   double leftKneeWork  = getJointMotorWork(ljKneeLeft);
   double rightKneeWork = getJointMotorWork(ljKneeRight);
-  return leftHipWork + rightHipWork + leftKneeWork + rightKneeWork;
+  double leftAnkleWork = getJointMotorWork(ljAnkleLeft);
+  double rightAnkleWork = getJointMotorWork(ljAnkleRight);
+  return leftHipWork + rightHipWork + leftKneeWork + rightKneeWork + leftAnkleWork + rightAnkleWork;
 }
 
 double CLeoBhWalkSym::getFootstepReward()
@@ -481,6 +488,15 @@ bool CLeoBhWalkSym::isDoomedToFall(CLeoState* state, bool report)
 {
   double torsoComstraint = 1; // 1
   double stanceComstraint = 0.36*M_PI; // 0.36*M_PI
+
+  // Divyam's termination condition
+  if ((fabs(state->mJointAngles[ljTorso]) > torsoComstraint) ||
+      (fabs(state->mJointAngles[ljAnkleLeft]) > stanceComstraint) ||
+      (fabs(state->mJointAngles[ljAnkleRight]) > stanceComstraint) ||
+      (mHipHeight < 0.15))
+    return true;
+  else
+    return false;
 
   if (!mContinueAfterFall)
   {
