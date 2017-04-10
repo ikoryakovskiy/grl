@@ -300,9 +300,9 @@ void *muscod_run (void *indata)
         pf << nmpc.m_pf;
         if (verbose) {
             std::cout << "THREAD '" << thread_id << "': sd = ";
-            std::cout << sd.transpose () << std::endl;
+            std::cout << sd << std::endl;
             std::cout << "THREAD '" << thread_id << "': pf = ";
-            std::cout << pf.transpose () << std::endl;
+            std::cout << pf << std::endl;
         }
 
         // UNLOCK THE MUTEX
@@ -323,7 +323,7 @@ void *muscod_run (void *indata)
         pthread_mutex_unlock(nmpc.mutex_); // --> Unlock the mutex
 
         if (verbose) {
-            std::cout << "THREAD '" << thread_id << "': qc = " << qc.transpose() << std::endl;
+            std::cout << "THREAD '" << thread_id << "': qc = " << qc << std::endl;
         }
 
         pthread_mutex_lock(nmpc.mutex_); // --> Lock the mutex
