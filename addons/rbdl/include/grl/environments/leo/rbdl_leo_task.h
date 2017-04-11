@@ -91,8 +91,8 @@ class LeoSquattingTask : public Task
     TYPEINFO("task/leo_squatting", "Task specification for Leo squatting with an auto-actuated arm")
 
   public:
-    LeoSquattingTask() : target_env_(NULL), timeout_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_shaping_(0.0), power_(2.0),
-      randomize_(0), dof_(3), gamma_(0.95), continue_after_fall_(0), setpoint_reward_(1) { }
+    LeoSquattingTask() : target_env_(NULL), timeout_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_nmpc_qd_(1.0), weight_shaping_(0.0), power_(2.0),
+      randomize_(0), dof_(3), continue_after_fall_(0), setpoint_reward_(1) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -110,11 +110,10 @@ class LeoSquattingTask : public Task
   protected:
     Environment *target_env_;
     double timeout_;
-    double weight_nmpc_, weight_nmpc_aux_, weight_shaping_;
+    double weight_nmpc_, weight_nmpc_aux_, weight_nmpc_qd_, weight_shaping_;
     double power_;
     int randomize_;
     int dof_;
-    double gamma_;
     Vector target_obs_min_, target_obs_max_;
     int continue_after_fall_;
     int setpoint_reward_;

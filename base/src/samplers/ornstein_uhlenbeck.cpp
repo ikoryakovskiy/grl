@@ -98,6 +98,7 @@ size_t OrnsteinUhlenbeckSampler::sample(double time, const LargeVector &values, 
   // Greedy action selection
   size_t offset = GreedySampler::sample(values, at);
   CRAWL(discretizer_->at(offset));
+  CRAWL(discretizer_->discretize(discretizer_->at(offset)));
 
   // Supress noise at the start of an episode
   if (time == 0.0)

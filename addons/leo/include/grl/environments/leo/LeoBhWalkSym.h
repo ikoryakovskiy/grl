@@ -18,7 +18,9 @@
 class CLeoBhWalkSym: public CSTGAgentQLeo
 {
   protected:
+    // Constants
     double        mTotalStepTime;
+    double        mUpLegLength, mLoLegLength;
 
     // Learning algorithm options
     bool          mUseEffectiveAction;        // Calculate the effectively executed action to improve convergence
@@ -53,7 +55,6 @@ class CLeoBhWalkSym: public CSTGAgentQLeo
     double        mScaleFactKneeStanceAngleRate;
     double        mScaleFactKneeSwingAngle;
     double        mScaleFactKneeSwingAngleRate;
-    double        mMultiResScaleFact;         // If > 0, multi-resolution tile coding will be used with an additional layer, uniformly scaled with this factor (state space only, not action space)
     bool          mContinueAfterFall;
 
     // Termination variables
@@ -85,6 +86,7 @@ class CLeoBhWalkSym: public CSTGAgentQLeo
     double        mLeftAnklePos, mRightAnklePos;
     uint64_t      mSwingTime;                 // Time since last footstep [us]
     int           mFootContactNum;
+    double        mHipHeight;
 
     // Performance variables
     int           mNumFootsteps;              // Number of footsteps since last reset

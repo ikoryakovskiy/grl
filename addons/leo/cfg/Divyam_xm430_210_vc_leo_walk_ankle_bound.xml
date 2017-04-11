@@ -12,12 +12,12 @@
 		<!-- Initial condition for learning, all angles measured with respect to gravity  -->
 		<!-- Don't let the torso lean too much forward; it helps balancing in the beginning -->
 		<leftupperlegICangle>0</leftupperlegICangle>
-		<rightupperlegICangle>0</rightupperlegICangle>
+		<rightupperlegICangle oldvalue="-0.72">-0.72</rightupperlegICangle>
 		<leftlowerlegICangle>0</leftlowerlegICangle>
-		<rightlowerlegICangle>0</rightlowerlegICangle>
-		<leftfootICangle>0</leftfootICangle>
-		<rightfootICangle>0</rightfootICangle>
-		<torsoICangle>0</torsoICangle>
+		<rightlowerlegICangle oldvalue="0.55">0.55</rightlowerlegICangle>
+		<leftfootICangle>0.0</leftfootICangle>
+		<rightfootICangle oldvalue="rightlowerlegICangle">rightlowerlegICangle</rightfootICangle>
+		<torsoICangle oldvalue="0.35">0.1</torsoICangle>
 		<leofloorheightdata>0.0410;0.0415;0.0415;0.042;0.0425;0.0425;0.043;0.0435;0.0435;0.0435;0.0435;0.044;0.044;0.044;0.044;0.044;0.044;0.0435;0.0435;0.0435;0.044;0.044;0.0445;0.0445;0.0445;0.045;0.045;0.045;0.0455;0.0455;0.0455;0.0455;0.0455;0.0455;0.0455;0.0455;0.0455;0.0455;0.0455;0.0455;0.045;0.045;0.045;0.0445;0.0445;0.0445;0.0445;0.0445;0.0445;0.0445;0.0445;0.044;0.0435;0.0435;0.0435;0.044;0.044;0.0445;0.0445;0.0445;0.0445;0.0445;0.0445;0.0445;0.0445;0.0445;0.0445;0.0435;0.0435;0.043;0.043;0.0425;0.0425;0.0425;0.042;0.042;0.0415;0.0415;0.0415;0.0415;0.0415;0.0415;0.0415;0.0415;0.0415;0.0415;0.0415;0.0415;0.0415;0.042;0.0425;0.0425;0.0425;0.0425;0.0425;0.043;0.043;0.0435;0.043;0.043;0.043;0.0425;0.0425;0.0425;0.042;0.0415;0.0415;0.041;0.0405;0.0405;0.0395;0.0395;0.039;0.0385;0.0385;0.0385;0.0385;0.0385;0.0385;0.0385;0.0385;0.0385;0.0385;0.038;0.0375;0.0375;0.037;0.037;0.0365;0.0365;0.0365;0.036;0.0355;0.036;0.0355;0.0355;0.0355;0.0355;0.0355;0.0355;0.0355;0.0355;0.0355;0.035;0.035;0.0345;0.0345;0.0345;0.0345;0.0345;0.034;0.034;0.034;0.0345;0.0345;0.035;0.0355;0.0355;0.0355;0.036;0.036;0.0365;0.0365;0.037;0.037;0.0375;0.0372;0.0372;0.037;0.037;0.037;0.0375;0.0375;0.038;0.0385;0.039;0.0395;0.04;0.0405;0.041;0.0415;0.0415;0.0415;0.0415;0.0415;0.0415;0.041;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.0405;0.041;0.041;0.0415;0.0415;0.0415;0.042;0.042;0.0415;0.0415;0.041;0.041;0.0405;0.0405;0.04;0.0395;0.0395;0.039;0.0385;0.0385;0.0385;0.039;0.039;0.0395;0.0395;0.0395;0.04;0.04;0.04;0.04;0.0395;0.04;0.0395;0.0395;0.0395;0.0395;0.039;0.0385;0.0385;0.038;0.038;0.038;0.038;0.0385;0.0385;0.0385;0.0385;0.039;0.038;0.038;0.0395;0.0395;0.0395;0.04;0.04;0.04;0.04;0.04;0.04;0.04;0.04;0.04;0.0405;0.0405;0.0405;0.0405;0.041</leofloorheightdata>
 		<leofloorradius>1.72</leofloorradius>
 		<leofloorlength>2*pi*leofloorradius</leofloorlength>
@@ -36,7 +36,7 @@
 		<s>surface</s>
 	</strings>
 	<appLogLevel info="2" warn="4" err="5">0</appLogLevel>
-        <loglevel info="2" warn="4" err="5">error</loglevel>
+  <loglevel info="2" warn="4" err="5">error</loglevel>
 	<learner>
 		<lifeTime comment="in seconds">36000</lifeTime>
 		<autoSavePolicy>true</autoSavePolicy>
@@ -71,20 +71,20 @@
 		<syncExploration>false</syncExploration>
 		
 		<!-- rewards -->
-		<rewardTime comment="per step!">-1.0</rewardTime>
+		<rewardTime comment="per step!">-1.5</rewardTime>
 		<rewardFootstepDist>0.0</rewardFootstepDist>
 		<rewardFootstepBackward>0.0</rewardFootstepBackward>
 		<rewardFootstepDistCont>300.0</rewardFootstepDistCont>
 		<rewardFootstepMaxLength>10.20</rewardFootstepMaxLength>
-		<rewardEnergy comment="per joule!">-3.0</rewardEnergy>
-		<rewardFootClearance>-1.0</rewardFootClearance>
-		<rewardFootClearanceThreshold comment="in cm">0.02</rewardFootClearanceThreshold>
-		<rewardDoomedToFall>-125.0</rewardDoomedToFall>
-		<rewardHipAngleChange>0.0</rewardHipAngleChange>
+		<rewardEnergy comment="per joule!">-2.0</rewardEnergy>
+		<rewardFootClearance>0</rewardFootClearance>
+		<rewardFootClearanceThreshold>0</rewardFootClearanceThreshold>
+		<rewardDoomedToFall>-75</rewardDoomedToFall>
+		<rewardHipAngleChange>0</rewardHipAngleChange>
 		<rewardDoubleStance>0.0</rewardDoubleStance>
 		<rewardStanceSwingFootDist>0.0</rewardStanceSwingFootDist>
-		<rewardTorsoUpright>-1.0</rewardTorsoUpright>
-		<rewardTorsoUprightAngle lastvalue="-0.15">-0.07</rewardTorsoUprightAngle>
+		<rewardTorsoUpright>0.0</rewardTorsoUpright>
+		<rewardTorsoUprightAngle lastvalue="-0.15">-0.15</rewardTorsoUprightAngle>
 		<rewardTorsoUprightAngleMargin definition="angle deviation [rad] for which reward is 50%">0.1</rewardTorsoUprightAngleMargin>
 		<rewardFootContact>0.0</rewardFootContact>
 		<trialTimeoutSeconds>25</trialTimeoutSeconds>
@@ -281,7 +281,7 @@
 		<actuationdelay comment="in seconds">0.000</actuationdelay>
 		<!-- Merge this configuration with leo's ODE configuration -->
 		<include>
-			<filename>xm430_210_vc_leoconfig.xml</filename>
+			<filename>Divyam_xm430_210_vc_leoconfig.xml</filename>
 			<path>ode/</path>
 		</include>
 		<object>

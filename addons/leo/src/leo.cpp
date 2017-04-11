@@ -32,10 +32,10 @@ void CLeoBhBase::fillLeoState(const Vector &obs, const Vector &action, CLeoState
     leoState.mJointSpeeds[i] = mJointSpeedFilter[i].filter(obs[ljNumJoints+i]);
   }
 
-  leoState.mFootContacts  = obs[2*ljNumJoints+lfToeRight]  > 0.5 ? LEO_FOOTSENSOR_RIGHT_TOE  : 0;
-  leoState.mFootContacts |= obs[2*ljNumJoints+lfHeelRight] > 0.5 ? LEO_FOOTSENSOR_RIGHT_HEEL : 0;
-  leoState.mFootContacts |= obs[2*ljNumJoints+lfToeLeft]   > 0.5 ? LEO_FOOTSENSOR_LEFT_TOE   : 0;
-  leoState.mFootContacts |= obs[2*ljNumJoints+lfHeelLeft]  > 0.5 ? LEO_FOOTSENSOR_LEFT_HEEL  : 0;
+  leoState.mFootContacts  = (obs[2*ljNumJoints+lfToeRight]  > 0.5) ? LEO_FOOTSENSOR_RIGHT_TOE  : 0;
+  leoState.mFootContacts |= (obs[2*ljNumJoints+lfHeelRight] > 0.5) ? LEO_FOOTSENSOR_RIGHT_HEEL : 0;
+  leoState.mFootContacts |= (obs[2*ljNumJoints+lfToeLeft]   > 0.5) ? LEO_FOOTSENSOR_LEFT_TOE   : 0;
+  leoState.mFootContacts |= (obs[2*ljNumJoints+lfHeelLeft]  > 0.5) ? LEO_FOOTSENSOR_LEFT_HEEL  : 0;
 
   // required for the correct energy calculation in the reward function
   if (action.size())
@@ -179,24 +179,20 @@ void LeoBaseEnvironment::configure(Configuration &config)
   // Process configuration of Leo
   CXMLConfiguration xmlConfig;
   if (!xmlConfig.loadFile(xml_))
-  {
-    ERROR("Couldn't load XML configuration file \"" << xml_ << "\"!\nPlease check that the file exists and that it is sound (error: " << xmlConfig.errorStr() << ").");
-    return;
-  }
+    throw Exception("Couldn't load XML configuration file \"" + xml_ + "\"!\nPlease check that the file exists and that it is sound (error: " + xmlConfig.errorStr() + ").");
 
   // Resolve expressions
   xmlConfig.resolveExpressions();
 
   // Read rewards and preprogrammed angles
-  bh_->readConfig(xmlConfig.root());
+  bool configresult = bh_->readConfig(xmlConfig.root());
+  if (!configresult)
+    throw Exception("LeoBaseEnvironment: Configuration of ODE environment cannot load due to parameter miss");
 
   // Create ode object which resolves states and actions
   ODESTGEnvironment *ode = new ODESTGEnvironment();
   if (!ode->configure(config))
-  {
-    ERROR("Could not initialize STG ODE environment");
-    return;
-  }
+    throw Exception("LeoBaseEnvironment: Could not initialize STG ODE environment");
 
   // Select states and actions that are delivered to an agent
   configParseObservations(config, ode->getSensors());
