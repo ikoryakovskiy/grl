@@ -61,9 +61,11 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
   //------------------- Initialize NMPC thread A ------------------- //
   // initialize MUSCOD instance
   muscod_A_ = new MUSCOD();
-  if (verbose_)
-  {
-        muscod_A_->setLogLevelTotal(-1);
+  if (verbose_) {
+    muscod_A_->setLogLevelAndFile(-1, NULL, NULL);
+  } else {
+    muscod_A_->setLogLevelAndFile(-1, NULL, NULL);
+    muscod_A_->setLogLevelScreen(-1);
   }
 
   // initialize NMPCProblem instance
@@ -95,9 +97,11 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
 
   //------------------- Initialize NMPC thread B ------------------- //
   muscod_B_ = new MUSCOD();
-  if (verbose_)
-  {
-        muscod_A_->setLogLevelTotal(-1);
+  if (verbose_) {
+    muscod_B_->setLogLevelAndFile(-1, NULL, NULL);
+  } else {
+    muscod_B_->setLogLevelAndFile(-1, NULL, NULL);
+    muscod_B_->setLogLevelScreen(-1);
   }
 
   nmpc_B_ = new NMPCProblem(
