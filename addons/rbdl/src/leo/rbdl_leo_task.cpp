@@ -220,9 +220,9 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   // res[res_cnt++] = 0.01 * u[TAUS["arm"]]; // arm
 
   double shaping = 0;
-  shaping += pow(0.01 * fabs(action[0]), power_); // hip_left
-  shaping += pow(0.01 * fabs(action[1]), power_); // knee_left
-  shaping += pow(0.01 * fabs(action[2]), power_); // ankle_left
+//  shaping += pow(0.01 * fabs(action[0]), power_); // hip_left
+//  shaping += pow(0.01 * fabs(action[1]), power_); // knee_left
+//  shaping += pow(0.01 * fabs(action[2]), power_); // ankle_left
 /*
   double F0 = -fabs(state[rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t)
   double F1 = -fabs(next [rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t+1)
@@ -232,6 +232,10 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
 */
 
   //double shaping = -fabs(next [rlsRootZ] - refRootZ); // distance to setpoint at time (t) or (t+1)
+
+  TRACE(cost_nmpc);
+  TRACE(cost_nmpc_aux);
+  TRACE(cost_nmpc_qd);
 
   // reward is a negative of cost
   *reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*(cost_nmpc_aux + weight_nmpc_qd_*cost_nmpc_qd)) - weight_shaping_*shaping;
