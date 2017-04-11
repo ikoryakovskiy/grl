@@ -189,8 +189,8 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   if ((*next)[rlsRefRootZ] != state_[rlsRefRootZ])
     (*next)[stsSquats] = state_[stsSquats] + 1;
 
-  //std::cout << "  > Next state: " << std::fixed << std::setprecision(3) << std::right;
-  //std::cout << "  > Height: " << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ] << std::endl;
+  std::cout << "  > Height: " << std::fixed << std::setprecision(3) << std::right
+            << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ] << std::endl;
   //std::cout << "  > Next state: " << std::fixed << std::setprecision(3) << std::right << std::setw(10) << *next << std::endl;
 
   export_meshup_animation(*next, target_action_);

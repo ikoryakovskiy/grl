@@ -6174,7 +6174,15 @@ task/leo_squatting:
     max: 1.797693134862316e+308
   weight_nmpc_aux:
     type: double.weight_nmpc_aux
-    description: "Weight on the part of NMPC cost with auxilary "
+    description: Weight on the part of NMPC cost with auxilary
+    mutability: system
+    default: 1
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  weight_nmpc_qd:
+    type: double.weight_nmpc_qd
+    description: Weight on the part of NMPC cost which penalizes large velocities
     mutability: system
     default: 1
     optional: 1
@@ -6201,14 +6209,6 @@ task/leo_squatting:
     description: If zero, reward at setpoint is given for setpoint at time t, otherwise - at t+1
     mutability: system
     default: 1
-    optional: 1
-    min: 0
-    max: 1
-  gamma:
-    type: double
-    description: double.gammaDiscount rate used for correct shaping
-    mutability: configuration
-    default: 0.95
     optional: 1
     min: 0
     max: 1
