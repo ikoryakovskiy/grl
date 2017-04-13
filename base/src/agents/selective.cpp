@@ -129,7 +129,7 @@ void SelectiveMasterAgent::executeSubAgent(int idx, double tau, const Observatio
     current_agent_->end(tau, obs, reward);          // finish previous agent
     current_agent_ = agent;                         // switch to the new agent
     current_agent_->start(obs, action);             // start it to obtain action
-    INFO("Changing subAgents");
+    TRACE("Changing subAgents");
   }
   else
     current_agent_->step(tau, obs, reward, action); // or simply continue
