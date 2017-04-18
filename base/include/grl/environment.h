@@ -396,6 +396,39 @@ class SandboxEnvironment : public Environment
     virtual void report(std::ostream &os) const;
 };
 
+///Environment that simulates an internal transition model but uses the state from Deep RL
+class DRLEnvironment : public Environment
+{
+  public:
+    TYPEINFO("environment/modeled_deeprl", "Environment that uses a state transition model internally but uses the state from Deep RL")
+
+  public:
+    Model *model_;
+    Task *task_;
+    Vector state_;
+    Observation obs_;
+    VectorSignal *state_obj_;
+    Exporter *exporter_;
+    VectorSignal *sub_state_drl_;
+
+    int test_;
+    double time_test_, time_learn_;
+
+  public:
+    DRLEnvironment() : model_(NULL), task_(NULL), state_obj_(NULL), exporter_(NULL), sub_state_drl_(NULL), test_(false), time_test_(0.), time_learn_(0.) { }
+
+    // From Configurable
+    virtual void request(ConfigurationRequest *config);
+    virtual void configure(Configuration &config);
+    virtual void reconfigure(const Configuration &config);
+    virtual DRLEnvironment &copy(const Configurable &obj);
+
+    // From Environment
+    virtual void start(int test, Observation *obs);
+    virtual double step(const Action &action, Observation *obs, double *reward, int *terminal);
+    virtual void report(std::ostream &os) const;
+};
+
 }
 
 #endif /* GRL_ENVIRONMENT_H_ */

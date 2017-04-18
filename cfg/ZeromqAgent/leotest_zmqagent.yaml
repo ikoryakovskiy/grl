@@ -4,22 +4,23 @@ experiment:
   trials: 0
   steps: 0
   rate: 0
-  test_interval: 300
-  output: leo_sym_output_tc
+  test_interval: 0
   environment: 
     type: environment/leo_walk
     behavior: 
       type: behavior/leo_walk_sym
-    xml: ../../leo/cfg/xm430_210_tc_leo_walk.xml
+    randomize: 0.0872639
+    xml: ../../leo/cfg/xm430_210_vc_leo_walk_ankle_bound.xml
     target_env: 
       type: environment/ode
       xml: ../../xml
-      randomize: 1
       visualize: 1
-    observe: torso_boom, hipright, hipleft, kneeright, kneeleft
-    actuate: hipright, hipleft, stanceknee
+    observe: hipleft, hipright, kneeleft, kneeright, torso_boom
+    actuate: hipleft, hipright, stanceknee
+    sub_transition_type: 
+      type: signal/vector
   agent: 
-    type: agent/zeromq
+    type: agent/zmq_action
     communicator: 
       type: communicator/zeromq/request_reply
       pattern: ZMQ_REQ
@@ -31,7 +32,7 @@ experiment:
     action_max: []
     test: 0
   test_agent: 
-    type: agent/zeromq
+    type: agent/zmq_action
     communicator: 
       type: communicator/zeromq/request_reply
       pattern: ZMQ_REQ
@@ -42,5 +43,5 @@ experiment:
     action_min: []
     action_max: []
     test: 1
-  load_file: none
-  save_every: test
+  load_file: /home/divyam/rl-agent/leo_py/model-mp-PoolWorker-1
+  save_every: never

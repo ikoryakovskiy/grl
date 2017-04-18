@@ -35,6 +35,7 @@ REGISTER_CONFIGURABLE(ZeromqPubSubCommunicator)
 REGISTER_CONFIGURABLE(CommunicatorEnvironment)
 REGISTER_CONFIGURABLE(ZeromqRequestReplyCommunicator)
 REGISTER_CONFIGURABLE(ZeromqAgent)
+REGISTER_CONFIGURABLE(ZeromqAgentDRL)
 
 
 void ZeromqCommunicator::request(ConfigurationRequest *config)
@@ -254,4 +255,76 @@ void ZeromqAgent::end(double tau, const Observation &obs, double reward)
   communicator_->recv(&temp);
 }
 
+//////////////////////////////////////////////////////////
+void ZeromqAgentDRL::request(ConfigurationRequest *config)
+{
+  config->push_back(CRP("communicator", "communicator", "Comunicator which exchanges messages with an actual/virtual environment", communicator_));
+  config->push_back(CRP("observation_dims", "int.observation_dims", "Number of observation dimensions", observation_dims_, CRP::System));
+  config->push_back(CRP("action_dims", "int.action_dims", "Number of action dimensions", action_dims_, CRP::System));
+  config->push_back(CRP("action_min", "vector.action_min", "Lower limit of action", action_min_, CRP::System));
+  config->push_back(CRP("action_max", "vector.action_max", "Upper limit of action", action_max_, CRP::System));
+  config->push_back(CRP("test", "int.test", "Selection of learning/testing agent", test_, CRP::System));
+  config->push_back(CRP("pub_state_drl","signal/vector","State received from python",pub_state_drl_,true));
+}
 
+void ZeromqAgentDRL::configure(Configuration &config)
+{
+  // Read configuration
+  action_dims_ = config["action_dims"];
+  observation_dims_ = config["observation_dims"];
+  action_min_ = config["action_min"].v();
+  action_max_ = config["action_max"].v();
+  communicator_ = (Communicator*)config["communicator"].ptr();
+  test_ = config["test"];
+  pub_state_drl_ = (VectorSignal*)config["pub_state_drl"].ptr();
+}
+
+void ZeromqAgentDRL::reconfigure(const Configuration &config)
+{
+}
+
+void ZeromqAgentDRL::start(const Observation &obs, Action *action)
+{
+  action->v.resize(action_dims_);
+  action->type = atUndefined;
+
+  Vector a(obs.v.cols()+1);
+  Vector b(action->v.cols()+obs.v.cols());
+  Vector c(obs.v.cols());
+  a << test_, obs.v;
+  communicator_->send(a);
+
+  communicator_->recv(&b);
+  action->v = b(0);
+  c << b(1), b(2);
+  pub_state_drl_->set(c);
+//  NOTICE(pub_state_drl_);
+}
+
+void ZeromqAgentDRL::step(double tau, const Observation &obs, double reward, Action *action)
+{
+  action->v.resize(action_dims_);
+  action->type = atUndefined;
+
+  Vector a(obs.v.cols()+3);
+  Vector b(action->v.cols()+obs.v.cols());
+  Vector c(obs.v.cols());
+  a << test_, obs.v, reward, 0;
+  communicator_->send(a);
+
+  communicator_->recv(&b);
+  action->v = b(0);
+  c << b(1), b(2);
+  pub_state_drl_->set(c);
+//  NOTICE(pub_state_drl_);
+}
+
+void ZeromqAgentDRL::end(double tau, const Observation &obs, double reward)
+{
+  Vector temp(action_dims_);
+
+  Vector a(obs.v.cols()+3);
+  a << test_, obs.v, reward, 2;
+  communicator_->send(a);
+  communicator_->recv(&temp);
+}

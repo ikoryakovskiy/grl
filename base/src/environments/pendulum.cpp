@@ -35,17 +35,19 @@ REGISTER_CONFIGURABLE(PendulumRegulatorTask)
 
 void PendulumDynamics::request(ConfigurationRequest *config)
 {
+    config->push_back(CRP("mass", "mass of the pendulum", m_, CRP::Configuration));
 }
 
 void PendulumDynamics::configure(Configuration &config)
 {
   J_ = 0.000191;
-  m_ = 0.055;
   g_ = 9.81;
   l_ = 0.042;
   b_ = 0.000003;
   K_ = 0.0536;
   R_ = 9.5;
+
+  m_ = config["mass"];
 }
 
 void PendulumDynamics::reconfigure(const Configuration &config)
@@ -97,9 +99,20 @@ void PendulumSwingupTask::reconfigure(const Configuration &config)
 void PendulumSwingupTask::start(int test, Vector *state) const
 {
   state->resize(3);
-  //(*state)[0] = M_PI+randomization_*(test==0)*RandGen::get()*2*M_PI;
-  (*state)[0] = (test==0)*RandGen::getUniform(-M_PI,M_PI) + (test==1)*M_PI;
-  (*state)[1] = (test==0)*RandGen::getUniform(-1,1);
+//  (*state)[0] = M_PI+randomization_*(test==0)*RandGen::get()*2*M_PI;
+  if (randomization_ == 0)
+  {
+    (*state)[0] = (test==0)*RandGen::getUniform(-M_PI,M_PI) + (test==1)*M_PI;
+    (*state)[1] = (test==0)*RandGen::getUniform(-1,1);
+  }
+  else
+  {
+    (*state)[0] = (test==0)*RandGen::getUniform(-M_PI,M_PI) + (test==1)*randomization_*RandGen::getUniform(-M_PI,M_PI);
+    (*state)[1] = (test==0)*RandGen::getUniform(-1,1) + (test==1)*randomization_*RandGen::getUniform(-1,1);
+  }
+
+//  (*state)[0] = RandGen::getUniform(-M_PI,M_PI);
+//  (*state)[1] = RandGen::getUniform(-1,1);
   (*state)[2] = 0;
 }
 

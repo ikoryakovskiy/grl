@@ -41,7 +41,10 @@ class PendulumDynamics : public Dynamics
 
   public:
     double J_, m_, g_, l_, b_, K_, R_;
-  
+
+  public:
+    PendulumDynamics() : J_(0.000191), m_(0.055), g_(9.81), l_(0.042), b_(0.000003), K_(0.0526), R_(9.5) {}
+
   public:
     // From Configurable
     virtual void request(ConfigurationRequest *config);

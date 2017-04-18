@@ -35,6 +35,7 @@
 #include <drl_messages.pb.h>
 #include <time.h>
 #include <Statistics.h>
+#include <grl/signal.h>
 
 namespace grl
 {
@@ -127,11 +128,11 @@ class CommunicatorEnvironment: public Environment
     CSimpleStat computation_stat_;
 };
 
-/// ZeroMQ agent
+/// ZeroMQ communicator agent which provides only action
 class ZeromqAgent : public Agent
 {
   public:
-    TYPEINFO("agent/zeromq", "Zeromq Agent which interects with a python by sending and receiving messages")
+    TYPEINFO("agent/zmq_action", "Zeromq Agent which interects with an external script by sending and receiving messages")
     ZeromqAgent() : action_dims_(1), observation_dims_(1), test_(0) {}
 
     // From Configurable
@@ -150,6 +151,32 @@ class ZeromqAgent : public Agent
     Vector action_min_, action_max_;
     Communicator *communicator_;
     int test_;
+};
+
+/// ZeroMQ communicator agent which provides state and action
+class ZeromqAgentDRL : public Agent
+{
+  public:
+    TYPEINFO("agent/zmq_action_state", "Zeromq Agent which interects with an external script by sending and receiving messages")
+    ZeromqAgentDRL() : action_dims_(1), observation_dims_(1), test_(0), pub_state_drl_(NULL) {}
+
+    // From Configurable
+    virtual void request(ConfigurationRequest *config);
+    virtual void configure(Configuration &config);
+    virtual void reconfigure(const Configuration &config);
+
+    // From Policy
+    virtual void start(const Observation &obs, Action *action);
+    virtual void step(double tau, const Observation &obs, double reward, Action *action);
+    virtual void end(double tau, const Observation &obs, double reward);
+
+
+  protected:
+    int action_dims_, observation_dims_;
+    Vector action_min_, action_max_;
+    Communicator *communicator_;
+    int test_;
+    VectorSignal *pub_state_drl_;
 };
 
 }

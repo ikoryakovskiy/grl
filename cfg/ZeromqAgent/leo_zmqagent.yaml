@@ -4,7 +4,7 @@ experiment:
   trials: 0
   steps: 0
   rate: 0
-  test_interval: 1
+  test_interval: 0
   environment: 
     type: environment/leo_walk
     behavior: 
@@ -20,7 +20,7 @@ experiment:
     sub_transition_type: 
       type: signal/vector
   agent: 
-    type: agent/zeromq
+    type: agent/zmq_action
     communicator: 
       type: communicator/zeromq/request_reply
       pattern: ZMQ_REQ
@@ -32,7 +32,7 @@ experiment:
     action_max: []
     test: 0
   test_agent: 
-    type: agent/zeromq
+    type: agent/zmq_action
     communicator: 
       type: communicator/zeromq/request_reply
       pattern: ZMQ_REQ
@@ -43,5 +43,5 @@ experiment:
     action_min: []
     action_max: []
     test: 1
-  load_file: /home/divyam/rl-agent/grlDocker/PythonFiles/model-mp-PoolWorker-1
+  load_file: /home/divyam/rl-agent/leo_py/model-PoolWorker-3
   save_every: never

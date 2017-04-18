@@ -6,26 +6,22 @@ experiment:
   rate: 0
   test_interval: 0
   environment: 
-    type: environment/modeled
+    type: environment/modeled_deeprl
     model: 
       type: model/dynamical
       control_step: 0.05
-      integration_steps: 5
+      integration_steps: 10
       dynamics: 
         type: dynamics/pendulum
-        mass: 0.055
+        mass: 0.09
     task: 
       type: task/pendulum/swingup
       timeout: 25
       randomization: 1
-    exporter: 
-      type: exporter/csv
-      file: ddpg_1
-      style: line
-      variant: all
-      enabled: 1
+    sub_state_drl: 
+      type: signal/vector
   agent: 
-    type: agent/zmq_action
+    type: agent/zmq_action_state
     communicator: 
       type: communicator/zeromq/request_reply
       pattern: ZMQ_REQ
@@ -36,8 +32,9 @@ experiment:
     action_min: experiment/environment/task/action_min
     action_max: experiment/environment/task/action_max
     test: 0
+    pub_state_drl: experiment/environment/sub_state_drl
   test_agent: 
-    type: agent/zmq_action
+    type: agent/zmq_action_state
     communicator: 
       type: communicator/zeromq/request_reply
       pattern: ZMQ_REQ
@@ -48,7 +45,8 @@ experiment:
     action_min: experiment/environment/task/action_min
     action_max: experiment/environment/task/action_max
     test: 1
-  load_file: /home/divyam/rl-agent/pendulum_drl/model-pendulum-1.ckpt
+    pub_state_drl: experiment/environment/sub_state_drl
+  load_file: /home/divyam/rl-agent/pendulum_drl/model-pendulum-new-2.ckpt
   save_every: never
 visualizer: 
   type: visualizer/glut
