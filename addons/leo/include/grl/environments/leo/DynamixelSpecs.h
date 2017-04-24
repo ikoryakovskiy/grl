@@ -80,6 +80,7 @@
   #define DXL_TORQUE_CONST                    MAXON_TORQUE_CONST
   #define DXL_GEARBOX_RATIO                   DXL_XM430_210_GEARBOX_RATIO
   #define DXL_RESISTANCE                      4.6
+  #define DXL_VISCOUS_FRICTION                0.1
 
   // Temperature coefficients
   #define DXL_COPPER_COEF                     DXL_XM430_210_COPPER_COEF
