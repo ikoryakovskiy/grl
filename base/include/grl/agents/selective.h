@@ -66,7 +66,7 @@ class SelectiveMasterAgent : public Agent
     virtual void end(double tau, const Observation &obs, double reward);
     
     virtual size_t selectSubAgent(double time, const Observation &obs, Action *action);
-    virtual void executeSubAgent(int idx, double tau, const Observation &obs, double reward, Action *action);
+    virtual void stepSubAgent(int idx, double tau, const Observation &obs, double reward, Action *action);
 };
 
 }

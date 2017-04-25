@@ -92,7 +92,7 @@ void SelectiveMasterAgent::step(double tau, const Observation &obs, double rewar
 {
   time_ += tau;
   int idx = selectSubAgent(time_, obs, action);
-  executeSubAgent(idx, tau, obs, reward, action);
+  stepSubAgent(idx, tau, obs, reward, action);
 }
 
 void SelectiveMasterAgent::end(double tau, const Observation &obs, double reward)
@@ -121,12 +121,13 @@ size_t SelectiveMasterAgent::selectSubAgent(double time, const Observation &obs,
   return maxconfa;
 }
 
-void SelectiveMasterAgent::executeSubAgent(int idx, double tau, const Observation &obs, double reward, Action *action)
+void SelectiveMasterAgent::stepSubAgent(int idx, double tau, const Observation &obs, double reward, Action *action)
 {
   SubAgent *agent = agents_[idx];
   if (current_agent_ != agent)
   {
-    current_agent_->end(tau, obs, reward);          // finish previous agent
+    //current_agent_->end(tau, obs, reward);          // finish previous agent
+    current_agent_->step(tau, obs, reward, action); // last step of the current agent
     current_agent_ = agent;                         // switch to the new agent
     current_agent_->start(obs, action);             // start it to obtain action
     TRACE("Changing subAgents");
