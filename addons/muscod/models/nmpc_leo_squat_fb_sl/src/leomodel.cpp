@@ -65,8 +65,11 @@ void LeoModel::updateState (
 	assert (nDof == nActuatedDof);
 	for (unsigned int i = 0; i < nActuatedDof; i++) {
 		// TODO control on voltage level
-    tau[i] = torque_from_voltage_and_angular_velocity (u[i], qdot[i]);
-    //tau[i] = tau[i] - 0.1*qdot[i];  // friction
+		// tau[i] = torque_from_voltage_and_angular_velocity (u[i], qdot[i]);
+
+		// use define DXL_VISCOUS_FRICTION for the Dynamixel friction
+		// from DynamixelSpecs.h
+		tau[i] = u[i] - DXL_VISCOUS_FRICTION*qdot[i];  // friction
 	}
 }
 
@@ -119,7 +122,7 @@ void LeoModel::calcForwardDynamicsRhs (double *res)
 		);
 	} else {
 		// std::cout << "evaluating 'ForwardDynamics'" << std::endl;
-    ForwardDynamics (model, q, qdot, tau, qddot);
+	ForwardDynamics (model, q, qdot, tau, qddot);
 	}
 	dynamicsComputed = true;
 
