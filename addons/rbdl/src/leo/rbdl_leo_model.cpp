@@ -100,6 +100,7 @@ void LeoSquattingSandboxModel::request(ConfigurationRequest *config)
 
   config->push_back(CRP("lower_height", "double.lower_height", "Lower bound of root height to switch direction", lower_height_, CRP::Configuration, 0.0, DBL_MAX));
   config->push_back(CRP("upper_height", "double.upper_height", "Upper bound of root height to switch direction", upper_height_, CRP::Configuration, 0.0, DBL_MAX));
+  config->push_back(CRP("mode", "Control mode (torque/voltage )", mode_, CRP::Configuration, {"tc", "vc"}));
 }
 
 void LeoSquattingSandboxModel::configure(Configuration &config)
@@ -108,6 +109,7 @@ void LeoSquattingSandboxModel::configure(Configuration &config)
 
   lower_height_ = config["lower_height"];
   upper_height_ = config["upper_height"];
+  mode_ = config["mode"].str();
 }
 
 void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
@@ -140,9 +142,19 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   // auto-actuate arm
   if (action.size() == target_dof_-1)
   {
-    double armVoltage = XM430_VS_RX28_COEFF*(14.0/3.3) * 5.0*(-0.26 - state_[rlsArmAngle]);
-    armVoltage = fmin(LEO_MAX_DXL_VOLTAGE, fmax(armVoltage, -LEO_MAX_DXL_VOLTAGE)); // ensure voltage within limits
-    target_action_ << action, armVoltage;
+    double arma;
+    if (mode_ == "vc")
+    {
+      arma = XM430_VS_RX28_COEFF*(14.0/3.3) * 5.0*(-0.26 - state_[rlsArmAngle]);
+      arma = fmin(LEO_MAX_DXL_VOLTAGE, fmax(arma, -LEO_MAX_DXL_VOLTAGE)); // ensure voltage within limits
+    }
+    else
+    {
+      arma = 1.0*(-0.26 - state_[rlsArmAngle]);
+      arma = fmin(DXL_MAX_TORQUE, fmax(arma, -DXL_MAX_TORQUE)); // ensure torque within limits
+    }
+
+    target_action_ << action, arma;
   }
   else
     target_action_ << action;

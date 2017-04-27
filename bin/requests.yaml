@@ -5092,6 +5092,15 @@ sandbox_model/leo_squatting:
     optional: 1
     min: 0
     max: 1.797693134862316e+308
+  mode:
+    type: string
+    description: Control mode (torque/voltage )
+    mutability: configuration
+    default: vc
+    optional: 1
+    options:
+      - tc
+      - vc
 signal/matrix:
   description: Matrix-based signal (trajectory, etc.)
 signal/vector:

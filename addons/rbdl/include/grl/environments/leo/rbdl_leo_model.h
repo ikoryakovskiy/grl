@@ -65,7 +65,7 @@ class LeoSquattingSandboxModel : public LeoSandboxModel
     TYPEINFO("sandbox_model/leo_squatting", "State transition model that integrates equations of motion and augments state vector with additional elements")
 
   public:
-    LeoSquattingSandboxModel() : lower_height_(0.28), upper_height_(0.35) { }
+    LeoSquattingSandboxModel() : lower_height_(0.28), upper_height_(0.35), mode_("vc") { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -78,6 +78,7 @@ class LeoSquattingSandboxModel : public LeoSandboxModel
   protected:
     Vector rbdl_addition_;
     double lower_height_, upper_height_;
+    std::string mode_;
 };
 
 }

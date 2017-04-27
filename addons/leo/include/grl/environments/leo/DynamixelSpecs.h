@@ -75,6 +75,7 @@
 
   #define DXL_MAX_POSITION                    DXL_XM430_210_MAX_POSITION
   #define DXL_MAX_VELOCITY                    DXL_XM430_210_MAX_VELOCITY
+  #define DXL_MAX_TORQUE                      DXL_XM430_210_MAX_TORQUE
 
   // Motor coefficients
   #define DXL_TORQUE_CONST                    MAXON_TORQUE_CONST
