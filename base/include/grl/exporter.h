@@ -69,6 +69,7 @@ class CSVExporter : public Exporter
     std::string fields_;
     std::string style_;
     std::string variant_;
+    int         precision_;
     
     std::ofstream stream_;
     std::vector<size_t> order_;
@@ -78,7 +79,7 @@ class CSVExporter : public Exporter
     std::map<std::string, int> run_counter_;
 
   public:
-    CSVExporter() : style_("line"), variant_("all"), write_header_(true), enabled_(true) { }
+    CSVExporter() : style_("line"), variant_("all"), precision_(6), write_header_(true), enabled_(true) { }
   
     // From Configurable
     virtual void request(ConfigurationRequest *config);

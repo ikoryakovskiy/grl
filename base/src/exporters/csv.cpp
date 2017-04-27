@@ -40,6 +40,7 @@ void CSVExporter::request(ConfigurationRequest *config)
   config->push_back(CRP("fields", "Comma-separated list of fields to write", fields_));
   config->push_back(CRP("style", "Header style", style_, CRP::Configuration, {"none", "line", "meshup"}));
   config->push_back(CRP("variant", "Variant to export", variant_, CRP::Configuration, {"test", "learn", "all"}));
+  config->push_back(CRP("precision", "Precision of the output", precision_, CRP::Online, 0, 16));
   config->push_back(CRP("enabled", "Enable writing to output file", enabled_, CRP::Online, 0, 1));
 }
 
@@ -49,6 +50,7 @@ void CSVExporter::configure(Configuration &config)
   fields_  = config["fields"].str();
   style_   = config["style"].str();
   variant_ = config["variant"].str();
+  precision_ = config["precision"];
   enabled_ = config["enabled"];
   
   if (file_.empty())
@@ -196,7 +198,7 @@ void CSVExporter::write(const std::vector<Vector> &vars)
     const Vector &v = vars[order_[ii]];
     for (size_t jj = 0; jj < v.size(); ++jj)
     {
-      stream_ << std::fixed << std::setw(11) << std::setprecision(6) << v[jj];
+      stream_ << std::fixed << std::setw(precision_+5) << std::setprecision(precision_) << v[jj];
       if (ii < order_.size()-1 || jj < v.size() -1)
         stream_ << ", ";
     }

@@ -1585,6 +1585,14 @@ exporter/csv:
       - test
       - learn
       - all
+  precision:
+    type: int
+    description: Precision of the output
+    mutability: online
+    default: 6
+    optional: 1
+    min: 0
+    max: 16
   enabled:
     type: int
     description: Enable writing to output file

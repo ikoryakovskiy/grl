@@ -167,14 +167,14 @@ void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *termi
     *terminal = 2;
   else
     *terminal = 0;
-/*
+
   // debugging (until first switch)
   if (state[rlsRefRootZ] == 0.28)
   {
     TRACE("Terminate on first switch.");
     *terminal = 1;
   }
-*/
+
 }
 
 void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const
