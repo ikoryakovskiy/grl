@@ -233,7 +233,7 @@ nhist
 * Choosing libraries *
 
 libmodel
-libnmpc_leo_squat_fb_sl_fa
+libnmpc_leo_squat_fb_sl_fa_tc
 
 libhessian
 hess_gaussnewton

@@ -250,19 +250,61 @@ int LeoSquattingTask::failed(const Vector &state) const
     return 0;
 
   double torsoAngle = state[rlsAnkleAngle] + state[rlsKneeAngle] + state[rlsHipAngle];
-  if (fabs(torsoAngle) > 1.0 || // > 57 deg
-      // penalty for high joint velocities
-      (state[rlsAnkleAngleRate] < target_obs_min_[rlsAnkleAngleRate]) ||
-      (state[rlsAnkleAngleRate] > target_obs_max_[rlsAnkleAngleRate]) ||
-      (state[rlsKneeAngleRate]  < target_obs_min_[rlsKneeAngleRate])  ||
-      (state[rlsKneeAngleRate]  > target_obs_max_[rlsKneeAngleRate])  ||
-      (state[rlsHipAngleRate]   < target_obs_min_[rlsHipAngleRate])   ||
-      (state[rlsHipAngleRate]   > target_obs_max_[rlsHipAngleRate])   ||
-      (state[rlsArmAngleRate]   < target_obs_min_[rlsArmAngleRate])   ||
-      (state[rlsArmAngleRate]   > target_obs_max_[rlsArmAngleRate])   ||
-      (state[rlsRootZ] < 0)
-      )
+  if (fabs(torsoAngle) > 1.0) // > 57 deg
+  {
+    TRACE("Terminate on large torso.");
     return 1;
+  }
+  //
+  else if (state[rlsAnkleAngleRate] < target_obs_min_[rlsAnkleAngleRate])
+  {
+    TRACE("Terminate on large negative ankle angle rate.");
+    return 1;
+  }
+  else if (state[rlsAnkleAngleRate] > target_obs_max_[rlsAnkleAngleRate])
+  {
+    TRACE("Terminate on large positive ankle angle rate.");
+    return 1;
+  }
+  //
+  else if (state[rlsKneeAngleRate]  < target_obs_min_[rlsKneeAngleRate])
+  {
+    TRACE("Terminate on large negative knee angle rate.");
+    return 1;
+  }
+  else if (state[rlsKneeAngleRate]  > target_obs_max_[rlsKneeAngleRate])
+  {
+    TRACE("Terminate on large positive knee angle rate.");
+    return 1;
+  }
+  //
+  else if (state[rlsHipAngleRate]   < target_obs_min_[rlsHipAngleRate])
+  {
+    TRACE("Terminate on large negative hip angle rate.");
+    return 1;
+  }
+  else if (state[rlsHipAngleRate]   > target_obs_max_[rlsHipAngleRate])
+  {
+    TRACE("Terminate on large positive hip angle rate.");
+    return 1;
+  }
+  //
+  else if (state[rlsArmAngleRate]   < target_obs_min_[rlsArmAngleRate])
+  {
+    TRACE("Terminate on large negative ankle angle rate.");
+    return 1;
+  }
+  else if (state[rlsArmAngleRate]   > target_obs_max_[rlsArmAngleRate])
+  {
+    TRACE("Terminate on large positive ankle angle rate.");
+    return 1;
+  }
+  //
+  else if (state[rlsRootZ] < 0)
+  {
+    TRACE("Terminate on root point going under the ground.");
+    return 1;
+  }
   else
     return 0;
 }
