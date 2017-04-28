@@ -41,7 +41,7 @@ void DPGPredictor::request(ConfigurationRequest *config)
   config->push_back(CRP("gamma", "Discount rate", gamma_));
   config->push_back(CRP("lambda", "Trace decay rate", lambda_));
 
-  config->push_back(CRP("projector", "projector.state", "Projects observations onto representation spaces", projector_));
+  config->push_back(CRP("projector", "projector.observation", "Projects observations onto representation spaces", projector_));
   config->push_back(CRP("critic_representation", "representation.value/state", "State value function representation", critic_representation_));
   config->push_back(CRP("critic_trace", "trace", "Trace of critic projections", critic_trace_, true));
   config->push_back(CRP("advantage_representation", "representation", "Local advantage model representation (one output per action dimension)", advantage_representation_));

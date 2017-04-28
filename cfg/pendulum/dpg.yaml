@@ -19,7 +19,7 @@ experiment:
   agent: 
     type: agent/td
     policy: 
-      type: policy/action
+      type: mapping/policy/action
       sigma: [1]
       output_min: experiment/environment/task/action_min
       output_max: experiment/environment/task/action_max
