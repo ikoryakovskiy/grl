@@ -150,9 +150,11 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
     }
     else
     {
-      arma = 1.0*(-0.26 - state_[rlsArmAngle]);
+      arma = 0.05*(-0.26 - state_[rlsArmAngle]);
       arma = fmin(DXL_MAX_TORQUE, fmax(arma, -DXL_MAX_TORQUE)); // ensure torque within limits
     }
+
+    //std::cout << "Arm: " << -0.26 - state_[rlsArmAngle] << " -> " << arma << std::endl;
 
     target_action_ << action, arma;
   }

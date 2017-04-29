@@ -184,17 +184,19 @@ u(*,*)
 u_sca(*,*)
 ALL: 0.01
 
+ ; TORQUE CONTROL
 u_min(*,*)
- 0: -10.7
- 1: -10.7
- 2: -10.7
- 3: -10.7
+ 0: -3.0
+ 1: -3.0
+ 2: -3.0
+ 3: -3.0
 
+ ; TORQUE CONTROL
 u_max(*,*)
- 0:  10.7
- 1:  10.7
- 2:  10.7
- 3:  10.7
+ 0:  3.0
+ 1:  3.0
+ 2:  3.0
+ 3:  3.0
 
 u_name
  0: tau_ankle_left
@@ -242,7 +244,7 @@ nhist
 * Choosing libraries *
 
 libmodel
-libnmpc_leo_squat_fb_sl
+libnmpc_leo_squat_fb_sl_tc
 
 libhessian
 hess_gaussnewton
@@ -292,7 +294,7 @@ options_itol
 options_rfac
 0.00000
 options_levmar
-0.0000
+0.00000
 options_qp_featol
 1.0e-8
 options_qp_relax
@@ -314,7 +316,7 @@ options_plevel_matlab
 options_bflag
 -1
 options_qp_itmax
-10000
+1000
 options_qp_expand
 99999999
 options_sflag

@@ -71,7 +71,7 @@ bool LeoBaseAgent::failed(const Observation &obs, bool stanceLegLeft) const
 
   if (fabs(obs[0]+obs[1]+obs[2]) > torsoComstraint)
   {
-    std::cout << "[TERMINATION] Torso angle too large" << std::endl;
+    //std::cout << "[TERMINATION] Torso angle too large" << std::endl;
     return true;
   }
 

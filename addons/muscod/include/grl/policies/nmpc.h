@@ -52,7 +52,8 @@ class NMPCPolicy : public NMPCBase
     pthread_cond_t cond_iv_ready_;
     pthread_mutex_t mutex_;
 
-    Vector initial_sd_, initial_pf_, initial_hf_, initial_qc_, final_sd_;
+    Vector initial_sd_, initial_pf_, initial_qc_, final_sd_;
+    Vector initial_sd_prev_, initial_pf_prev_, initial_qc_prev_;
 
     // CONTROL LOOP
     bool iv_provided_;

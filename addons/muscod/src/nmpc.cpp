@@ -87,9 +87,11 @@ void NMPCPolicy::configure(Configuration &config)
   // Allocate memory
   initial_sd_ = ConstantVector(nmpc_->NXD(), 0);
   initial_pf_ = ConstantVector(nmpc_->NP(), 0);
-  initial_hf_ = ConstantVector(nmpc_->NH(), 0);
   initial_qc_ = ConstantVector(nmpc_->NU(), 0);
   final_sd_   = ConstantVector(nmpc_->NXD(), 0);
+  initial_sd_prev_ = ConstantVector(nmpc_->NXD(), 0);
+  initial_pf_prev_ = ConstantVector(nmpc_->NP(), 0);
+  initial_qc_prev_ = ConstantVector(nmpc_->NU(), 0);
 
   grl_assert(nmpc_->NU() == action_max_.size() || nmpc_->NU() == action_max_.size());
   grl_assert(nmpc_->NU() == action_min_.size() || nmpc_->NU() == action_max_.size());
@@ -258,8 +260,23 @@ void NMPCPolicy::act(double time, const Observation &in, Action *out)
   if (time == 0.0)
     muscod_reset(initial_sd_, initial_pf_, initial_qc_);
 
-  out->v.resize( nmpc_->NU() );
+  // simulate model over specified time interval using NMPC internal model
+  if (time != 0)
+  {
+    double time_interval = 0.03; //nmpc_->getSamplingRate();
+    nmpc_->simulate(
+        initial_sd_prev_, // state from previous iteration
+        initial_pf_prev_, // parameter from previous iteration
+        initial_qc_prev_, // control from previous iteration
+        time_interval,
+        &final_sd_        // state from comparison with input
+    );
+    final_sd_ = final_sd_ - initial_sd_;
+    Vector error = (final_sd_*final_sd_.transpose()).sqrt();
+    std::cout << "Model-plant error " << error << std::endl;
+  }
 
+  out->v.resize( nmpc_->NU() );
   if (feedback_ == "non-threaded")
   {
     for (int inmpc = 0; inmpc < n_iter_; ++inmpc) {
@@ -326,11 +343,17 @@ void NMPCPolicy::act(double time, const Observation &in, Action *out)
     out->v[i] = fmax( fmin(initial_qc_[i], action_max_[i]) , action_min_[i]);
     if (out->v[i] != initial_qc_[i])
       WARNING("NMPC action " << i << " was truncated");
+    initial_qc_[i] = out->v[i];
   }
 
   out->type = atGreedy;
 
   if (verbose_)
     std::cout << "Feedback Control: [" << out->v << "]" << std::endl;
+
+  // record variables for simulation
+  initial_sd_prev_ = initial_sd_;
+  initial_pf_prev_ = initial_pf_;
+  initial_qc_prev_ = initial_qc_;
 }
 

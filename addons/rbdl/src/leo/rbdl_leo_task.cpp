@@ -39,9 +39,10 @@
 
 using namespace grl;
 
+REGISTER_CONFIGURABLE(LeoSquattingTaskFA)
 REGISTER_CONFIGURABLE(LeoSquattingTask)
 
-void LeoSquattingTask::request(ConfigurationRequest *config)
+void LeoSquattingTaskFA::request(ConfigurationRequest *config)
 {
   Task::request(config);
   config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_, true));
@@ -56,7 +57,7 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("continue_after_fall", "int.continue_after_fall", "Continue exectution of the environemnt even after a fall of Leo", continue_after_fall_, CRP::System, 0, 1));
 }
 
-void LeoSquattingTask::configure(Configuration &config)
+void LeoSquattingTaskFA::configure(Configuration &config)
 {
   target_env_ = (Environment*)config["target_env"].ptr(); // Select a real enviromnent if needed
   timeout_ = config["timeout"];
@@ -99,9 +100,9 @@ void LeoSquattingTask::configure(Configuration &config)
   std::cout << "action_max: " << config["action_max"].v() << std::endl;
 }
 
-void LeoSquattingTask::start(int test, Vector *state) const
+void LeoSquattingTaskFA::start(int test, Vector *state) const
 {
-  *state = ConstantVector(2*(dof_+1)+1, 0);
+  *state = ConstantVector(2*(4)+1, 0); // Same size for both tasts with FA and without
 
   if (target_env_)
   {
@@ -152,7 +153,7 @@ void LeoSquattingTask::start(int test, Vector *state) const
   CRAWL("Initial state: " << *state);
 }
 
-void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *terminal) const
+void LeoSquattingTaskFA::observe(const Vector &state, Observation *obs, int *terminal) const
 {
   grl_assert(state.size() == stsStateDim);
 
@@ -167,17 +168,17 @@ void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *termi
     *terminal = 2;
   else
     *terminal = 0;
-
+/*
   // debugging (until first switch)
   if (state[rlsRefRootZ] == 0.28)
   {
     TRACE("Terminate on first switch.");
     *terminal = 1;
   }
-
+*/
 }
 
-void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const
+void LeoSquattingTaskFA::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const
 {
   grl_assert(state.size() == stsStateDim);
   grl_assert(action.size() == dof_);
@@ -220,6 +221,7 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   // regularize: || qdot ||_2^2
   // res[res_cnt++] = 6.00 * sd[QDOTS["arm"]]; // arm
   double rateW = 5.0; // 6.0
+  cost_nmpc_qd += pow(rateW * fabs(next[rlsArmAngleRate]), power_); // hip_left
   cost_nmpc_qd += pow(rateW * fabs(next[rlsHipAngleRate]), power_); // hip_left
   cost_nmpc_qd += pow(rateW * fabs(next[rlsKneeAngleRate]), power_); // knee_left
   cost_nmpc_qd += pow(rateW * fabs(next[rlsAnkleAngleRate]), power_); // ankle_left
@@ -249,7 +251,7 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   *reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*(cost_nmpc_aux + weight_nmpc_qd_*cost_nmpc_qd)) - weight_shaping_*shaping;
 }
 
-int LeoSquattingTask::failed(const Vector &state) const
+int LeoSquattingTaskFA::failed(const Vector &state) const
 {
   if (std::isnan(state[rlsRootZ]))
     ERROR("NaN value of root, try to reduce integration period to cope with this.");
@@ -317,7 +319,7 @@ int LeoSquattingTask::failed(const Vector &state) const
     return 0;
 }
 
-void LeoSquattingTask::report(std::ostream &os, const Vector &state) const
+void LeoSquattingTaskFA::report(std::ostream &os, const Vector &state) const
 {
   const int pw = 15;
   std::stringstream progressString;
@@ -325,4 +327,31 @@ void LeoSquattingTask::report(std::ostream &os, const Vector &state) const
   progressString << std::setw(pw) << state[rlsRootZ];
   progressString << std::setw(pw) << state[stsSquats];
   os << progressString.str();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *terminal) const
+{
+  grl_assert(state.size() == stsStateDim);
+
+  // arm is auto-actuated => exclude angle and angle rate from observations
+  obs->v.resize(2*dof_+1);
+  obs->v << state[rlsAnkleAngle], state[rlsKneeAngle], state[rlsHipAngle], state[rlsArmAngle],
+            state[rlsAnkleAngleRate], state[rlsKneeAngleRate], state[rlsHipAngleRate], state[rlsArmAngleRate], state[rlsRefRootZ];
+
+  if ((timeout_> 0) && (state[rlsTime] >= timeout_))
+    *terminal = 1;
+  else if (failed(state))
+    *terminal = 2;
+  else
+    *terminal = 0;
+/*
+  // debugging (until first switch)
+  if (state[rlsRefRootZ] == 0.28)
+  {
+    TRACE("Terminate on first switch.");
+    *terminal = 1;
+  }
+*/
 }

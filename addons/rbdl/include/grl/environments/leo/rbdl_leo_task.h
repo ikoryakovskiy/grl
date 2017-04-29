@@ -85,13 +85,13 @@ enum SquattingTaskState
   stsStateDim
 };
 
-class LeoSquattingTask : public Task
+class LeoSquattingTaskFA : public Task
 {
   public:
-    TYPEINFO("task/leo_squatting", "Task specification for Leo squatting with an auto-actuated arm")
+    TYPEINFO("task/leo_squatting_fa", "Task specification for Leo squatting with an auto-actuated arm")
 
   public:
-    LeoSquattingTask() : target_env_(NULL), timeout_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_nmpc_qd_(1.0), weight_shaping_(0.0), power_(2.0),
+    LeoSquattingTaskFA() : target_env_(NULL), timeout_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_nmpc_qd_(1.0), weight_shaping_(0.0), power_(2.0),
       randomize_(0), dof_(3), continue_after_fall_(0), setpoint_reward_(1) { }
 
     // From Configurable
@@ -117,6 +117,18 @@ class LeoSquattingTask : public Task
     Vector target_obs_min_, target_obs_max_;
     int continue_after_fall_;
     int setpoint_reward_;
+};
+
+class LeoSquattingTask : public LeoSquattingTaskFA
+{
+  public:
+    TYPEINFO("task/leo_squatting", "Task specification for Leo squatting")
+
+  public:
+    LeoSquattingTask() { dof_ = 4; }
+
+    // From Task
+    virtual void observe(const Vector &state, Observation *obs, int *terminal) const;
 };
 
 }

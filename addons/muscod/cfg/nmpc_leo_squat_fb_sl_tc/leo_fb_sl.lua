@@ -14,28 +14,26 @@
 --]]
 
 -- strict checks for undefined variables
---require 'SRC.strict'
+-- require 'SRC.strict'
 
 -- load module with convenience functions
---utils = require 'SRC.utils'
+-- utils = require 'SRC.utils'
 
 -- initial
 armICangle = -0.26 -- = -15*degtorad
 
-
 -- for model
-inertiadontcare = 0.001
 torsoheight = (0.24155)
 torsoHipDistX = (0.00273)
 torsoHipDistZ = (-torsoheight/2)
-torsoMass = 0.91326
+torsoMass = 0.94226
 boomMass = 0.860
 boomCMY = 0.835
 boomLength = 1.70
 boomIZZ = 0.31863
-boomVirtualMassX = (boomCMY^2*boomMass + boomIZZ)/(boomLength^2)
-boomVirtualMassZ = boomMass*boomCMY/boomLength
-boomExtForce = (boomVirtualMassZ - boomVirtualMassX)*(-9.81)
+boomVirtualMassX = 0 --(boomCMY^2*boomMass + boomIZZ)/(boomLength^2)
+--boomVirtualMassZ = boomMass*boomCMY/boomLength
+--boomExtForce = (boomVirtualMassZ - boomVirtualMassX)*(-9.81)
 torsoBoomMass = torsoMass + boomVirtualMassX
 torsoCMX = -0.00102
 torsoCMZ = 0.009945
@@ -56,7 +54,7 @@ armJointZ = (0.091275)
 upleglength = (0.116)
 interlegdist = (0.06390)
 
-uplegMass = 0.17978
+uplegMass = 0.19978
 uplegCMX = 0.00285
 uplegCMZ = -0.00481 - upleglength/2
 uplegIYY = 0.000273133
@@ -69,9 +67,9 @@ uplegRightJointX = (torsoHipDistX)
 uplegRightJointY = (-interlegdist/2)
 uplegRightJointZ = (torsoHipDistZ)
 
-loleglength = (0.1045)
+loleglength = 0.1085
 
-lolegMass = 0.12691
+lolegMass = 0.13691
 lolegCMX = 0.00804 + 0.00405
 lolegCMZ = -0.00867 - loleglength/2
 lolegIYY = 0.000153379
@@ -209,45 +207,10 @@ visuals = {
       dimensions = { (0.020), (0.010), (0.140) },
       color = { 0.8, 0.8, 0.8},
       mesh_center = {
-        (0.01527), 0.005, (-0.05699)
-      },
-      src = "meshes/unit_cube.obj",
-    },
-    {
-      -- Should be rotated
-      name = "lower_arm_box",
-      dimensions = { (0.020), (0.010), (0.150) },
-      color = colors.bracket,
-      mesh_center = {
-        (0.06989), 0.005, (-0.18714)
-      },
-      src = "meshes/unit_cube.obj",
-    },
-    {
-      name = "hand_wheel",
-      dimensions = {
-        (2*handwheelradius), (2*handwheelradius), (2*handwheelradius)
-      },
-      color = colors.wheel,
-      mesh_center = {
-        (handoffsetx), 0.005, (handoffsetz)
-      },
-      src = "meshes/unit_sphere_lowres.obj"
-    }
-  },
-  upper_arm = {
-    {
-      -- Should be rotated
-      name = "upper_arm_box",
-      dimensions = { (0.020), (0.010), (0.140) },
-      color = { 0.8, 0.8, 0.8},
-      mesh_center = {
         (0.01527), 0.0, (-0.05699)
       },
       src = "meshes/unit_cube.obj",
     },
-  },
-  lower_arm = {
     {
       -- Should be rotated
       name = "lower_arm_box",
@@ -266,6 +229,41 @@ visuals = {
       color = colors.wheel,
       mesh_center = {
         (handoffsetx), 0.0, (handoffsetz)
+      },
+      src = "meshes/unit_sphere_lowres.obj"
+    }
+  },
+  upper_arm = {
+    {
+      -- Should be rotated
+      name = "upper_arm_box",
+      dimensions = { (0.020), (0.010), (0.140) },
+      color = { 0.8, 0.8, 0.8},
+      mesh_center = {
+        (0.01527), 0.005, (-0.05699)
+      },
+      src = "meshes/unit_cube.obj",
+    },
+  },
+  lower_arm = {
+    {
+      -- Should be rotated
+      name = "lower_arm_box",
+      dimensions = { (0.020), (0.010), (0.150) },
+      color = colors.bracket,
+      mesh_center = {
+        (0.06989), 0.005, (-0.18714)
+      },
+      src = "meshes/unit_cube.obj",
+    },
+    {
+      name = "hand_wheel",
+      dimensions = {
+        (2*handwheelradius), (2*handwheelradius), (2*handwheelradius)
+      },
+      color = colors.wheel,
+      mesh_center = {
+        (handoffsetx), 0.005, (handoffsetz)
       },
       src = "meshes/unit_sphere_lowres.obj"
     }
@@ -454,9 +452,9 @@ model = {
           -- support_center = {
           --   coordinates = {0.0405, 0., 0.}
           -- },
-          CoM = {
-            coordinates = {0.0351913, -0.00137974, 0.28}
-          },
+          --CoM = {
+          --  coordinates = {0.0351913, -0.00137974, 0.28}
+          --},
         }
       },
       {
