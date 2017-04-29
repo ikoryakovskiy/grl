@@ -31,7 +31,7 @@
 #include <grl/policy.h>
 #include <grl/policies/nmpc_base.h>
 #include <grl/policies/muscod_nmpc.h>
-
+#include <grl/signal.h>
 
 class MUSCOD;
 
@@ -54,6 +54,8 @@ class NMPCPolicy : public NMPCBase
 
     Vector initial_sd_, initial_pf_, initial_qc_, final_sd_;
     Vector initial_sd_prev_, initial_pf_prev_, initial_qc_prev_;
+    double sum_error_;
+    int sum_error_counter_;
 
     // CONTROL LOOP
     bool iv_provided_;
@@ -67,8 +69,10 @@ class NMPCPolicy : public NMPCBase
     std::string feedback_;
     int n_iter_;
 
+     VectorSignal *pub_error_signal_;
+
   public:
-    NMPCPolicy() : muscod_nmpc_(NULL), nmpc_(NULL), n_iter_(1) { }
+    NMPCPolicy() : muscod_nmpc_(NULL), nmpc_(NULL), n_iter_(1), pub_error_signal_(NULL), sum_error_(0), sum_error_counter_(0)  { }
     ~NMPCPolicy();
 
     // From Configurable

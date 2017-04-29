@@ -446,6 +446,12 @@ agent/master/selective:
     mutability: configuration
     default: 0
     optional: 0
+  sub_sigma_signal:
+    type: signal/vector
+    description: Subscriber to external sigma
+    mutability: configuration
+    default: 0
+    optional: 1
 agent/master/sequential:
   description: Master agent that executes sub-agents sequentially
   predictor:
@@ -1723,6 +1729,88 @@ mapping/policy/feed_forward:
     mutability: configuration
     default: 0
     optional: 1
+mapping/policy/leo/action/learn:
+  description: Policy based on a direct action representation for Leo during learning
+  sigma:
+    type: vector
+    description: Standard deviation of exploration distribution
+    mutability: configuration
+    default: "[  ]"
+    optional: 1
+  output_min:
+    type: vector.action_min
+    description: Lower limit on outputs
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  output_max:
+    type: vector.action_max
+    description: Upper limit on outputs
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  projector:
+    type: projector.observation
+    description: Projects observations onto representation space
+    mutability: configuration
+    default: 0
+    optional: 0
+  representation:
+    type: representation.action
+    description: Action representation
+    mutability: configuration
+    default: 0
+    optional: 0
+  sub_sigma_signal:
+    type: signal/vector
+    description: Subscriber to external sigma
+    mutability: configuration
+    default: 0
+    optional: 1
+mapping/policy/leo/action/test:
+  description: Policy based on a direct action representation for Leo during testing
+  sigma:
+    type: vector
+    description: Standard deviation of exploration distribution
+    mutability: configuration
+    default: "[  ]"
+    optional: 1
+  output_min:
+    type: vector.action_min
+    description: Lower limit on outputs
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  output_max:
+    type: vector.action_max
+    description: Upper limit on outputs
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  projector:
+    type: projector.observation
+    description: Projects observations onto representation space
+    mutability: configuration
+    default: 0
+    optional: 0
+  representation:
+    type: representation.action
+    description: Action representation
+    mutability: configuration
+    default: 0
+    optional: 0
+  sub_error_signal:
+    type: signal/vector
+    description: Subscriber to an error signal
+    mutability: configuration
+    default: 0
+    optional: 1
+  pub_sigma_signal:
+    type: signal/vector
+    description: Publisher of sigma
+    mutability: configuration
+    default: 0
+    optional: 1
 mapping/policy/mcts:
   description: Monte-Carlo Tree Search policy
   model:
@@ -1905,6 +1993,12 @@ mapping/policy/nmpc:
     optional: 1
     min: 0
     max: 2147483647
+  pub_error_signal:
+    type: signal/vector
+    description: Publsher of the model-plant mismatch error signal
+    mutability: configuration
+    default: 0
+    optional: 1
 mapping/policy/nmpc_mlrti:
   description: "Thread-based nonlinear model predictive control policy using the MUSCOD library and implementing a multi-level real-time iteration "
   verbose:
@@ -2848,6 +2942,12 @@ policy/nmpc_stages:
     optional: 1
     min: 0
     max: 2147483647
+  pub_error_signal:
+    type: signal/vector
+    description: Publsher of the model-plant mismatch error signal
+    mutability: configuration
+    default: 0
+    optional: 1
 predictor/ac/action:
   description: Actor-critic predictor for direct action policies
   importer:

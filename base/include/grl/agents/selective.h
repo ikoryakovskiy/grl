@@ -30,6 +30,7 @@
 
 #include <grl/predictor.h>
 #include <grl/agent.h>
+#include <grl/signal.h>
 
 namespace grl
 {
@@ -47,9 +48,10 @@ class SelectiveMasterAgent : public Agent
     int current_idx_;
     double total_reward_;
     double time_;
+    VectorSignal *sub_sigma_signal_;
     
   public:
-    SelectiveMasterAgent() : agents_(2), total_rewards_(0), current_agent_(NULL), current_idx_(0), total_reward_(0), time_(0)
+    SelectiveMasterAgent() : agents_(2), total_rewards_(0), current_agent_(NULL), current_idx_(0), total_reward_(0), time_(0), sub_sigma_signal_(NULL)
     {
       agents_[0] = agents_[1] = NULL;
     }

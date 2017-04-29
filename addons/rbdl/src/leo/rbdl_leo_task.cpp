@@ -80,11 +80,22 @@ void LeoSquattingTaskFA::configure(Configuration &config)
   config.set("observation_dims", 2*dof_+1);
   Vector observation_min, observation_max;
   observation_min.resize(2*dof_+1);
-  observation_min << target_obs_min_[rlsAnkleAngle], target_obs_min_[rlsKneeAngle], target_obs_min_[rlsHipAngle],
-      target_obs_min_[rlsAnkleAngleRate], target_obs_min_[rlsKneeAngleRate], target_obs_min_[rlsHipAngleRate], target_obs_min_[rlsTime];
   observation_max.resize(2*dof_+1);
-  observation_max << target_obs_max_[rlsAnkleAngle], target_obs_max_[rlsKneeAngle], target_obs_max_[rlsHipAngle],
-      target_obs_max_[rlsAnkleAngleRate], target_obs_max_[rlsKneeAngleRate], target_obs_max_[rlsHipAngleRate], target_obs_max_[rlsTime];
+  if (dof_ == 3)
+  {
+    observation_min << target_obs_min_[rlsAnkleAngle], target_obs_min_[rlsKneeAngle], target_obs_min_[rlsHipAngle],
+        target_obs_min_[rlsAnkleAngleRate], target_obs_min_[rlsKneeAngleRate], target_obs_min_[rlsHipAngleRate], target_obs_min_[rlsTime];
+    observation_max << target_obs_max_[rlsAnkleAngle], target_obs_max_[rlsKneeAngle], target_obs_max_[rlsHipAngle],
+        target_obs_max_[rlsAnkleAngleRate], target_obs_max_[rlsKneeAngleRate], target_obs_max_[rlsHipAngleRate], target_obs_max_[rlsTime];
+  }
+  else if (dof_ == 4)
+  {
+    observation_min << target_obs_min_[rlsAnkleAngle], target_obs_min_[rlsKneeAngle], target_obs_min_[rlsHipAngle], target_obs_min_[rlsArmAngle],
+        target_obs_min_[rlsAnkleAngleRate], target_obs_min_[rlsKneeAngleRate], target_obs_min_[rlsHipAngleRate], target_obs_min_[rlsArmAngleRate], target_obs_min_[rlsTime];
+    observation_max << target_obs_max_[rlsAnkleAngle], target_obs_max_[rlsKneeAngle], target_obs_max_[rlsHipAngle],  target_obs_max_[rlsArmAngle],
+        target_obs_max_[rlsAnkleAngleRate], target_obs_max_[rlsKneeAngleRate], target_obs_max_[rlsHipAngleRate], target_obs_max_[rlsArmAngleRate], target_obs_max_[rlsTime];
+  }
+
   config.set("observation_min", observation_min);
   config.set("observation_max", observation_max);
 
@@ -346,12 +357,12 @@ void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *termi
     *terminal = 2;
   else
     *terminal = 0;
-/*
+
   // debugging (until first switch)
   if (state[rlsRefRootZ] == 0.28)
   {
     TRACE("Terminate on first switch.");
     *terminal = 1;
   }
-*/
+
 }

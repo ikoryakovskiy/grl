@@ -34,7 +34,8 @@ if (PKG_CONFIG_FOUND AND QT4_FOUND)
                           ${SRC}/agents/leo_td.cpp
                           ${SRC}/agents/leo_fixed.cpp
                           ${SRC}/agents/leo_sma.cpp
-                          ${SRC}/agents/leo_walkdynamic.cpp)
+                          ${SRC}/agents/leo_walkdynamic.cpp
+                          ${SRC}/policies/leo_action.cpp)
 
     include_directories(${SRC}/../include/grl/environments/leo)
 

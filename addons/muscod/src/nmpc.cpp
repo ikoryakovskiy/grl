@@ -33,6 +33,7 @@ void NMPCPolicy::request(ConfigurationRequest *config)
   NMPCBase::request(config);
   config->push_back(CRP("feedback", "Choose between a non-treaded and a threaded feedback of NMPC", feedback_, CRP::Configuration, {"non-threaded", "threaded"}));
   config->push_back(CRP("n_iter", "Number of iteration", (int)n_iter_, CRP::System, 0, INT_MAX));
+  config->push_back(CRP("pub_error_signal", "signal/vector", "Publsher of the model-plant mismatch error signal", pub_error_signal_, true));
 }
 
 void NMPCPolicy::configure(Configuration &config)
@@ -40,6 +41,7 @@ void NMPCPolicy::configure(Configuration &config)
   NMPCBase::configure(config);
   feedback_ = config["feedback"].str();
   n_iter_ = config["n_iter"];
+  pub_error_signal_ = (VectorSignal*)config["pub_error_signal"].ptr();
 
   INFO("Running " << feedback_ << " implementation of NMPC");
 
@@ -174,6 +176,9 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, const Vector &initial_p
     }
   }
 
+  sum_error_ = 0;
+  sum_error_counter_ = 0;
+
   if (verbose_)
     std::cout << "MUSCOD is reseted!" << std::endl;
 }
@@ -261,7 +266,7 @@ void NMPCPolicy::act(double time, const Observation &in, Action *out)
     muscod_reset(initial_sd_, initial_pf_, initial_qc_);
 
   // simulate model over specified time interval using NMPC internal model
-  if (time != 0)
+  if (pub_error_signal_ && time != 0)
   {
     double time_interval = 0.03; //nmpc_->getSamplingRate();
     nmpc_->simulate(
@@ -271,9 +276,12 @@ void NMPCPolicy::act(double time, const Observation &in, Action *out)
         time_interval,
         &final_sd_        // state from comparison with input
     );
-    final_sd_ = final_sd_ - initial_sd_;
-    Vector error = (final_sd_*final_sd_.transpose()).sqrt();
-    std::cout << "Model-plant error " << error << std::endl;
+    Vector x = final_sd_.block(0, 0, 1, nmpc_->NU()) - initial_sd_.block(0, 0, 1, nmpc_->NU());
+    double error = sqrt(x.cwiseProduct(x).sum());
+    sum_error_ += error;
+    sum_error_counter_++;
+    pub_error_signal_->set(ConstantVector(nmpc_->NU(), sum_error_/sum_error_counter_));
+    //std::cout << "Model-plant error " << pub_error_signal_->get() << std::endl;
   }
 
   out->v.resize( nmpc_->NU() );
