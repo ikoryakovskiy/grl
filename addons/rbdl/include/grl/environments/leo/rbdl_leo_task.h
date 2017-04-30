@@ -92,7 +92,7 @@ class LeoSquattingTaskFA : public Task
 
   public:
     LeoSquattingTaskFA() : target_env_(NULL), timeout_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_nmpc_qd_(1.0), weight_shaping_(0.0), power_(2.0),
-      randomize_(0), dof_(3), continue_after_fall_(0), setpoint_reward_(1) { }
+      randomize_(0), dof_(3), continue_after_fall_(0), setpoint_reward_(1), sub_sim_state_(NULL) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -117,6 +117,8 @@ class LeoSquattingTaskFA : public Task
     Vector target_obs_min_, target_obs_max_;
     int continue_after_fall_;
     int setpoint_reward_;
+
+    VectorSignal *sub_sim_state_;
 };
 
 class LeoSquattingTask : public LeoSquattingTaskFA

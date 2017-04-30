@@ -69,10 +69,10 @@ class NMPCPolicy : public NMPCBase
     std::string feedback_;
     int n_iter_;
 
-     VectorSignal *pub_error_signal_;
+     VectorSignal *pub_error_signal_, *pub_sim_state_;
 
   public:
-    NMPCPolicy() : muscod_nmpc_(NULL), nmpc_(NULL), n_iter_(1), pub_error_signal_(NULL), sum_error_(0), sum_error_counter_(0)  { }
+    NMPCPolicy() : muscod_nmpc_(NULL), nmpc_(NULL), sum_error_(0), sum_error_counter_(0), n_iter_(1), pub_error_signal_(NULL), pub_sim_state_(NULL)  { }
     ~NMPCPolicy();
 
     // From Configurable

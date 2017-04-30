@@ -55,6 +55,7 @@ void LeoSquattingTaskFA::request(ConfigurationRequest *config)
   config->push_back(CRP("power", "double.power", "Power of objective functions comprising cost", power_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("setpoint_reward", "int.setpoint_reward", "If zero, reward at setpoint is given for setpoint at time t, otherwise - at t+1", setpoint_reward_, CRP::System, 0, 1));
   config->push_back(CRP("continue_after_fall", "int.continue_after_fall", "Continue exectution of the environemnt even after a fall of Leo", continue_after_fall_, CRP::System, 0, 1));
+  config->push_back(CRP("sub_sim_state", "signal/vector", "Subscriber to external sigma", sub_sim_state_, true));
 }
 
 void LeoSquattingTaskFA::configure(Configuration &config)
@@ -69,6 +70,7 @@ void LeoSquattingTaskFA::configure(Configuration &config)
   power_ = config["power"];
   setpoint_reward_ = config["setpoint_reward"];
   continue_after_fall_ = config["continue_after_fall"];
+  sub_sim_state_ = (VectorSignal*)config["sub_sim_state"].ptr();
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-M_PI, -M_PI, -M_PI, -M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
@@ -198,6 +200,15 @@ void LeoSquattingTaskFA::evaluate(const Vector &state, const Action &action, con
   if (failed(next))
   {
     *reward = -100;
+    return;
+  }
+
+  if (sub_sim_state_)
+  {
+    // use reward based on the simulated state
+    Vector sim_state = sub_sim_state_->get();
+    Vector x = next.block(0, 0, 1, dof_) - sim_state.block(0, 0, 1, dof_);
+    *reward = - sqrt(x.cwiseProduct(x).sum());
     return;
   }
 
