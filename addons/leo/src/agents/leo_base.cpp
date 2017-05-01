@@ -49,8 +49,8 @@ void LeoBaseAgent::configure(Configuration &config)
 
 bool LeoBaseAgent::failed(const Observation &obs, bool stanceLegLeft) const
 {
-  double torsoComstraint = 1; // 1
-  double stanceComstraint = 0.36*M_PI; // 0.36*M_PI
+  double torsoConstraint = 1; // 1
+  double stanceConstraint = 0.36*M_PI; // 0.36*M_PI
 
   /*
   // Torso angle out of range
@@ -62,14 +62,14 @@ bool LeoBaseAgent::failed(const Observation &obs, bool stanceLegLeft) const
 
   // Stance leg angle out of range
   int hipStance = stanceLegLeft ? ljHipLeft : ljHipRight;
-  if (fabs(obs[ljTorso] + obs[hipStance]) > stanceComstraint)
+  if (fabs(obs[ljTorso] + obs[hipStance]) > stanceConstraint)
   {
     std::cout << "[TERMINATION] Stance leg angle too large" << std::endl;
     return true;
   }
   */
 
-  if (fabs(obs[0]+obs[1]+obs[2]) > torsoComstraint)
+  if (fabs(obs[0]+obs[1]+obs[2]) > torsoConstraint)
   {
     //std::cout << "[TERMINATION] Torso angle too large" << std::endl;
     return true;

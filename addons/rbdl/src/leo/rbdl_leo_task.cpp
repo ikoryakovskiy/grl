@@ -130,7 +130,7 @@ void LeoSquattingTaskFA::start(int test, Vector *state) const
     *state <<
            1.0586571916803691E+00,
           -2.1266836153365212E+00,
-           1.2680264236561250E+00, // 1.0680264236561250E+00,
+           1.2680264236561250E+00,
           -2.5999999999984957E-01,
           -0.0,
           -0.0,
@@ -203,18 +203,22 @@ void LeoSquattingTaskFA::evaluate(const Vector &state, const Action &action, con
     return;
   }
 
+  double cost_nmpc = 0, cost_nmpc_aux = 0, cost_nmpc_qd = 0;
+  double refRootZ = setpoint_reward_ ? next[rlsRefRootZ] : state[rlsRefRootZ];
+
   if (sub_sim_state_)
   {
+    // use shaping
+    double F0 = -fabs(state[rlsRootZ] - refRootZ); // distance to setpoint at time (t)
+    double F1 = -fabs(next [rlsRootZ] - refRootZ); // distance to setpoint at time (t+1)
+    double shaping = 0.97*F1 - F0; // positive reward for getting closer to the setpoint
+
     // use reward based on the simulated state
     Vector sim_state = sub_sim_state_->get();
     Vector x = next.block(0, 0, 1, dof_) - sim_state.block(0, 0, 1, dof_);
-    *reward = - sqrt(x.cwiseProduct(x).sum());
+    *reward = - sqrt(x.cwiseProduct(x).sum()) + 1.0 * shaping;
     return;
   }
-
-  double cost_nmpc = 0, cost_nmpc_aux = 0, cost_nmpc_qd = 0;
-
-  double refRootZ = setpoint_reward_ ? next[rlsRefRootZ] : state[rlsRefRootZ];
 
   // calculate support center from feet positions
   double suppport_center = 0.5 * (next[rlsLeftTipX] + next[rlsLeftHeelX]);

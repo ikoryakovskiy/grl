@@ -60,7 +60,7 @@ void SelectiveMasterAgent::report(std::ostream &os)
   std::stringstream progressString;
   progressString << std::fixed << std::setprecision(3) << std::right;
 
-  std::cout << "   " << &total_rewards_ << std::endl;
+  //std::cout << "   " << &total_rewards_ << std::endl;
 
   // append cumulative reward in case of timeout termination
   if (total_reward_ != 0)

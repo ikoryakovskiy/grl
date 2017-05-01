@@ -401,7 +401,7 @@ double LeoSquatEnvironment::step(const Action &action, Observation *obs, double 
 {
   CRAWL("RL action: " << action);
 
-  Vector a = action;
+  //Vector a = action;
   //a << -4, 5, -4;
   //std::cout << "RL action: " << action << std::endl;
 
