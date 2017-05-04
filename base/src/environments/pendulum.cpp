@@ -67,9 +67,9 @@ void PendulumDynamics::configure(Configuration &config)
       std::string file = param.substr(0, pos);
       std::string sn = param.substr(pos+1, param.length()-pos);
 
-      char* p;
+      char* p = NULL;
       long n = strtol(sn.c_str(), &p, 10);
-      if (*p == NULL)
+      if (p == NULL)
       {
         // load file and read parameters from the specified line
         std::ifstream infile(file);

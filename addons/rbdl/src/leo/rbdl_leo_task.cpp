@@ -39,10 +39,9 @@
 
 using namespace grl;
 
-REGISTER_CONFIGURABLE(LeoSquattingTaskFA)
 REGISTER_CONFIGURABLE(LeoSquattingTask)
 
-void LeoSquattingTaskFA::request(ConfigurationRequest *config)
+void LeoSquattingTask::request(ConfigurationRequest *config)
 {
   Task::request(config);
   config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_, true));
@@ -56,9 +55,11 @@ void LeoSquattingTaskFA::request(ConfigurationRequest *config)
   config->push_back(CRP("setpoint_reward", "int.setpoint_reward", "If zero, reward at setpoint is given for setpoint at time t, otherwise - at t+1", setpoint_reward_, CRP::System, 0, 1));
   config->push_back(CRP("continue_after_fall", "int.continue_after_fall", "Continue exectution of the environemnt even after a fall of Leo", continue_after_fall_, CRP::System, 0, 1));
   config->push_back(CRP("sub_sim_state", "signal/vector", "Subscriber to external sigma", sub_sim_state_, true));
+  config->push_back(CRP("gamma", "Discount rate (used in shaping)", gamma_));
+  config->push_back(CRP("fixed_arm", "int.fixed_arm", "Require fixed arm, fa option", fixed_arm_, CRP::System, 0, 1));
 }
 
-void LeoSquattingTaskFA::configure(Configuration &config)
+void LeoSquattingTask::configure(Configuration &config)
 {
   target_env_ = (Environment*)config["target_env"].ptr(); // Select a real enviromnent if needed
   timeout_ = config["timeout"];
@@ -71,6 +72,8 @@ void LeoSquattingTaskFA::configure(Configuration &config)
   setpoint_reward_ = config["setpoint_reward"];
   continue_after_fall_ = config["continue_after_fall"];
   sub_sim_state_ = (VectorSignal*)config["sub_sim_state"].ptr();
+  gamma_ = config["gamma"];
+  fixed_arm_ = config["fixed_arm"];
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-M_PI, -M_PI, -M_PI, -M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
@@ -78,19 +81,21 @@ void LeoSquattingTaskFA::configure(Configuration &config)
   toVector(obs_min, target_obs_min_);
   toVector(obs_max, target_obs_max_);
 
+  dof_ = fixed_arm_ ? 3 : 4;
+
   // Observations and actions exposed to an agent
   config.set("observation_dims", 2*dof_+1);
   Vector observation_min, observation_max;
   observation_min.resize(2*dof_+1);
   observation_max.resize(2*dof_+1);
-  if (dof_ == 3)
+  if (fixed_arm_)
   {
     observation_min << target_obs_min_[rlsAnkleAngle], target_obs_min_[rlsKneeAngle], target_obs_min_[rlsHipAngle],
         target_obs_min_[rlsAnkleAngleRate], target_obs_min_[rlsKneeAngleRate], target_obs_min_[rlsHipAngleRate], target_obs_min_[rlsTime];
     observation_max << target_obs_max_[rlsAnkleAngle], target_obs_max_[rlsKneeAngle], target_obs_max_[rlsHipAngle],
         target_obs_max_[rlsAnkleAngleRate], target_obs_max_[rlsKneeAngleRate], target_obs_max_[rlsHipAngleRate], target_obs_max_[rlsTime];
   }
-  else if (dof_ == 4)
+  else
   {
     observation_min << target_obs_min_[rlsAnkleAngle], target_obs_min_[rlsKneeAngle], target_obs_min_[rlsHipAngle], target_obs_min_[rlsArmAngle],
         target_obs_min_[rlsAnkleAngleRate], target_obs_min_[rlsKneeAngleRate], target_obs_min_[rlsHipAngleRate], target_obs_min_[rlsArmAngleRate], target_obs_min_[rlsTime];
@@ -113,7 +118,7 @@ void LeoSquattingTaskFA::configure(Configuration &config)
   std::cout << "action_max: " << config["action_max"].v() << std::endl;
 }
 
-void LeoSquattingTaskFA::start(int test, Vector *state) const
+void LeoSquattingTask::start(int test, Vector *state) const
 {
   *state = ConstantVector(2*(4)+1, 0); // Same size for both tasts with FA and without
 
@@ -163,17 +168,25 @@ void LeoSquattingTaskFA::start(int test, Vector *state) const
     }
   }
 
+  total_task_reward_ = 0;
   CRAWL("Initial state: " << *state);
 }
 
-void LeoSquattingTaskFA::observe(const Vector &state, Observation *obs, int *terminal) const
+void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *terminal) const
 {
   grl_assert(state.size() == stsStateDim);
 
-  // arm is auto-actuated => exclude angle and angle rate from observations
   obs->v.resize(2*dof_+1);
-  obs->v << state[rlsAnkleAngle], state[rlsKneeAngle], state[rlsHipAngle],
-            state[rlsAnkleAngleRate], state[rlsKneeAngleRate], state[rlsHipAngleRate], state[rlsRefRootZ];
+  if (fixed_arm_)
+  {
+    obs->v << state[rlsAnkleAngle], state[rlsKneeAngle], state[rlsHipAngle],
+              state[rlsAnkleAngleRate], state[rlsKneeAngleRate], state[rlsHipAngleRate], state[rlsRefRootZ];
+  }
+  else
+  {
+    obs->v << state[rlsAnkleAngle], state[rlsKneeAngle], state[rlsHipAngle], state[rlsArmAngle],
+              state[rlsAnkleAngleRate], state[rlsKneeAngleRate], state[rlsHipAngleRate], state[rlsArmAngleRate], state[rlsRefRootZ];
+  }
 
   if ((timeout_> 0) && (state[rlsTime] >= timeout_))
     *terminal = 1;
@@ -191,7 +204,7 @@ void LeoSquattingTaskFA::observe(const Vector &state, Observation *obs, int *ter
 */
 }
 
-void LeoSquattingTaskFA::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const
+void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const
 {
   grl_assert(state.size() == stsStateDim);
   grl_assert(action.size() == dof_);
@@ -200,25 +213,12 @@ void LeoSquattingTaskFA::evaluate(const Vector &state, const Action &action, con
   if (failed(next))
   {
     *reward = -100;
+    total_task_reward_ += -100;
     return;
   }
 
   double cost_nmpc = 0, cost_nmpc_aux = 0, cost_nmpc_qd = 0;
   double refRootZ = setpoint_reward_ ? next[rlsRefRootZ] : state[rlsRefRootZ];
-
-  if (sub_sim_state_)
-  {
-    // use shaping
-    double F0 = -fabs(state[rlsRootZ] - refRootZ); // distance to setpoint at time (t)
-    double F1 = -fabs(next [rlsRootZ] - refRootZ); // distance to setpoint at time (t+1)
-    double shaping = 0.97*F1 - F0; // positive reward for getting closer to the setpoint
-
-    // use reward based on the simulated state
-    Vector sim_state = sub_sim_state_->get();
-    Vector x = next.block(0, 0, 1, dof_) - sim_state.block(0, 0, 1, dof_);
-    *reward = - sqrt(x.cwiseProduct(x).sum()) + 1.0 * shaping;
-    return;
-  }
 
   // calculate support center from feet positions
   double suppport_center = 0.5 * (next[rlsLeftTipX] + next[rlsLeftHeelX]);
@@ -247,7 +247,8 @@ void LeoSquattingTaskFA::evaluate(const Vector &state, const Action &action, con
   // regularize: || qdot ||_2^2
   // res[res_cnt++] = 6.00 * sd[QDOTS["arm"]]; // arm
   double rateW = 5.0; // 6.0
-  cost_nmpc_qd += pow(rateW * fabs(next[rlsArmAngleRate]), power_); // hip_left
+  if (!fixed_arm_)
+    cost_nmpc_qd += pow(rateW * fabs(next[rlsArmAngleRate]), power_); // arm, added to cost only if nmpc adds it
   cost_nmpc_qd += pow(rateW * fabs(next[rlsHipAngleRate]), power_); // hip_left
   cost_nmpc_qd += pow(rateW * fabs(next[rlsKneeAngleRate]), power_); // knee_left
   cost_nmpc_qd += pow(rateW * fabs(next[rlsAnkleAngleRate]), power_); // ankle_left
@@ -255,29 +256,40 @@ void LeoSquattingTaskFA::evaluate(const Vector &state, const Action &action, con
   // regularize: || u ||_2^2
   // res[res_cnt++] = 0.01 * u[TAUS["arm"]]; // arm
 
-  double shaping = 0;
-//  shaping += pow(0.01 * fabs(action[0]), power_); // hip_left
-//  shaping += pow(0.01 * fabs(action[1]), power_); // knee_left
-//  shaping += pow(0.01 * fabs(action[2]), power_); // ankle_left
-/*
-  double F0 = -fabs(state[rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t)
-  double F1 = -fabs(next [rlsRootZ] - next[rlsRefRootZ]); // distance to setpoint at time (t+1)
-  double shaping = gamma_*F1 - F0; // positive reward for getting closer to the setpoint
-  TRACE(state[rlsRootZ] << ", " << next[rlsRootZ] << " -> " << next[rlsRefRootZ]);
-  TRACE(F1 << " - " << F0 << " = " << shaping);
-*/
-
-  //double shaping = -fabs(next [rlsRootZ] - refRootZ); // distance to setpoint at time (t) or (t+1)
-
   TRACE(cost_nmpc);
   TRACE(cost_nmpc_aux);
   TRACE(cost_nmpc_qd);
 
   // reward is a negative of cost
-  *reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*(cost_nmpc_aux + weight_nmpc_qd_*cost_nmpc_qd)) - weight_shaping_*shaping;
+  double task_reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*(cost_nmpc_aux + weight_nmpc_qd_*cost_nmpc_qd));
+  total_task_reward_ += task_reward;
+
+  if (sub_sim_state_)
+  {
+    // use reward based on the simulated state if requested
+    Vector sim_state = sub_sim_state_->get();
+    Vector x = next.block(0, 0, 1, dof_) - sim_state.block(0, 0, 1, dof_);
+    *reward = - sqrt(x.cwiseProduct(x).sum());
+  }
+  else
+    *reward = task_reward;
+
+  TRACE(*reward);
+
+  // adding shaping
+  if (weight_shaping_ != 0.0)
+  {
+    double F0 = -fabs(state[rlsRootZ] - refRootZ); // distance to setpoint at time (t)
+    double F1 = -fabs(next [rlsRootZ] - refRootZ); // distance to setpoint at time (t+1)
+    double shaping = gamma_*F1 - F0; // positive reward for getting closer to the setpoint
+    TRACE(state[rlsRootZ] << ", " << next[rlsRootZ] << " -> " << refRootZ);
+    TRACE(F1 << " - " << F0 << " = " << shaping);
+    *reward += weight_shaping_*shaping;
+    TRACE(*reward);
+  }
 }
 
-int LeoSquattingTaskFA::failed(const Vector &state) const
+int LeoSquattingTask::failed(const Vector &state) const
 {
   if (std::isnan(state[rlsRootZ]))
     ERROR("NaN value of root, try to reduce integration period to cope with this.");
@@ -345,39 +357,13 @@ int LeoSquattingTaskFA::failed(const Vector &state) const
     return 0;
 }
 
-void LeoSquattingTaskFA::report(std::ostream &os, const Vector &state) const
+void LeoSquattingTask::report(std::ostream &os, const Vector &state) const
 {
   const int pw = 15;
   std::stringstream progressString;
   progressString << std::fixed << std::setprecision(3) << std::right;
   progressString << std::setw(pw) << state[rlsRootZ];
   progressString << std::setw(pw) << state[stsSquats];
+  progressString << std::setw(pw) << total_task_reward_;
   os << progressString.str();
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *terminal) const
-{
-  grl_assert(state.size() == stsStateDim);
-
-  // arm is auto-actuated => exclude angle and angle rate from observations
-  obs->v.resize(2*dof_+1);
-  obs->v << state[rlsAnkleAngle], state[rlsKneeAngle], state[rlsHipAngle], state[rlsArmAngle],
-            state[rlsAnkleAngleRate], state[rlsKneeAngleRate], state[rlsHipAngleRate], state[rlsArmAngleRate], state[rlsRefRootZ];
-
-  if ((timeout_> 0) && (state[rlsTime] >= timeout_))
-    *terminal = 1;
-  else if (failed(state))
-    *terminal = 2;
-  else
-    *terminal = 0;
-
-  // debugging (until first switch)
-  if (state[rlsRefRootZ] == 0.28)
-  {
-    TRACE("Terminate on first switch.");
-    *terminal = 1;
-  }
-
 }

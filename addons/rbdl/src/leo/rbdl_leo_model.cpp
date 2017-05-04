@@ -121,7 +121,8 @@ void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
   // Compose a complete state <state, time, height, com, ..., squats>
   // Immediately try to stand up
   state_.resize(stsStateDim);
-  state_ << *state, VectorConstructor(upper_height_), rbdl_addition_, VectorConstructor(0);
+  state_ << *state, VectorConstructor(upper_height_), rbdl_addition_,
+      VectorConstructor(0); // zero squats
   *state = state_;
 
   export_meshup_animation(state_, ConstantVector(target_dof_, 0));

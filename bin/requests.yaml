@@ -6238,7 +6238,7 @@ task/flyer2d/regulator:
     min: 0
     max: 1.797693134862316e+308
 task/leo_squatting:
-  description: Task specification for Leo squatting
+  description: Task specification for Leo squatting without an auto-actuated arm by default
   observation_dims:
     type: int.observation_dims
     description: Number of observation dimensions
@@ -6355,124 +6355,22 @@ task/leo_squatting:
     mutability: configuration
     default: 0
     optional: 1
-task/leo_squatting_fa:
-  description: Task specification for Leo squatting with an auto-actuated arm
-  observation_dims:
-    type: int.observation_dims
-    description: Number of observation dimensions
-    mutability: provided
-  observation_min:
-    type: vector.observation_min
-    description: Lower limit on observations
-    mutability: provided
-  observation_max:
-    type: vector.observation_max
-    description: Upper limit on observations
-    mutability: provided
-  action_dims:
-    type: int.action_dims
-    description: Number of action dimensions
-    mutability: provided
-  action_min:
-    type: vector.action_min
-    description: Lower limit on actions
-    mutability: provided
-  action_max:
-    type: vector.action_max
-    description: Upper limit on actions
-    mutability: provided
-  reward_min:
-    type: double.reward_min
-    description: Lower limit on immediate reward
-    mutability: provided
-  reward_max:
-    type: double.reward_max
-    description: Upper limit on immediate reward
-    mutability: provided
-  target_env:
-    type: environment
-    description: Interaction environment
+  gamma:
+    type: double
+    description: Discount rate (used in shaping)
     mutability: configuration
-    default: 0
-    optional: 1
-  timeout:
-    type: double.timeout
-    description: Task timeout
-    mutability: system
-    default: 0
+    default: 0.97
     optional: 1
     min: 0
-    max: 1.797693134862316e+308
-  randomize:
-    type: int.randomize
-    description: Initialization from a random pose
+    max: 1
+  fixed_arm:
+    type: int.fixed_arm
+    description: Require fixed arm, fa option
     mutability: system
     default: 0
     optional: 1
     min: 0
     max: 1
-  weight_nmpc:
-    type: double.weight_nmpc
-    description: Weight on the NMPC cost (excluding shaping)
-    mutability: system
-    default: 0.0001
-    optional: 1
-    min: 0
-    max: 1.797693134862316e+308
-  weight_nmpc_aux:
-    type: double.weight_nmpc_aux
-    description: Weight on the part of NMPC cost with auxilary
-    mutability: system
-    default: 1
-    optional: 1
-    min: 0
-    max: 1.797693134862316e+308
-  weight_nmpc_qd:
-    type: double.weight_nmpc_qd
-    description: Weight on the part of NMPC cost which penalizes large velocities
-    mutability: system
-    default: 1
-    optional: 1
-    min: 0
-    max: 1.797693134862316e+308
-  weight_shaping:
-    type: double.weight_shaping
-    description: Weight on the shaping cost
-    mutability: system
-    default: 0
-    optional: 1
-    min: 0
-    max: 1.797693134862316e+308
-  power:
-    type: double.power
-    description: Power of objective functions comprising cost
-    mutability: system
-    default: 2
-    optional: 1
-    min: 0
-    max: 1.797693134862316e+308
-  setpoint_reward:
-    type: int.setpoint_reward
-    description: If zero, reward at setpoint is given for setpoint at time t, otherwise - at t+1
-    mutability: system
-    default: 1
-    optional: 1
-    min: 0
-    max: 1
-  continue_after_fall:
-    type: int.continue_after_fall
-    description: Continue exectution of the environemnt even after a fall of Leo
-    mutability: system
-    default: 0
-    optional: 1
-    min: 0
-    max: 1
-  sub_sim_state:
-    type: signal/vector
-    description: Subscriber to external sigma
-    mutability: configuration
-    default: 0
-    optional: 1
 task/lua:
   description: User-provided task specification in LUA
   observation_dims:
