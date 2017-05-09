@@ -468,7 +468,7 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
 
     // use pointers to identify different controllers
     // switch controllers cntl_ <-> idle_
-    tmp_nmpc = cntl_; // bug 1 fix
+    tmp_nmpc = cntl_;
     cntl_ = idle_;
     idle_ = tmp_nmpc;
 
@@ -488,7 +488,7 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
     // change state:
     //   state -> 0 (idle_call)
     current_state_ = idle_call;
-    this->act(time, in, out); // bug 2 fix
+    this->act(time, in, out);
     break; //optional
 
   default : //Optional
@@ -496,6 +496,13 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
   }
 
   // Here we can return the feedback control
+/*
+  // *** HACK TO MAKE LEO SQUAT IN VOLTAGE CONTROL ***
+  if (fabs(initial_pf_[0] - 0.28) < 0.00001)
+    initial_qc_ *= 0.5;
+  else
+    initial_qc_ *= 1.1;
+*/
   out->v = initial_qc_;
   out->type = atGreedy;
 
