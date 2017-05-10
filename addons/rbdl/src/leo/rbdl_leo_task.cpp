@@ -168,7 +168,9 @@ void LeoSquattingTask::start(int test, Vector *state) const
     }
   }
 
-  total_task_reward_ = 0;
+  task_reward_ = 0;
+  subtask_reward_ = 0;
+  subtasks_rewards_.clear();
   CRAWL("Initial state: " << *state);
 }
 
@@ -213,7 +215,8 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   if (failed(next))
   {
     *reward = -100;
-    total_task_reward_ += -100;
+    task_reward_ += -100;
+    subtask_reward_ += -100;
     return;
   }
 
@@ -261,8 +264,9 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   TRACE(cost_nmpc_qd);
 
   // reward is a negative of cost
-  double task_reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*(cost_nmpc_aux + weight_nmpc_qd_*cost_nmpc_qd));
-  total_task_reward_ += task_reward;
+  double immediate_reward = -weight_nmpc_*(cost_nmpc + weight_nmpc_aux_*(cost_nmpc_aux + weight_nmpc_qd_*cost_nmpc_qd));
+  task_reward_ += immediate_reward;
+  subtask_reward_ += immediate_reward;
 
   if (sub_sim_state_)
   {
@@ -272,7 +276,7 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
     *reward = - sqrt(x.cwiseProduct(x).sum());
   }
   else
-    *reward = task_reward;
+    *reward = immediate_reward;
 
   TRACE(*reward);
 
@@ -286,6 +290,13 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
     TRACE(F1 << " - " << F0 << " = " << shaping);
     *reward += weight_shaping_*shaping;
     TRACE(*reward);
+  }
+
+  // record rewards when switching happens
+  if (state[rlsRefRootZ] != next[rlsRefRootZ])
+  {
+    subtasks_rewards_.push_back(subtask_reward_);
+    subtask_reward_ = 0;
   }
 }
 
@@ -364,6 +375,20 @@ void LeoSquattingTask::report(std::ostream &os, const Vector &state) const
   progressString << std::fixed << std::setprecision(3) << std::right;
   progressString << std::setw(pw) << state[rlsRootZ];
   progressString << std::setw(pw) << state[stsSquats];
-  progressString << std::setw(pw) << total_task_reward_;
+  progressString << std::setw(pw) << task_reward_;
+
+  // append cumulative reward in case of timeout termination
+  if (subtask_reward_ != 0)
+    subtasks_rewards_.push_back(subtask_reward_);
+
+  int max_size = 6;
+  int size = std::min(max_size, static_cast<int>(subtasks_rewards_.size()));
+
+  for (int i = 0; i < size; i++)
+    progressString << std::setw(pw) << subtasks_rewards_[i];
+
+  for (int i = size; i < max_size; i++)
+    progressString << std::setw(pw) << std::numeric_limits<double>::quiet_NaN();
+
   os << progressString.str();
 }

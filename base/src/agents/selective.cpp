@@ -60,17 +60,15 @@ void SelectiveMasterAgent::report(std::ostream &os)
   std::stringstream progressString;
   progressString << std::fixed << std::setprecision(3) << std::right;
 
-  //std::cout << "   " << &total_rewards_ << std::endl;
-
   // append cumulative reward in case of timeout termination
-  if (total_reward_ != 0)
-    total_rewards_.push_back(total_reward_);
+  if (subtask_reward_ != 0)
+    subtasks_rewards_.push_back(subtask_reward_);
 
   int max_size = 6;
-  int size = std::min(max_size, static_cast<int>(total_rewards_.size()));
+  int size = std::min(max_size, static_cast<int>(subtasks_rewards_.size()));
 
   for (int i = 0; i < size; i++)
-    progressString << std::setw(pw) << total_rewards_[i];
+    progressString << std::setw(pw) << subtasks_rewards_[i];
 
   for (int i = size; i < max_size; i++)
     progressString << std::setw(pw) << std::numeric_limits<double>::quiet_NaN();
@@ -94,8 +92,8 @@ void SelectiveMasterAgent::start(const Observation &obs, Action *action)
   current_agent_->start(obs, action);
 
   time_ = 0;
-  total_reward_ = 0;
-  total_rewards_.clear();
+  subtask_reward_ = 0;
+  subtasks_rewards_.clear();
 }
 
 void SelectiveMasterAgent::step(double tau, const Observation &obs, double reward, Action *action)
@@ -108,9 +106,9 @@ void SelectiveMasterAgent::step(double tau, const Observation &obs, double rewar
 void SelectiveMasterAgent::end(double tau, const Observation &obs, double reward)
 {
   current_agent_->end(tau, obs, reward);
-  total_reward_ += reward;
-  total_rewards_.push_back(total_reward_);
-  total_reward_ = 0;
+  subtask_reward_ += reward;
+  subtasks_rewards_.push_back(subtask_reward_);
+  subtask_reward_ = 0;
 }
 
 size_t SelectiveMasterAgent::selectSubAgent(double time, const Observation &obs, Action *action)
@@ -146,11 +144,11 @@ void SelectiveMasterAgent::stepSubAgent(int idx, double tau, const Observation &
 
   // record rewards based on changes of the index
   // therefore, also allow to use the same agent, but record it's performance at each stage
-  total_reward_ += reward;
+  subtask_reward_ += reward;
   if (current_idx_ != idx)
   {
-    total_rewards_.push_back(total_reward_);
-    total_reward_ = 0;
+    subtasks_rewards_.push_back(subtask_reward_);
+    subtask_reward_ = 0;
     current_idx_ = idx;
   }
 }

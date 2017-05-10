@@ -92,7 +92,7 @@ class LeoSquattingTask : public Task
 
   public:
     LeoSquattingTask() : target_env_(NULL), timeout_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_nmpc_qd_(1.0), weight_shaping_(0.0),
-      total_task_reward_(0.0), power_(2.0), randomize_(0), dof_(4), continue_after_fall_(0), setpoint_reward_(1), gamma_(0.97),
+      task_reward_(0.0), subtask_reward_(0.0), power_(2.0), randomize_(0), dof_(4), continue_after_fall_(0), setpoint_reward_(1), gamma_(0.97),
       fixed_arm_(false), sub_sim_state_(NULL) { }
 
     // From Configurable
@@ -112,7 +112,9 @@ class LeoSquattingTask : public Task
     Environment *target_env_;
     double timeout_;
     double weight_nmpc_, weight_nmpc_aux_, weight_nmpc_qd_, weight_shaping_;
-    mutable double total_task_reward_;
+    mutable double task_reward_;
+    mutable double subtask_reward_;
+    mutable std::vector<double> subtasks_rewards_;
     double power_;
     int randomize_;
     int dof_;
