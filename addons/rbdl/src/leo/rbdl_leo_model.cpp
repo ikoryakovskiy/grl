@@ -171,6 +171,15 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   double tau;
   if (target_env_)
   {
+    if (mode_ == "vc")
+    {
+      // *** HACK TO MAKE LEO SQUAT IN VOLTAGE CONTROL ***
+      if (fabs(state_[rlsRefRootZ] - 0.28) < 0.00001)
+        target_action_ *= VectorConstructor(0.25, 0.25, 0.25, 1); // 0.5 for warm dynamixels
+      else
+        target_action_ *= VectorConstructor(1.15, 1.15, 1.15, 1); // 1.1 for warm dynamixels
+    }
+
     Observation obs;
     tau = target_env_->step(target_action_, &obs, NULL, NULL);
     target_state_next_ <<  obs.v, VectorConstructor(target_state_[rlsTime] + tau);
@@ -204,9 +213,9 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   if ((*next)[rlsRefRootZ] != state_[rlsRefRootZ])
     (*next)[stsSquats] = state_[stsSquats] + 1;
 
-  //std::cout << "  > Height: " << std::fixed << std::setprecision(3) << std::right
-  //          << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
-  //          << std::setw(10) << (*next)[rlsRefRootZ] << std::endl;
+  std::cout << "  > Height: " << std::fixed << std::setprecision(3) << std::right
+            << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
+            << std::setw(10) << (*next)[rlsRefRootZ] << std::endl;
   //std::cout << "  > Next state: " << std::fixed << std::setprecision(3) << std::right << std::setw(10) << *next << std::endl;
 
   export_meshup_animation(*next, target_action_);

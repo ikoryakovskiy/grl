@@ -496,13 +496,6 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
   }
 
   // Here we can return the feedback control
-/*
-  // *** HACK TO MAKE LEO SQUAT IN VOLTAGE CONTROL ***
-  if (fabs(initial_pf_[0] - 0.28) < 0.00001)
-    initial_qc_ *= 0.5;
-  else
-    initial_qc_ *= 1.1;
-*/
   out->v = initial_qc_;
   out->type = atGreedy;
 

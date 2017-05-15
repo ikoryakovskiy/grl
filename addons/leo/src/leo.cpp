@@ -21,7 +21,7 @@ void CLeoBhBase::resetState(double time0)
 
   for (int i=0; i<ljNumDynamixels; i++)
     mJointSpeedFilter[i].init(1.0/mTotalStepTime, 10.0);
-  mJointSpeedFilter[ljTorso].init(mTotalStepTime, 25.0);	// 25Hz because? : 1) this encoder has 8x the resolution of a dynamixel 2) torso angles/velocities are more important
+  mJointSpeedFilter[ljTorso].init(1.0/mTotalStepTime, 25.0);	// 25Hz because? : 1) this encoder has 8x the resolution of a dynamixel 2) torso angles/velocities are more important
 }
 
 void CLeoBhBase::fillLeoState(const Vector &obs, const Vector &action, CLeoState &leoState)
