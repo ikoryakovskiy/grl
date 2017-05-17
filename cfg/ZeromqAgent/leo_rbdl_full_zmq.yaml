@@ -17,7 +17,6 @@ experiment:
         file: leo_ff_dl.lua
         auxiliary: com
       target_dof: 7
-      animation: full
       condition: [0.01, 0.01]
       mode: vc
     task: 
