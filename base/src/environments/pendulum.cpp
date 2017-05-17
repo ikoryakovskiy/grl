@@ -132,7 +132,7 @@ void PendulumSwingupTask::observe(const Vector &state, Observation *obs, int *te
   b = state[1];
 
   obs->v.resize(2);
-  (*obs)[0] = a;
+  (*obs)[0] = a; //+ RandGen::getUniform(-0.3,0.3);
   (*obs)[1] = b;
   obs->absorbing = false;
   

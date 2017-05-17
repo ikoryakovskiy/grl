@@ -27,10 +27,13 @@
 
 #include <grl/environments/leo/rbdl_leo_model.h>
 #include <grl/environments/leo/rbdl_leo_task.h>
+#include <DynamixelSpecs.h>
+#include <iomanip>
 
 using namespace grl;
 
 REGISTER_CONFIGURABLE(LeoSquattingSandboxModel)
+REGISTER_CONFIGURABLE(LeoWalkingSandboxModel)
 
 void LeoSandboxModel::request(ConfigurationRequest *config)
 {
@@ -41,6 +44,9 @@ void LeoSandboxModel::request(ConfigurationRequest *config)
   config->push_back(CRP("target_dof", "int.target_dof", "Number of degrees of freedom of the target model", target_dof_, CRP::Configuration, 0, INT_MAX));
   config->push_back(CRP("animation", "Save current state or full animation", animation_, CRP::Configuration, {"nope", "full", "immediate"}));
   config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_, true));
+
+  condition_ = VectorConstructor(0.01, 0.01);
+  config->push_back(CRP("condition", "vector.condition", "Box-like conditions for switching direction of squat", condition_));
 }
 
 void LeoSandboxModel::configure(Configuration &config)
@@ -51,6 +57,7 @@ void LeoSandboxModel::configure(Configuration &config)
   target_env_ = (Environment*)config["target_env"].ptr(); // Select a real enviromnent if needed
   target_dof_ = config["target_dof"];
   animation_ = config["animation"].str();
+  condition_ = config["condition"].v();
 }
 
 void LeoSandboxModel::export_meshup_animation(const Vector &state, const Vector &action) const
@@ -94,6 +101,7 @@ void LeoSquattingSandboxModel::request(ConfigurationRequest *config)
 
   config->push_back(CRP("lower_height", "double.lower_height", "Lower bound of root height to switch direction", lower_height_, CRP::Configuration, 0.0, DBL_MAX));
   config->push_back(CRP("upper_height", "double.upper_height", "Upper bound of root height to switch direction", upper_height_, CRP::Configuration, 0.0, DBL_MAX));
+  config->push_back(CRP("mode", "Control mode (torque/voltage )", mode_, CRP::Configuration, {"tc", "vc"}));
 }
 
 void LeoSquattingSandboxModel::configure(Configuration &config)
@@ -102,29 +110,20 @@ void LeoSquattingSandboxModel::configure(Configuration &config)
 
   lower_height_ = config["lower_height"];
   upper_height_ = config["upper_height"];
+  mode_ = config["mode"].str();
 }
 
 void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
 {
-  // Obtain an actual state from a target environment, not from task
-  if (target_env_)
-  {
-    Observation obs;
-    target_env_->start(0, &obs);
-    *state = obs.v;
-  }
-
-  // Unknown bug in GRL call/Lua/RBDL: need to call eom, then 'finalize' works correctly
-  Vector xd;
-  action_step_.resize(target_dof_);
-  dynamics_->eom(*state, action_step_, &xd);
-
   // Fill parts of a state such as Center of Mass, Angular Momentum
+  dynamics_->updateKinematics(*state);
   dynamics_->finalize(*state, rbdl_addition_);
 
   // Compose a complete state <state, time, height, com, ..., squats>
+  // Immediately try to stand up
   state_.resize(stsStateDim);
-  state_ << *state, VectorConstructor(lower_height_), rbdl_addition_, VectorConstructor(0.0);
+  state_ << *state, VectorConstructor(upper_height_), rbdl_addition_,
+      VectorConstructor(0); // zero squats
   *state = state_;
 
   export_meshup_animation(state_, ConstantVector(target_dof_, 0));
@@ -134,23 +133,35 @@ void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
 
 double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
 {
-  state_step_.resize(2*target_dof_+1);
-  next_step_.resize(2*target_dof_+1);
-  action_step_.resize(target_dof_);
+  target_state_.resize(2*target_dof_+1);
+  target_state_next_.resize(2*target_dof_+1);
+  target_action_.resize(target_dof_);
   next->resize(state_.size());
 
   // reduce state
-  state_step_ << state_.block(0, 0, 1, 2*target_dof_+1);
+  target_state_ << state_.block(0, 0, 1, 2*target_dof_+1);
 
   // auto-actuate arm
   if (action.size() == target_dof_-1)
   {
-    //double armVoltage = (14.0/3.3) * 5.0*(-0.26 - state_[rlsArmAngle]);
-    //armVoltage = fmin(10.7, fmax(armVoltage, -10.7)); // ensure voltage within limits
-    //action_step_ << action, armVoltage;
+    double arma;
+    if (mode_ == "vc")
+    {
+      arma = XM430_VS_RX28_COEFF*(14.0/3.3) * 5.0*(-0.26 - state_[rlsLeftArmAngle]);
+      arma = fmin(LEO_MAX_DXL_VOLTAGE, fmax(arma, -LEO_MAX_DXL_VOLTAGE)); // ensure voltage within limits
+    }
+    else
+    {
+      arma = 0.05*(-0.26 - state_[rlsLeftArmAngle]);
+      arma = fmin(DXL_MAX_TORQUE, fmax(arma, -DXL_MAX_TORQUE)); // ensure torque within limits
+    }
+
+    //std::cout << "Arm: " << -0.26 - state_[rlsArmAngle] << " -> " << arma << std::endl;
+
+    target_action_ << action, arma;
   }
   else
-    action_step_ << action;
+    target_action_ << action;
 
 //  action_step_ << ConstantVector(target_dof_, 0);
 
@@ -162,38 +173,106 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   if (target_env_)
   {
     Observation obs;
-  
-    tau = target_env_->step(action_step_, &obs, NULL, NULL);
-    next_step_ = obs.v;
-    
-    next_step_[rlsTime] = state_step_[rlsTime] + tau;
+    tau = target_env_->step(target_action_, &obs, NULL, NULL);
+    target_state_next_ <<  obs.v, VectorConstructor(target_state_[rlsTime] + tau);
+    dynamics_->updateKinematics(target_state_next_); // update kinematics if rbdl integration is not used
   }
   else
-    tau = dm_.step(state_step_, action_step_, &next_step_);
+    tau = dm_.step(target_state_, target_action_, &target_state_next_);
 
-  dynamics_->finalize(next_step_, rbdl_addition_);
+  dynamics_->finalize(target_state_next_, rbdl_addition_);
 
   // Compose the next state
-  (*next) << next_step_, VectorConstructor(state_[rlsRefRootZ]),
+  (*next) << target_state_next_, VectorConstructor(state_[rlsRefRootZ]),
       rbdl_addition_, VectorConstructor(state_[stsSquats]);
 
   // Switch setpoint if needed
-  if ( fabs((*next)[rlsComVelocityZ] - 0.0) < 0.01)
+  if (fabs((*next)[rlsComVelocityZ] - 0.0) < condition_[1])
   {
-    if ( fabs((*next)[rlsRootZ] - lower_height_) < 0.01)
+    if (fabs((*next)[rlsRootZ] - lower_height_) < condition_[0])
+    {
       (*next)[rlsRefRootZ] = upper_height_;
-    else if ( fabs((*next)[rlsRootZ] - upper_height_) < 0.01)
+      //std::cout << "Lower setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
+    }
+    else if (fabs((*next)[rlsRootZ] - upper_height_) < condition_[0])
+    {
       (*next)[rlsRefRootZ] = lower_height_;
+      //std::cout << "Upper setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
+    }
   }
 
-  // Increase number of squats if needed
+  // Increase number of half-squats if setpoint changed
   if ((*next)[rlsRefRootZ] != state_[rlsRefRootZ])
     (*next)[stsSquats] = state_[stsSquats] + 1;
 
-//  std::cout << "  > Height: " << (*next)[rlsRootZ] << std::endl;
-//  std::cout << "  > Next state: " << *next << std::endl;
+  //std::cout << "  > Height: " << std::fixed << std::setprecision(3) << std::right
+  //          << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
+  //          << std::setw(10) << (*next)[rlsRefRootZ] << std::endl;
+  //std::cout << "  > Next state: " << std::fixed << std::setprecision(3) << std::right << std::setw(10) << *next << std::endl;
 
-  export_meshup_animation(*next, action_step_);
+  export_meshup_animation(*next, target_action_);
+
+  state_ = *next;
+  return tau;
+}
+
+////////////////////////////////////////////
+
+void LeoWalkingSandboxModel::request(ConfigurationRequest *config)
+{
+  LeoSandboxModel::request(config);
+  config->push_back(CRP("mode", "Control mode (torque/voltage )", mode_, CRP::Configuration, {"tc", "vc"}));
+}
+
+void LeoWalkingSandboxModel::configure(Configuration &config)
+{
+  LeoSandboxModel::configure(config);
+  mode_ = config["mode"].str();
+}
+
+void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
+{
+  // Fill parts of a state such as Center of Mass, Angular Momentum
+  dynamics_->updateKinematics(*state);
+  dynamics_->finalize(*state, rbdl_addition_);
+
+  // Compose a complete state <state, time, height, com, ..., squats>
+  state_.resize(18);
+  state_ << *state, rbdl_addition_;
+  *state = state_;
+
+  export_meshup_animation(state_, ConstantVector(target_dof_, 0));
+
+  TRACE("Initial state: " << state_);
+}
+
+double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
+{
+  target_state_.resize(2*target_dof_+1);
+  target_state_next_.resize(2*target_dof_+1);
+  target_action_.resize(target_dof_);
+  next->resize(state_.size());
+
+  // reduce state
+  target_state_ << state_.head(2*target_dof_+1);
+  target_action_ << action;
+
+  double tau;
+  if (target_env_)
+  {
+    Observation obs;
+    tau = target_env_->step(target_action_, &obs, NULL, NULL);
+    target_state_next_ <<  obs.v, VectorConstructor(target_state_[rlsTime] + tau);
+    dynamics_->updateKinematics(target_state_next_); // update kinematics if rbdl integration is not used
+  }
+  else
+    tau = dm_.step(target_state_, target_action_, &target_state_next_);
+
+  dynamics_->finalize(target_state_next_, rbdl_addition_);
+
+  // Compose the next state
+  (*next) << target_state_next_, rbdl_addition_;
+  export_meshup_animation(*next, target_action_);
 
   state_ = *next;
   return tau;

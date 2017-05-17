@@ -238,6 +238,7 @@ class ModeledEnvironment : public Environment
     Observation obs_;
     VectorSignal *state_obj_;
     Exporter *exporter_;
+    Vector state_addition_;
     
     int test_;
     double time_test_, time_learn_;
@@ -361,7 +362,7 @@ class Sandbox : public Configurable
     virtual void report(std::ostream &os) const { }
 
   protected:
-    Vector state_, state_step_, next_step_, action_step_;
+    Vector state_, target_state_, target_state_next_, target_action_;
 };
 
 /// Sequential-access transition environment.
@@ -412,10 +413,11 @@ class DRLEnvironment : public Environment
     VectorSignal *sub_state_drl_;
 
     int test_;
+    int noise_;
     double time_test_, time_learn_;
 
   public:
-    DRLEnvironment() : model_(NULL), task_(NULL), state_obj_(NULL), exporter_(NULL), sub_state_drl_(NULL), test_(false), time_test_(0.), time_learn_(0.) { }
+    DRLEnvironment() : model_(NULL), task_(NULL), state_obj_(NULL), exporter_(NULL), sub_state_drl_(NULL), test_(false), noise_(0), time_test_(0.), time_learn_(0.){ }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);

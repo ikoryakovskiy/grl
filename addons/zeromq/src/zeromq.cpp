@@ -232,6 +232,7 @@ void ZeromqAgent::start(const Observation &obs, Action *action)
   a << test_, obs.v;
   communicator_->send(a);
   communicator_->recv(&(action->v));
+  NOTICE(action->v);
 }
 
 void ZeromqAgent::step(double tau, const Observation &obs, double reward, Action *action)

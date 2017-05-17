@@ -524,8 +524,8 @@ agent/td:
     mutability: configuration
     default: 0
     optional: 0
-agent/zeromq:
-  description: Zeromq Agent which interects with a python by sending and receiving messages
+agent/zmq_action:
+  description: Zeromq Agent which interects with an external script by sending and receiving messages
   communicator:
     type: communicator
     description: Comunicator which exchanges messages with an actual/virtual environment
@@ -568,6 +568,56 @@ agent/zeromq:
     optional: 1
     min: 0
     max: 2147483647
+agent/zmq_action_state:
+  description: Zeromq Agent which interects with an external script by sending and receiving messages
+  communicator:
+    type: communicator
+    description: Comunicator which exchanges messages with an actual/virtual environment
+    mutability: configuration
+    default: 0x6e69
+    optional: 0
+  observation_dims:
+    type: int.observation_dims
+    description: Number of observation dimensions
+    mutability: system
+    default: 1
+    optional: 1
+    min: 0
+    max: 2147483647
+  action_dims:
+    type: int.action_dims
+    description: Number of action dimensions
+    mutability: system
+    default: 1
+    optional: 1
+    min: 0
+    max: 2147483647
+  action_min:
+    type: vector.action_min
+    description: Lower limit of action
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  action_max:
+    type: vector.action_max
+    description: Upper limit of action
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  test:
+    type: int.test
+    description: Selection of learning/testing agent
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 2147483647
+  pub_state_drl:
+    type: signal/vector
+    description: State received from python
+    mutability: configuration
+    default: 0
+    optional: 1
 behavior/leo_squat_sym:
   description: Leo squatting behavior with symmetrical switchers of observations
 behavior/leo_walk:
@@ -784,6 +834,40 @@ dynamics/mountain:
     optional: 0
 dynamics/pendulum:
   description: Pendulum dynamics based on the DCSC MOPS
+  mass:
+    type: double
+    description: mass of the pendulum
+    mutability: configuration
+    default: 0.055
+    optional: 1
+    min: 0
+    max: 1
+dynamics/rbdl:
+  description: RBDL rigid body dynamics
+  file:
+    type: string
+    description: RBDL Lua model file
+    mutability: configuration
+    default: ""
+    optional: 1
+  options:
+    type: string
+    description: Lua string to execute when loading model
+    mutability: configuration
+    default: ""
+    optional: 1
+  points:
+    type: string
+    description: Points
+    mutability: configuration
+    default: ""
+    optional: 1
+  auxiliary:
+    type: string
+    description: Model mass(mm), Center of mass (com), Center of mass velocity (comv), Angular momentum (am)
+    mutability: configuration
+    default: ""
+    optional: 1
 dynamics/swimmer:
   description: Coulom's swimmer dynamics
   segments:
@@ -1008,6 +1092,44 @@ environment/modeled:
     type: signal/vector
     description: Current state of the model
     mutability: provided
+environment/modeled_deeprl:
+  description: Environment that uses a state transition model internally but uses the state from Deep RL
+  model:
+    type: model
+    description: Environment model
+    mutability: configuration
+    default: 0
+    optional: 0
+  task:
+    type: task
+    description: Task to perform in the environment (should match model)
+    mutability: configuration
+    default: 0
+    optional: 0
+  exporter:
+    type: exporter
+    description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
+    mutability: configuration
+    default: 0
+    optional: 1
+  state:
+    type: signal/vector
+    description: Current state of the model
+    mutability: provided
+  sub_state_drl:
+    type: signal/vector
+    description: state received from deep rl agent
+    mutability: configuration
+    default: 0
+    optional: 1
+  noise:
+    type: int.noise
+    description: Measurement noise to be added
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 2147483647
 environment/ode:
   description: Open Dynamics Engine simulation environment
   xml:
@@ -1566,7 +1688,7 @@ mapping/policy/feed_forward:
     type: mapping
     description: Maps time to controls
     mutability: configuration
-    default: 0x26e7fb0
+    default: 0x20
     optional: 1
 mapping/policy/mcts:
   description: Monte-Carlo Tree Search policy
@@ -4508,6 +4630,148 @@ sandbox_model/compass_walker:
     optional: 1
     min: 0
     max: 1
+sandbox_model/leo_squatting:
+  description: State transition model that integrates equations of motion and augments state vector with additional elements
+  control_step:
+    type: double.control_step
+    description: Control step time
+    mutability: configuration
+    default: 0.05
+    optional: 1
+    min: 0.001
+    max: 1.797693134862316e+308
+  integration_steps:
+    type: int
+    description: Number of integration steps per control step
+    mutability: configuration
+    default: 5
+    optional: 1
+    min: 1
+    max: 2147483647
+  dynamics:
+    type: dynamics/rbdl
+    description: Equations of motion
+    mutability: configuration
+    default: 0
+    optional: 0
+  target_dof:
+    type: int.target_dof
+    description: Number of degrees of freedom of the target model
+    mutability: configuration
+    default: 4
+    optional: 1
+    min: 0
+    max: 2147483647
+  animation:
+    type: string
+    description: Save current state or full animation
+    mutability: configuration
+    default: ""
+    optional: 1
+    options:
+      - nope
+      - full
+      - immediate
+  target_env:
+    type: environment
+    description: Interaction environment
+    mutability: configuration
+    default: 0
+    optional: 1
+  condition:
+    type: vector.condition
+    description: Box-like conditions for switching direction of squat
+    mutability: configuration
+    default: "[ 0.01, 0.01 ]"
+    optional: 1
+  lower_height:
+    type: double.lower_height
+    description: Lower bound of root height to switch direction
+    mutability: configuration
+    default: 0.28
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  upper_height:
+    type: double.upper_height
+    description: Upper bound of root height to switch direction
+    mutability: configuration
+    default: 0.35
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  mode:
+    type: string
+    description: Control mode (torque/voltage )
+    mutability: configuration
+    default: vc
+    optional: 1
+    options:
+      - tc
+      - vc
+sandbox_model/leo_walk:
+  description: State transition model that integrates equations of motion and augments state vector with additional elements
+  control_step:
+    type: double.control_step
+    description: Control step time
+    mutability: configuration
+    default: 0.05
+    optional: 1
+    min: 0.001
+    max: 1.797693134862316e+308
+  integration_steps:
+    type: int
+    description: Number of integration steps per control step
+    mutability: configuration
+    default: 5
+    optional: 1
+    min: 1
+    max: 2147483647
+  dynamics:
+    type: dynamics/rbdl
+    description: Equations of motion
+    mutability: configuration
+    default: 0
+    optional: 0
+  target_dof:
+    type: int.target_dof
+    description: Number of degrees of freedom of the target model
+    mutability: configuration
+    default: 4
+    optional: 1
+    min: 0
+    max: 2147483647
+  animation:
+    type: string
+    description: Save current state or full animation
+    mutability: configuration
+    default: ""
+    optional: 1
+    options:
+      - nope
+      - full
+      - immediate
+  target_env:
+    type: environment
+    description: Interaction environment
+    mutability: configuration
+    default: 0
+    optional: 1
+  condition:
+    type: vector.condition
+    description: Box-like conditions for switching direction of squat
+    mutability: configuration
+    default: "[ 0.01, 0.01 ]"
+    optional: 1
+  mode:
+    type: string
+    description: Control mode (torque/voltage )
+    mutability: configuration
+    default: vc
+    optional: 1
+    options:
+      - tc
+      - vc
 signal/matrix:
   description: Matrix-based signal (trajectory, etc.)
 signal/vector:
@@ -5524,6 +5788,248 @@ task/flyer2d/regulator:
     optional: 1
     min: 0
     max: 1.797693134862316e+308
+task/leo_squatting:
+  description: Task specification for Leo squatting without an auto-actuated arm by default
+  observation_dims:
+    type: int.observation_dims
+    description: Number of observation dimensions
+    mutability: provided
+  observation_min:
+    type: vector.observation_min
+    description: Lower limit on observations
+    mutability: provided
+  observation_max:
+    type: vector.observation_max
+    description: Upper limit on observations
+    mutability: provided
+  action_dims:
+    type: int.action_dims
+    description: Number of action dimensions
+    mutability: provided
+  action_min:
+    type: vector.action_min
+    description: Lower limit on actions
+    mutability: provided
+  action_max:
+    type: vector.action_max
+    description: Upper limit on actions
+    mutability: provided
+  reward_min:
+    type: double.reward_min
+    description: Lower limit on immediate reward
+    mutability: provided
+  reward_max:
+    type: double.reward_max
+    description: Upper limit on immediate reward
+    mutability: provided
+  target_env:
+    type: environment
+    description: Interaction environment
+    mutability: configuration
+    default: 0
+    optional: 1
+  timeout:
+    type: double.timeout
+    description: Task timeout
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  randomize:
+    type: int.randomize
+    description: Initialization from a random pose
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
+  weight_nmpc:
+    type: double.weight_nmpc
+    description: Weight on the NMPC cost (excluding shaping)
+    mutability: system
+    default: 0.0001
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  weight_nmpc_aux:
+    type: double.weight_nmpc_aux
+    description: Weight on the part of NMPC cost with auxilary
+    mutability: system
+    default: 1
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  weight_nmpc_qd:
+    type: double.weight_nmpc_qd
+    description: Weight on the part of NMPC cost which penalizes large velocities
+    mutability: system
+    default: 1
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  weight_shaping:
+    type: double.weight_shaping
+    description: Weight on the shaping cost
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  power:
+    type: double.power
+    description: Power of objective functions comprising cost
+    mutability: system
+    default: 2
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  setpoint_reward:
+    type: int.setpoint_reward
+    description: If zero, reward at setpoint is given for setpoint at time t, otherwise - at t+1
+    mutability: system
+    default: 1
+    optional: 1
+    min: 0
+    max: 1
+  continue_after_fall:
+    type: int.continue_after_fall
+    description: Continue exectution of the environemnt even after a fall of Leo
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
+  sub_sim_state:
+    type: signal/vector
+    description: Subscriber to external sigma
+    mutability: configuration
+    default: 0
+    optional: 1
+  gamma:
+    type: double
+    description: Discount rate (used in shaping)
+    mutability: configuration
+    default: 0.97
+    optional: 1
+    min: 0
+    max: 1
+  fixed_arm:
+    type: int.fixed_arm
+    description: Require fixed arm, fa option
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
+task/leo_walking:
+  description: Task specification for Leo walking with all joints actuated (except for shoulder)
+  observation_dims:
+    type: int.observation_dims
+    description: Number of observation dimensions
+    mutability: provided
+  observation_min:
+    type: vector.observation_min
+    description: Lower limit on observations
+    mutability: provided
+  observation_max:
+    type: vector.observation_max
+    description: Upper limit on observations
+    mutability: provided
+  action_dims:
+    type: int.action_dims
+    description: Number of action dimensions
+    mutability: provided
+  action_min:
+    type: vector.action_min
+    description: Lower limit on actions
+    mutability: provided
+  action_max:
+    type: vector.action_max
+    description: Upper limit on actions
+    mutability: provided
+  reward_min:
+    type: double.reward_min
+    description: Lower limit on immediate reward
+    mutability: provided
+  reward_max:
+    type: double.reward_max
+    description: Upper limit on immediate reward
+    mutability: provided
+  target_env:
+    type: environment
+    description: Interaction environment
+    mutability: configuration
+    default: 0
+    optional: 1
+  timeout:
+    type: double.timeout
+    description: Task timeout
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  randomize:
+    type: int.randomize
+    description: Initialization from a random pose
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
+  sub_sim_state:
+    type: signal/vector
+    description: Subscriber to external sigma
+    mutability: configuration
+    default: 0
+    optional: 1
+task/lua:
+  description: User-provided task specification in LUA
+  observation_dims:
+    type: int.observation_dims
+    description: Number of observation dimensions
+    mutability: provided
+  observation_min:
+    type: vector.observation_min
+    description: Lower limit on observations
+    mutability: provided
+  observation_max:
+    type: vector.observation_max
+    description: Upper limit on observations
+    mutability: provided
+  action_dims:
+    type: int.action_dims
+    description: Number of action dimensions
+    mutability: provided
+  action_min:
+    type: vector.action_min
+    description: Lower limit on actions
+    mutability: provided
+  action_max:
+    type: vector.action_max
+    description: Upper limit on actions
+    mutability: provided
+  reward_min:
+    type: double.reward_min
+    description: Lower limit on immediate reward
+    mutability: provided
+  reward_max:
+    type: double.reward_max
+    description: Upper limit on immediate reward
+    mutability: provided
+  file:
+    type: string
+    description: Lua task file
+    mutability: configuration
+    default: ""
+    optional: 1
+  options:
+    type: string
+    description: Lua string to execute when loading task
+    mutability: configuration
+    default: ""
+    optional: 1
 task/mountain/regulator:
   description: Mountain world regulator task
   observation_dims:

@@ -75,9 +75,15 @@ class RBDLDynamics : public Dynamics
     // From Dynamics
     virtual void eom(const Vector &state, const Vector &actuation, Vector *xd) const;
     
-    /// Adds positions of additional points to state vector.
+    // Adds positions of additional points to state vector.
+    // Calling procedure:
+    // either eom() then finalize()
+    // or updateKinematics() then finalize()
     virtual void finalize(const Vector &state, Vector &out) const;
-    
+
+    // Update kinematics without making a step
+    virtual void updateKinematics(const Vector &state) const;
+
   protected:
     // own
     std::vector<std::string> points_, auxiliary_;

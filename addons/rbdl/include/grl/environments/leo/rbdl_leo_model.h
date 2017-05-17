@@ -56,6 +56,7 @@ class LeoSandboxModel: public Sandbox
     DynamicalModel dm_;
     RBDLDynamics *dynamics_;
     std::string animation_;
+    Vector condition_;
 };
 
 class LeoSquattingSandboxModel : public LeoSandboxModel
@@ -64,7 +65,7 @@ class LeoSquattingSandboxModel : public LeoSandboxModel
     TYPEINFO("sandbox_model/leo_squatting", "State transition model that integrates equations of motion and augments state vector with additional elements")
 
   public:
-    LeoSquattingSandboxModel() : lower_height_(0.28), upper_height_(0.35) { }
+    LeoSquattingSandboxModel() : lower_height_(0.28), upper_height_(0.35), mode_("vc") { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -77,6 +78,28 @@ class LeoSquattingSandboxModel : public LeoSandboxModel
   protected:
     Vector rbdl_addition_;
     double lower_height_, upper_height_;
+    std::string mode_;
+};
+
+class LeoWalkingSandboxModel : public LeoSandboxModel
+{
+  public:
+    TYPEINFO("sandbox_model/leo_walk", "State transition model that integrates equations of motion and augments state vector with additional elements")
+
+  public:
+    LeoWalkingSandboxModel() : mode_("vc") { }
+
+    // From Configurable
+    virtual void request(ConfigurationRequest *config);
+    virtual void configure(Configuration &config);
+
+    // From Model
+    virtual void start(const Vector &hint, Vector *state);
+    virtual double step(const Vector &action, Vector *next);
+
+  protected:
+    Vector rbdl_addition_;
+    std::string mode_;
 };
 
 }

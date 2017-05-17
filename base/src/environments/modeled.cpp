@@ -175,6 +175,7 @@ void DRLEnvironment::request(ConfigurationRequest *config)
   config->push_back(CRP("exporter", "exporter", "Optional exporter for transition log (supports time, state, observation, action, reward, terminal)", exporter_, true));
   config->push_back(CRP("state", "signal/vector", "Current state of the model", CRP::Provided));
   config->push_back(CRP("sub_state_drl","signal/vector","state received from deep rl agent", sub_state_drl_, true));
+  config->push_back(CRP("noise","int.noise","Measurement noise to be added",noise_, CRP::System));
 }
 
 void DRLEnvironment::configure(Configuration &config)
@@ -190,6 +191,7 @@ void DRLEnvironment::configure(Configuration &config)
   state_obj_ = new VectorSignal();
   config.set("state", state_obj_);
   sub_state_drl_ = (VectorSignal*)config["sub_state_drl"].ptr();
+  noise_ = config["noise"];
 
 }
 
@@ -250,6 +252,14 @@ double DRLEnvironment::step(const Action &action, Observation *obs, double *rewa
   } while (!done);
 
   task_->observe(next, obs, terminal);
+
+  //Add measurement noise
+  if (noise_)
+  {
+    (*obs)[0] += RandGen::getUniform(-0.2,0.2);
+    (*obs)[1] += RandGen::getUniform(-1,1);
+  }
+
   task_->evaluate(state_, action, next, reward);
 
   double &time = test_?time_test_:time_learn_;

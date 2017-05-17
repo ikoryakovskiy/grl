@@ -16,10 +16,11 @@ experiment:
         mass: 0.055
     task: 
       type: task/pendulum/swingup
-      timeout: 10000
+      timeout: 100000
       randomization: 1
     sub_state_drl: 
       type: signal/vector
+    noise: 0
   agent: 
     type: agent/zmq_action_state
     communicator: 

@@ -20,6 +20,7 @@ experiment:
       randomization: 1
     sub_state_drl: 
       type: signal/vector
+    noise: 1
   agent: 
     type: agent/zmq_action_state
     communicator: 

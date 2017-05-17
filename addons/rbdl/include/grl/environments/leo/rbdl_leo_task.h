@@ -35,65 +35,80 @@
 namespace grl
 {
 
-enum RbdlLeoState
+enum RbdlLeoWalkState
 {
-  rlsAnkleAngle,
-  rlsKneeAngle,
-  rlsHipAngle,
-//  rlsArmAngle,                    // might not be used
 
-  rlsDofDim = rlsHipAngle + 1,
+    rlsTorsoAngle,
+    rlsLeftHipAngle,
+    rlsRightHipAngle,
+    rlsLeftKneeAngle,
+    rlsRightKneeAngle,
+    rlsLeftAnkleAngle,
+    rlsRightAnkleAngle,
 
-  rlsAnkleAngleRate = rlsDofDim,
-  rlsKneeAngleRate,
-  rlsHipAngleRate,
-//  rlsArmAngleRate,                // might not be used
+    rlsTorsoAngleRate,
+    rlsLeftHipAngleRate,
+    rlsRightHipAngleRate,
+    rlsLeftKneeAngleRate,
+    rlsRightKneeAngleRate,
+    rlsLeftAnkleAngleRate,
+    rlsRightAnkleAngleRate,
 
-  rlsTime,
-  rlsRefRootZ,
+    rlsLeftArmAngle,
+    rlsRightArmAngle,
+    rlsLeftArmAngleRate,
+    rlsRightArmAngleRate,
 
-  rlsLeftTipX,
-  rlsLeftTipY,
-  rlsLeftTipZ,
+    rlsTime = 14,
 
-  rlsLeftHeelX,
-  rlsLeftHeelY,
-  rlsLeftHeelZ,
+    rlsComX,
+    rlsComY,
+    rlsComZ,
 
-  rlsRootX,
-  rlsRootY,
-  rlsRootZ,
+    rlsRefRootZ,
 
-  rlsMass,
+    rlsLeftTipX,
+    rlsLeftTipY,
+    rlsLeftTipZ,
 
-  rlsComX,
-  rlsComY,
-  rlsComZ,
+    rlsLeftHeelX,
+    rlsLeftHeelY,
+    rlsLeftHeelZ,
 
-  rlsComVelocityX,
-  rlsComVelocityY,
-  rlsComVelocityZ,
+    rlsRootX,
+    rlsRootY,
+    rlsRootZ,
 
-  rlsAngularMomentumX,
-  rlsAngularMomentumY,
-  rlsAngularMomentumZ,
+    rlsMass,
 
-  rlsStateDim = rlsAngularMomentumZ + 1
+
+
+    rlsComVelocityX,
+    rlsComVelocityY,
+    rlsComVelocityZ,
+
+    rlsAngularMomentumX,
+    rlsAngularMomentumY,
+    rlsAngularMomentumZ,
+
+    rlsStateDim = 18
 };
 
 enum SquattingTaskState
 {
   stsSquats = rlsStateDim,
-  stsStateDim
+  stsStateDim = 18
 };
 
 class LeoSquattingTask : public Task
 {
   public:
-    TYPEINFO("task/leo_squatting", "Task specification for Leo squatting with a fixed arm")
+    TYPEINFO("task/leo_squatting", "Task specification for Leo squatting without an auto-actuated arm by default")
 
   public:
-    LeoSquattingTask() : timeout_(0), rand_init_(0), dof_(3) { }
+    LeoSquattingTask() : target_env_(NULL), timeout_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_nmpc_qd_(1.0), weight_shaping_(0.0),
+      task_reward_(0.0), subtask_reward_(0.0), power_(2.0), randomize_(0), dof_(4), continue_after_fall_(0), setpoint_reward_(1), gamma_(0.97),
+      fixed_arm_(false), sub_sim_state_(NULL) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -109,10 +124,54 @@ class LeoSquattingTask : public Task
     virtual int failed(const Vector &state) const;
 
   protected:
+    Environment *target_env_;
     double timeout_;
-    int rand_init_;
+    double weight_nmpc_, weight_nmpc_aux_, weight_nmpc_qd_, weight_shaping_;
+    mutable double task_reward_;
+    mutable double subtask_reward_;
+    mutable std::vector<double> subtasks_rewards_;
+    double power_;
+    int randomize_;
     int dof_;
     Vector target_obs_min_, target_obs_max_;
+    int continue_after_fall_;
+    int setpoint_reward_;
+    double gamma_;
+    bool fixed_arm_;
+
+    VectorSignal *sub_sim_state_;
+};
+
+class LeoWalkingTask : public Task
+{
+  public:
+    TYPEINFO("task/leo_walking", "Task specification for Leo walking with all joints actuated (except for shoulder)")
+
+  public:
+    LeoWalkingTask() : target_env_(NULL), randomize_(0), dof_(4), timeout_(0), sub_sim_state_(NULL) { }
+
+    // From Configurable
+    virtual void request(ConfigurationRequest *config);
+    virtual void configure(Configuration &config);
+
+    // From Task
+    virtual void start(int test, Vector *state) const;
+    virtual void observe(const Vector &state, Observation *obs, int *terminal) const;
+    virtual void evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const;
+    virtual void report(std::ostream &os, const Vector &state) const;
+
+  protected:
+    Environment *target_env_;
+    int randomize_;
+    int dof_;
+    double timeout_;
+    Vector target_obs_min_, target_obs_max_;
+    VectorSignal *sub_sim_state_;
+
+  protected:
+    virtual double calculateReward(const Vector &state, const Vector &next) const;
+    virtual bool isDoomedToFall(const Vector &state) const;
+    virtual double getEnergyUsage(const Vector &state, const Vector &next, const Action &action) const;
 };
 
 }

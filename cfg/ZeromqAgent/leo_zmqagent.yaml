@@ -4,7 +4,7 @@ experiment:
   trials: 0
   steps: 0
   rate: 0
-  test_interval: 0
+  test_interval: 10
   environment: 
     type: environment/leo_walk
     behavior: 
@@ -43,5 +43,4 @@ experiment:
     action_min: []
     action_max: []
     test: 1
-  load_file: /home/divyam/rl-agent/leo_py/model-PoolWorker-3
   save_every: never

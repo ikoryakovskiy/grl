@@ -126,6 +126,26 @@ void RBDLDynamics::eom(const Vector &state, const Vector &actuation, Vector *xd)
   (*xd)[2*dim] = 1.;
 }
 
+void RBDLDynamics::updateKinematics(const Vector &state) const
+{
+  RBDLState *rbdl = rbdl_state_.instance();
+
+  size_t dim = rbdl->model->dof_count;
+  NOTICE(state.size());
+  if (state.size() != 2*dim+1)
+    throw Exception("dynamics/rbdl is incompatible with specified task");
+
+  RigidBodyDynamics::Math::VectorNd q = RigidBodyDynamics::Math::VectorNd::Zero(dim);
+  RigidBodyDynamics::Math::VectorNd qd = RigidBodyDynamics::Math::VectorNd::Zero(dim);
+
+  for (size_t ii=0; ii < dim; ++ii)
+  {
+    q[ii] = state[ii];
+    qd[ii] = state[ii + dim];
+  }
+  RigidBodyDynamics::UpdateKinematicsCustom(*rbdl->model, &q, &qd, NULL);
+}
+
 void RBDLDynamics::finalize(const Vector &state, Vector &out) const
 {
   Vector pt;

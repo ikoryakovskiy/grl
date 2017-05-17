@@ -349,15 +349,15 @@ void CODEObject::setInitialCondition(double randomize)
               mBodyICs[iBodyIC]->randomize(jointMap[mBodyICs[iBodyIC]->getBodyName()]);
             else
               mBodyICs[iBodyIC]->randomize(0.0); // Important line. Otherwice, previous trial initialization is applied
-			body->setRotation(mBodyICs[iBodyIC]->getRotation());
-		}
+            body->setRotation(mBodyICs[iBodyIC]->getRotation());
+        }
 	}
 
 	// Set velocities to their initial condition
 	// Since we currently do not support custom velocities,
 	// we set all velocities (angular and linear) to zero.
-	for (unsigned int iBody=0; iBody<mBodies.size(); iBody++)
-		mBodies[iBody]->zero();
+    for (unsigned int iBody=0; iBody<mBodies.size(); iBody++)
+        mBodies[iBody]->zero();
 
 	// Now that body rotations have moved, first disconnect all bodies ...
 	for (unsigned int iBody=0; iBody<mBodies.size(); iBody++)
@@ -380,9 +380,9 @@ void CODEObject::setInitialCondition(double randomize)
 	for (unsigned int iJoint=0; iJoint<mJoints.size(); iJoint++)
 		for (unsigned int iMotor=0; iMotor<mJoints[iJoint]->getNumMotors(); iMotor++)
 		{
-			CODEJointMotor* motor = mJoints[iJoint]->getMotor(iMotor);
+            CODEJointMotor* motor = mJoints[iJoint]->getMotor(iMotor);
 			if (motor != NULL)
-				motor->setInitialCondition();
+                motor->setInitialCondition();
 		}
 }
 

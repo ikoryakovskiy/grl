@@ -20,6 +20,7 @@ experiment:
       randomization: 0
     sub_state_drl: 
       type: signal/vector
+    noise: 0
   agent: 
     type: agent/zmq_action_state
     communicator: 
@@ -46,6 +47,7 @@ experiment:
     action_max: experiment/environment/task/action_max
     test: 1
     pub_state_drl: experiment/environment/sub_state_drl
+  load_file: /home/divyam/rl-agent/pendulum_drl/model-pendulum-1.ckpt
   save_every: run
 visualizer: 
   type: visualizer/glut

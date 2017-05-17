@@ -75,11 +75,13 @@
 
   #define DXL_MAX_POSITION                    DXL_XM430_210_MAX_POSITION
   #define DXL_MAX_VELOCITY                    DXL_XM430_210_MAX_VELOCITY
+  #define DXL_MAX_TORQUE                      DXL_XM430_210_MAX_TORQUE
 
   // Motor coefficients
   #define DXL_TORQUE_CONST                    MAXON_TORQUE_CONST
   #define DXL_GEARBOX_RATIO                   DXL_XM430_210_GEARBOX_RATIO
   #define DXL_RESISTANCE                      4.6
+  #define DXL_VISCOUS_FRICTION                0.1
 
   // Temperature coefficients
   #define DXL_COPPER_COEF                     DXL_XM430_210_COPPER_COEF
@@ -103,7 +105,8 @@
 
 // Define the maximum allowable Dynamixel voltage that can be guaranteed
 // under all temperature compensation situations.
-#define LEO_MAX_DXL_VOLTAGE             (LEO_SUPPLY_VOLTAGE/LEO_DXL_VOLTAGE_TEMP_FACT_FULL) // = 10.69 V @ RX-28;
+ // = 10.69 V @ RX-28; = 10.7745 V @ XM-430
+#define LEO_MAX_DXL_VOLTAGE             (LEO_SUPPLY_VOLTAGE/LEO_DXL_VOLTAGE_TEMP_FACT_FULL)
 
 
 
