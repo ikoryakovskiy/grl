@@ -12,6 +12,7 @@ endif()
 # Find Eigen
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(EIGEN3 REQUIRED eigen3)
+include_directories(${EIGEN3_INCLUDE_DIRS})
 
 # Use OpenMP if available
 find_package(OpenMP)
