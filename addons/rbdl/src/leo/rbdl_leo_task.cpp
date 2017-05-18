@@ -480,7 +480,7 @@ void LeoWalkingTask::start(int test, Vector *state) const
     {
       for (int ii=2; ii < dof_; ii+=2)
       {
-        state[ii] += RandGen::getUniform(-0.0872, 0.0872);
+        (*state)[ii] += RandGen::getUniform(-0.0872, 0.0872);
       }
      }
   }
