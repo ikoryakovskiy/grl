@@ -39,11 +39,15 @@ NMPCPolicyMLRTI::~NMPCPolicyMLRTI()
 void NMPCPolicyMLRTI::request(ConfigurationRequest *config)
 {
   NMPCBase::request(config);
+  config->push_back(CRP("pub_error_signal", "signal/vector", "Publsher of the model-plant mismatch error signal", pub_error_signal_, true));
+  config->push_back(CRP("pub_sim_state", "signal/vector", "Publsher of the simulated state signal", pub_sim_state_, true));
 }
 
 void NMPCPolicyMLRTI::configure(Configuration &config)
 {
   NMPCBase::configure(config);
+  pub_error_signal_ = (VectorSignal*)config["pub_error_signal"].ptr();
+  pub_sim_state_ = (VectorSignal*)config["pub_sim_state"].ptr();
 
   // Setup path for the problem description library and lua, csv, dat files used by it
   std::string problem_path  = model_path_ + "/" + model_name_;
@@ -271,6 +275,9 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
   // define current state
   current_state_ = idle_call;
 
+  sum_error_ = 0;
+  sum_error_counter_ = 0;
+
   if (verbose_)
     std::cout << "MUSCOD is reseted!" << std::endl;
 }
@@ -292,6 +299,25 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
   {
     std::cout << "time: [ " << time << " ]; state: [ " << initial_sd_ << "]" << std::endl;
     std::cout << "                          param: [ " << initial_pf_ << "]" << std::endl;
+  }
+
+  // simulate model over specified time interval using NMPC internal model
+  if (pub_error_signal_ && time != 0)
+  {
+    double time_interval = 0.03; //nmpc_->getSamplingRate();
+    cntl_->simulate(
+        initial_sd_prev_, // state from previous iteration
+        initial_pf_prev_, // parameter from previous iteration
+        initial_qc_prev_, // control from previous iteration
+        time_interval,
+        &final_sd_        // state from comparison with input
+    );
+    Vector x = final_sd_.block(0, 0, 1, cntl_->NU()) - initial_sd_.block(0, 0, 1, cntl_->NU());
+    double error = sqrt(x.cwiseProduct(x).sum());
+    sum_error_ += error;
+    sum_error_counter_++;
+    pub_error_signal_->set(ConstantVector(cntl_->NU(), sum_error_/sum_error_counter_));
+    //std::cout << "Model-plant error " << pub_error_signal_->get() << std::endl;
   }
 
   NMPCProblem* tmp_nmpc;
@@ -407,7 +433,21 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
       //       feedback phases
       true // wait flag
     );
-
+/*
+    // simulate model over specified time interval using NMPC internal model
+    if (pub_sim_state_)
+    {
+      double time_interval = 0.03; //nmpc_->getSamplingRate();
+      cntl_->simulate(
+          initial_sd_,    // current state
+          initial_pf_,    // current parameter
+          initial_qc_,    // applied control
+          time_interval,
+          &final_sd_      // next state
+      );
+      pub_sim_state_->set(final_sd_);
+    }
+*/
     // handle return values from thread
     // NOTE iv_provided and qc_retrieved shall be true!
     // FIXME is this necessary?
@@ -496,10 +536,22 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
   }
 
   // Here we can return the feedback control
-  out->v = initial_qc_;
+  out->v.resize( initial_qc_.size() );
+  for (int i = 0; i < action_min_.size(); i++)
+  {
+    out->v[i] = fmax( fmin(initial_qc_[i], action_max_[i]) , action_min_[i]);
+    if (out->v[i] != initial_qc_[i])
+      WARNING("NMPC MLRTI action " << i << " was truncated");
+    initial_qc_[i] = out->v[i];
+  }
   out->type = atGreedy;
 
   if (verbose_)
     std::cout << "Feedback Control: [" << out->v << "]" << std::endl;
+
+  // record variables for simulation
+  initial_sd_prev_ = initial_sd_;
+  initial_pf_prev_ = initial_pf_;
+  initial_qc_prev_ = initial_qc_;
 }
 

@@ -262,6 +262,7 @@ void *muscod_run (void *indata)
     Vector sd = Vector::Zero (NXD);
     Vector pf = Vector::Zero (NP);
     Vector qc = Vector::Zero (NU);
+    Vector final_sd = Vector::Zero (NXD);
 
     // same for exchange TODO: move this to backup_muscod_state
     nmpc.m_sd = Vector::Zero (NXD);
@@ -351,6 +352,7 @@ void *muscod_run (void *indata)
         pthread_mutex_unlock(nmpc.mutex_);
 
         // when in NMPC mode then continue re-linearization
+        // LMPC skips this code
         if (nmpc.m_nmpc_mode == 0) {
             if (verbose) {
                 std::cout << "THREAD '" << thread_id << "': MODE 0" << std::endl;
@@ -388,7 +390,18 @@ void *muscod_run (void *indata)
             nmpc.timing.time_prepare(tac - tic);
             pthread_mutex_unlock(nmpc.mutex_); // --> Unlock the mutex
         } // END IF NMPC MODE
-
+/*        else
+        {
+          double time_interval = 0.03; //nmpc_->getSamplingRate();
+          nmpc.simulate(
+              sd,    // current state
+              pf,    // current parameter
+              qc,    // applied control
+              time_interval,
+              &final_sd      // next state
+          );
+        }
+*/
         // time total evaluation time of NMPC iteration
         pthread_mutex_lock(nmpc.mutex_); // --> Lock the mutex
         nmpc.timing.time_preparation(ptac);

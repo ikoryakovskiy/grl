@@ -1473,13 +1473,13 @@ experiment/online_learning:
     min: 0
     max: 2147483647
   rate:
-    type: int
+    type: double
     description: Control step frequency in Hz
     mutability: online
     default: 0
     optional: 1
     min: 0
-    max: 2147483647
+    max: 1.797693134862316e+308
   test_interval:
     type: int
     description: Number of episodes in between test trials
@@ -2052,6 +2052,18 @@ mapping/policy/nmpc_mlrti:
     description: Name of MUSCOD NMPC model library
     mutability: configuration
     default: ""
+    optional: 1
+  pub_error_signal:
+    type: signal/vector
+    description: Publsher of the model-plant mismatch error signal
+    mutability: configuration
+    default: 0
+    optional: 1
+  pub_sim_state:
+    type: signal/vector
+    description: Publsher of the simulated state signal
+    mutability: configuration
+    default: 0
     optional: 1
 mapping/policy/nmpc_th:
   description: Nonlinear multistep (thread-based) model predictive control policy using the MUSCOD library
@@ -5221,6 +5233,14 @@ sandbox_model/leo_squatting:
     options:
       - tc
       - vc
+  sim_filtered:
+    type: int
+    description: Simulate filtering of velocity when rbdl is used
+    mutability: configuration
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
 signal/matrix:
   description: Matrix-based signal (trajectory, etc.)
 signal/vector:

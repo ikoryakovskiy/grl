@@ -101,15 +101,30 @@ void LeoSquattingSandboxModel::request(ConfigurationRequest *config)
   config->push_back(CRP("lower_height", "double.lower_height", "Lower bound of root height to switch direction", lower_height_, CRP::Configuration, 0.0, DBL_MAX));
   config->push_back(CRP("upper_height", "double.upper_height", "Upper bound of root height to switch direction", upper_height_, CRP::Configuration, 0.0, DBL_MAX));
   config->push_back(CRP("mode", "Control mode (torque/voltage )", mode_, CRP::Configuration, {"tc", "vc"}));
+  config->push_back(CRP("sim_filtered", "Simulate filtering of velocity when rbdl is used", sim_filtered_, CRP::Configuration, 0, 1));
 }
 
 void LeoSquattingSandboxModel::configure(Configuration &config)
 {
   LeoSandboxModel::configure(config);
 
+  if (target_dof_ != 4)
+    throw Exception("sandbox_model/leo_squatting: target dof is not correct for this task");
+
+  if (target_env_ && sim_filtered_)
+    throw Exception("sandbox_model/leo_squatting: filtering of real Leo velocities is done on-board");
+
   lower_height_ = config["lower_height"];
   upper_height_ = config["upper_height"];
   mode_ = config["mode"].str();
+  sim_filtered_ = config["sim_filtered"];
+
+  if (sim_filtered_)
+  {
+    // Init dynamixel speed filters
+    for (int i=0; i<target_dof_; i++)
+      speedFilter_[i].init(1.0/dm_.tau_, 5.0);
+  }
 }
 
 void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
@@ -125,6 +140,13 @@ void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
       VectorConstructor(0); // zero squats
   *state = state_;
 
+  if (sim_filtered_)
+  {
+    state_raw_vel_ = state->segment(target_dof_, target_dof_);
+    for (int i=0; i<target_dof_; i++)
+      speedFilter_[i].clear();
+  }
+
   export_meshup_animation(state_, ConstantVector(target_dof_, 0));
 
   TRACE("Initial state: " << state_);
@@ -137,8 +159,11 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   target_action_.resize(target_dof_);
   next->resize(state_.size());
 
-  // reduce state
-  target_state_ << state_.block(0, 0, 1, 2*target_dof_+1);
+  // strip state
+  if (sim_filtered_)
+    target_state_ << state_.head(target_dof_), state_raw_vel_, state_[rlsTime]; // provide a raw (correct) vector of velocities
+  else
+    target_state_ << state_.head(2*target_dof_+1);  //target_state_ << state_.block(0, 0, 1, 2*target_dof_+1);
 
   // auto-actuate arm
   if (action.size() == target_dof_-1)
@@ -183,10 +208,32 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
     Observation obs;
     tau = target_env_->step(target_action_, &obs, NULL, NULL);
     target_state_next_ <<  obs.v, VectorConstructor(target_state_[rlsTime] + tau);
-    dynamics_->updateKinematics(target_state_next_); // update kinematics if rbdl integration is not used
+    dynamics_->updateKinematics(target_state_next_); // update internal state of RBDL
   }
   else
+  {
     tau = dm_.step(target_state_, target_action_, &target_state_next_);
+
+    if (sim_filtered_)
+    {
+      // remember raw velocity
+      state_raw_vel_ = target_state_next_.segment(target_dof_, target_dof_);
+
+      // Calculate filtered velocity, same method as inside of Leo
+      Vector dx = target_state_next_.head(target_dof_) - target_state_.head(target_dof_);
+      double timeDiff = dm_.tau_;
+      for (int i = 0; i < target_dof_; i++)
+      {
+        const double velLimit = 8.0;
+        if (dx[i]/timeDiff > velLimit)
+          dx[i] = velLimit*timeDiff;
+        if (dx[i]/timeDiff < -velLimit)
+          dx[i] = -velLimit*timeDiff;
+        dx[i] = speedFilter_[i].filter(dx[i]/timeDiff);
+      }
+      target_state_next_ << target_state_next_.head(target_dof_), dx, target_state_next_[rlsTime];
+    }
+  }
 
   dynamics_->finalize(target_state_next_, rbdl_addition_);
 
@@ -213,9 +260,9 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   if ((*next)[rlsRefRootZ] != state_[rlsRefRootZ])
     (*next)[stsSquats] = state_[stsSquats] + 1;
 
-  std::cout << "  > Height: " << std::fixed << std::setprecision(3) << std::right
-            << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
-            << std::setw(10) << (*next)[rlsRefRootZ] << std::endl;
+//  std::cout << "  > Height: " << std::fixed << std::setprecision(3) << std::right
+//            << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
+//            << std::setw(10) << (*next)[rlsRefRootZ] << std::endl;
   //std::cout << "  > Next state: " << std::fixed << std::setprecision(3) << std::right << std::setw(10) << *next << std::endl;
 
   export_meshup_animation(*next, target_action_);

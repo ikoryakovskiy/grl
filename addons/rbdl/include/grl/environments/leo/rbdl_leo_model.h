@@ -30,6 +30,7 @@
 
 #include <grl/environment.h>
 #include <grl/environments/rbdl.h>
+#include <grl/butterworth.h>
 
 namespace grl
 {
@@ -65,7 +66,7 @@ class LeoSquattingSandboxModel : public LeoSandboxModel
     TYPEINFO("sandbox_model/leo_squatting", "State transition model that integrates equations of motion and augments state vector with additional elements")
 
   public:
-    LeoSquattingSandboxModel() : lower_height_(0.28), upper_height_(0.35), mode_("vc") { }
+    LeoSquattingSandboxModel() : lower_height_(0.28), upper_height_(0.35), mode_("vc"), sim_filtered_(0) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -79,6 +80,9 @@ class LeoSquattingSandboxModel : public LeoSandboxModel
     Vector rbdl_addition_;
     double lower_height_, upper_height_;
     std::string mode_;
+    int sim_filtered_;
+    Vector state_raw_vel_;
+    CButterworthFilter<2> speedFilter_[4];
 };
 
 }

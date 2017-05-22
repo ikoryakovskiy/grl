@@ -241,6 +241,9 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, Vector &initial_qc)
     }
   }
 
+  sum_error_ = 0;
+  sum_error_counter_ = 0;
+
   if (verbose_)
     std::cout << "MUSCOD is reseted!" << std::endl;
 }

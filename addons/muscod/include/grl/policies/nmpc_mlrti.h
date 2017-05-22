@@ -14,6 +14,7 @@
 #include "wrapper.hpp" // MUSCOD-II interface
 #include "muscod_nmpc.h" // MUSCOD-II NMPCProblem class
 #include <time.h>
+#include <grl/signal.h>
 
 namespace grl {
 
@@ -28,7 +29,9 @@ class NMPCPolicyMLRTI: public NMPCBase
   protected:
     int nmpc_ninit_; // number of MUSCOD SQP iterations for initialization
     Vector initial_pf_, initial_qc_, final_sd_;
-
+    Vector initial_sd_prev_, initial_pf_prev_, initial_qc_prev_;
+    double sum_error_;
+    int sum_error_counter_;
     MUSCOD *muscod_A_;
     NMPCProblem *nmpc_A_;
     const std::string thread_id_A = "A";
@@ -99,6 +102,8 @@ class NMPCPolicyMLRTI: public NMPCBase
     void   muscod_reset(const Vector &initial_obs, double time);
     void   muscod_quit(void* data);
 
+     VectorSignal *pub_error_signal_, *pub_sim_state_;
+
   public:
     NMPCPolicyMLRTI():
         nmpc_ninit_(10),
@@ -109,7 +114,11 @@ class NMPCPolicyMLRTI: public NMPCBase
         idle_iv_provided_ (true),
         idle_qc_retrieved_ (true),
         cntl_iv_provided_ (true),
-        cntl_qc_retrieved_ (true)
+        cntl_qc_retrieved_ (true),
+        sum_error_(0),
+        sum_error_counter_(0),
+        pub_error_signal_(NULL),
+        pub_sim_state_(NULL)
     {}
 
     ~NMPCPolicyMLRTI();
