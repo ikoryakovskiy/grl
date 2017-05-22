@@ -472,6 +472,18 @@ agent/master/sequential:
     mutability: configuration
     default: 0
     optional: 0
+  pub_action1:
+    type: signal/vector
+    description: Publisher of the action coming from the first subagent
+    mutability: configuration
+    default: 0
+    optional: 1
+  pub_action2:
+    type: signal/vector
+    description: Publisher of the action coming from the second subagent
+    mutability: configuration
+    default: 0
+    optional: 1
   exporter:
     type: exporter
     description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
@@ -498,6 +510,18 @@ agent/master/sequential/additive:
     mutability: configuration
     default: 0
     optional: 0
+  pub_action1:
+    type: signal/vector
+    description: Publisher of the action coming from the first subagent
+    mutability: configuration
+    default: 0
+    optional: 1
+  pub_action2:
+    type: signal/vector
+    description: Publisher of the action coming from the second subagent
+    mutability: configuration
+    default: 0
+    optional: 1
   exporter:
     type: exporter
     description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
@@ -5172,12 +5196,6 @@ sandbox_model/leo_squatting:
     optional: 1
     min: 1
     max: 2147483647
-  dynamics:
-    type: dynamics/rbdl
-    description: Equations of motion
-    mutability: configuration
-    default: 0
-    optional: 0
   target_dof:
     type: int.target_dof
     description: Number of degrees of freedom of the target model
@@ -5186,6 +5204,24 @@ sandbox_model/leo_squatting:
     optional: 1
     min: 0
     max: 2147483647
+  target_env:
+    type: environment
+    description: Interaction environment
+    mutability: configuration
+    default: 0
+    optional: 1
+  dynamics:
+    type: dynamics/rbdl
+    description: Equations of motion
+    mutability: configuration
+    default: 0
+    optional: 0
+  true_model:
+    type: model
+    description: True dynamical model
+    mutability: configuration
+    default: 0
+    optional: 1
   animation:
     type: string
     description: Save current state or full animation
@@ -5196,18 +5232,6 @@ sandbox_model/leo_squatting:
       - nope
       - full
       - immediate
-  target_env:
-    type: environment
-    description: Interaction environment
-    mutability: configuration
-    default: 0
-    optional: 1
-  condition:
-    type: vector.condition
-    description: Box-like conditions for switching direction of squat
-    mutability: configuration
-    default: "[ 0.01, 0.01 ]"
-    optional: 1
   lower_height:
     type: double.lower_height
     description: Lower bound of root height to switch direction
@@ -5224,6 +5248,12 @@ sandbox_model/leo_squatting:
     optional: 1
     min: 0
     max: 1.797693134862316e+308
+  precision:
+    type: vector.precision
+    description: Precision of setpoints box conditions for switching the direction of motion
+    mutability: configuration
+    default: "[ 0.01, 0.01 ]"
+    optional: 1
   mode:
     type: string
     description: Control mode (torque/voltage )
@@ -5241,6 +5271,12 @@ sandbox_model/leo_squatting:
     optional: 1
     min: 0
     max: 1
+  sub_true_action:
+    type: signal/vector
+    description: Subscriber to an external original action which is belived to be true
+    mutability: configuration
+    default: 0
+    optional: 1
 signal/matrix:
   description: Matrix-based signal (trajectory, etc.)
 signal/vector:

@@ -279,6 +279,10 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
     *reward = immediate_reward;
 
   TRACE(*reward);
+  TRACE(next[rlsMEF]);
+
+  if (fabs(*reward - next[rlsMEF]) > 1E-6)
+    ERROR("Something is wrong with MEF");
 
   // adding shaping
   if (weight_shaping_ != 0.0)

@@ -38,7 +38,7 @@ namespace grl
 class LeoSandboxModel: public Sandbox
 {
   public:
-    LeoSandboxModel() : target_dof_(4), target_env_(NULL), dynamics_(NULL) { }
+    LeoSandboxModel() : target_dof_(4), target_env_(NULL), dynamics_(NULL), sub_true_action_(NULL), true_model_(NULL) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -57,7 +57,10 @@ class LeoSandboxModel: public Sandbox
     DynamicalModel dm_;
     RBDLDynamics *dynamics_;
     std::string animation_;
-    Vector condition_;
+
+    VectorSignal *sub_true_action_;
+    Model *true_model_;
+    //RBDLDynamics *true_dyn_;
 };
 
 class LeoSquattingSandboxModel : public LeoSandboxModel
@@ -79,7 +82,9 @@ class LeoSquattingSandboxModel : public LeoSandboxModel
   protected:
     Vector rbdl_addition_;
     double lower_height_, upper_height_;
+    Vector precision_;
     std::string mode_;
+    Vector true_state_next_;
     int sim_filtered_;
     Vector state_raw_vel_;
     CButterworthFilter<2> speedFilter_[4];

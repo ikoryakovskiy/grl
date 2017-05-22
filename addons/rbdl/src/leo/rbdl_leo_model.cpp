@@ -38,25 +38,27 @@ void LeoSandboxModel::request(ConfigurationRequest *config)
 {
   dm_.request(config);
   config->pop_back();
-  config->push_back(CRP("dynamics", "dynamics/rbdl", "Equations of motion", dm_.dynamics_));
-
+//  true_dm_.request(config);
+//  config->pop_back();
   config->push_back(CRP("target_dof", "int.target_dof", "Number of degrees of freedom of the target model", target_dof_, CRP::Configuration, 0, INT_MAX));
-  config->push_back(CRP("animation", "Save current state or full animation", animation_, CRP::Configuration, {"nope", "full", "immediate"}));
   config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_, true));
+  config->push_back(CRP("dynamics", "dynamics/rbdl", "Equations of motion", dm_.dynamics_));
+  config->push_back(CRP("true_model", "model", "True dynamical model", true_model_, true));
 
-  condition_ = VectorConstructor(0.01, 0.01);
-  config->push_back(CRP("condition", "vector.condition", "Box-like conditions for switching direction of squat", condition_));
+  config->push_back(CRP("animation", "Save current state or full animation", animation_, CRP::Configuration, {"nope", "full", "immediate"}));
 }
 
 void LeoSandboxModel::configure(Configuration &config)
 {
+  target_dof_ = config["target_dof"];
+  target_env_ = (Environment*)config["target_env"].ptr(); // Select a real enviromnent if needed
+
   dm_.configure(config);
   dynamics_ = (RBDLDynamics*) dm_.dynamics_;
 
-  target_env_ = (Environment*)config["target_env"].ptr(); // Select a real enviromnent if needed
-  target_dof_ = config["target_dof"];
+  true_model_ = (Model*)config["true_model"].ptr();
+
   animation_ = config["animation"].str();
-  condition_ = config["condition"].v();
 }
 
 void LeoSandboxModel::export_meshup_animation(const Vector &state, const Vector &action) const
@@ -100,8 +102,11 @@ void LeoSquattingSandboxModel::request(ConfigurationRequest *config)
 
   config->push_back(CRP("lower_height", "double.lower_height", "Lower bound of root height to switch direction", lower_height_, CRP::Configuration, 0.0, DBL_MAX));
   config->push_back(CRP("upper_height", "double.upper_height", "Upper bound of root height to switch direction", upper_height_, CRP::Configuration, 0.0, DBL_MAX));
+  precision_ = VectorConstructor(0.01, 0.01);
+  config->push_back(CRP("precision", "vector.precision", "Precision of setpoints box conditions for switching the direction of motion", precision_));
   config->push_back(CRP("mode", "Control mode (torque/voltage )", mode_, CRP::Configuration, {"tc", "vc"}));
   config->push_back(CRP("sim_filtered", "Simulate filtering of velocity when rbdl is used", sim_filtered_, CRP::Configuration, 0, 1));
+  config->push_back(CRP("sub_true_action", "signal/vector", "Subscriber to an external original action which is belived to be true", sub_true_action_, true));
 }
 
 void LeoSquattingSandboxModel::configure(Configuration &config)
@@ -116,8 +121,13 @@ void LeoSquattingSandboxModel::configure(Configuration &config)
 
   lower_height_ = config["lower_height"];
   upper_height_ = config["upper_height"];
+  precision_ = config["precision"].v();
   mode_ = config["mode"].str();
   sim_filtered_ = config["sim_filtered"];
+  sub_true_action_ = (VectorSignal*)config["sub_true_action"].ptr();
+
+  if ((true_model_ && !sub_true_action_) || (!true_model_ && sub_true_action_))
+    throw Exception("sandbox_model/leo_squatting: if true model is used, true action should be defined as well");
 
   if (sim_filtered_)
   {
@@ -137,6 +147,7 @@ void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
   // Immediately try to stand up
   state_.resize(stsStateDim);
   state_ << *state, VectorConstructor(upper_height_), rbdl_addition_,
+      VectorConstructor(0), // zero mef error
       VectorConstructor(0); // zero squats
   *state = state_;
 
@@ -156,6 +167,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
 {
   target_state_.resize(2*target_dof_+1);
   target_state_next_.resize(2*target_dof_+1);
+  true_state_next_.resize(2*target_dof_+1);
   target_action_.resize(target_dof_);
   next->resize(state_.size());
 
@@ -239,17 +251,17 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
 
   // Compose the next state
   (*next) << target_state_next_, VectorConstructor(state_[rlsRefRootZ]),
-      rbdl_addition_, VectorConstructor(state_[stsSquats]);
+      rbdl_addition_, VectorConstructor(state_[rlsMEF], state_[stsSquats]);
 
   // Switch setpoint if needed
-  if (fabs((*next)[rlsComVelocityZ] - 0.0) < condition_[1])
+  if (fabs((*next)[rlsComVelocityZ] - 0.0) < precision_[1])
   {
-    if (fabs((*next)[rlsRootZ] - lower_height_) < condition_[0])
+    if (fabs((*next)[rlsRootZ] - lower_height_) < precision_[0])
     {
       (*next)[rlsRefRootZ] = upper_height_;
       //std::cout << "Lower setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
     }
-    else if (fabs((*next)[rlsRootZ] - upper_height_) < condition_[0])
+    else if (fabs((*next)[rlsRootZ] - upper_height_) < precision_[0])
     {
       (*next)[rlsRefRootZ] = lower_height_;
       //std::cout << "Upper setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
@@ -260,10 +272,25 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   if ((*next)[rlsRefRootZ] != state_[rlsRefRootZ])
     (*next)[stsSquats] = state_[stsSquats] + 1;
 
-//  std::cout << "  > Height: " << std::fixed << std::setprecision(3) << std::right
-//            << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
-//            << std::setw(10) << (*next)[rlsRefRootZ] << std::endl;
-  //std::cout << "  > Next state: " << std::fixed << std::setprecision(3) << std::right << std::setw(10) << *next << std::endl;
+  // Simulate true dynamics for Model Error Feedback algorithm
+  if (true_model_)
+  {
+    Vector true_action = target_action_;
+    if (sub_true_action_)
+      true_action = sub_true_action_->get();
+    true_model_->step(target_state_, true_action, &true_state_next_);
+    Vector x = true_state_next_.head(target_dof_) - target_state_next_.head(target_dof_);
+    (*next)[rlsMEF] = - sqrt(x.cwiseProduct(x).sum());
+    TRACE((*next)[rlsMEF]);
+  }
+  else
+    (*next)[rlsMEF] = 0;
+
+  //  std::cout << "  > Height: " << std::fixed << std::setprecision(3) << std::right
+  //            << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
+  //            << std::setw(10) << (*next)[rlsRefRootZ] << std::endl;
+    //std::cout << "  > Next state: " << std::fixed << std::setprecision(3) << std::right << std::setw(10) << *next << std::endl;
+
 
   export_meshup_animation(*next, target_action_);
 

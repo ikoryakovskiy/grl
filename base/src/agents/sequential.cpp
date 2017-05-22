@@ -38,6 +38,8 @@ void SequentialMasterAgent::request(ConfigurationRequest *config)
   config->push_back(CRP("predictor", "predictor", "Optional (model) predictor", predictor_, true));
   config->push_back(CRP("agent1", "agent", "First subagent, providing the suggested action", agent_[0]));
   config->push_back(CRP("agent2", "agent", "Second subagent, providing the final action", agent_[1]));
+  config->push_back(CRP("pub_action1", "signal/vector", "Publisher of the action coming from the first subagent", action_[0], true));
+  config->push_back(CRP("pub_action2", "signal/vector", "Publisher of the action coming from the second subagent", action_[1], true));
   config->push_back(CRP("exporter", "exporter", "Optional exporter for transition log (supports time, state, observation, action, reward, terminal)", exporter_, true));
 }
 
@@ -46,6 +48,8 @@ void SequentialMasterAgent::configure(Configuration &config)
   predictor_ = (Predictor*)config["predictor"].ptr();
   agent_[0] = (SubAgent*)config["agent1"].ptr();
   agent_[1] = (SubAgent*)config["agent2"].ptr();
+  action_[0] = (VectorSignal*)config["pub_action1"].ptr();
+  action_[1] = (VectorSignal*)config["pub_action2"].ptr();
 
   exporter_ = (Exporter*) config["exporter"].ptr();
 
@@ -71,10 +75,14 @@ void SequentialMasterAgent::start(const Observation &obs, Action *action)
   time_ = 0;
 
   agent_[0]->start(obs, action);
+  if (action_[0])
+    action_[0]->set(action->v);
   if (exporter_)
     exporter_->append({grl::VectorConstructor(time_), *action});
 
   agent_[1]->start(obs, action);
+  if (action_[1])
+    action_[1]->set(action->v);
   if (exporter_)
     exporter_->append({*action});
 
@@ -87,10 +95,14 @@ void SequentialMasterAgent::step(double tau, const Observation &obs, double rewa
   time_ += tau;
 
   agent_[0]->step(tau, obs, reward, action);
+  if (action_[0])
+    action_[0]->set(action->v);
   if (exporter_)
     exporter_->append({grl::VectorConstructor(time_), *action});
 
   agent_[1]->step(tau, obs, reward, action);
+  if (action_[1])
+    action_[1]->set(action->v);
   if (exporter_)
     exporter_->append({*action});
 
@@ -141,12 +153,16 @@ void SequentialAdditiveMasterAgent::start(const Observation &obs, Action *action
 
   // First action
   agent_[0]->start(obs, action);
+  if (action_[0])
+    action_[0]->set(action->v);
   if (exporter_)
     exporter_->append({grl::VectorConstructor(time_), *action});
 
   // Second action
   Action action1;
   agent_[1]->start(obs, &action1);
+  if (action_[1])
+    action_[1]->set(action1.v);
   if (exporter_)
     exporter_->append({action1});
 
@@ -171,6 +187,8 @@ void SequentialAdditiveMasterAgent::step(double tau, const Observation &obs, dou
   // First action
   timer t;
   agent_[0]->step(tau, obs, reward, action);
+  if (action_[0])
+    action_[0]->set(action->v);
   TRACE("Elapsed time (1): " << t.elapsed() << " s" << std::endl);
   if (exporter_)
     exporter_->append({grl::VectorConstructor(time_), *action});
@@ -179,6 +197,8 @@ void SequentialAdditiveMasterAgent::step(double tau, const Observation &obs, dou
   Action action1;
   t.restart();
   agent_[1]->step(tau, obs, reward, &action1);
+  if (action_[1])
+    action_[1]->set(action1.v);
   TRACE("Elapsed time (2) " << t.elapsed() << " s" << std::endl);
   if (exporter_)
     exporter_->append({action1});

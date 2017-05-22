@@ -76,7 +76,9 @@ enum RbdlLeoState
   rlsAngularMomentumY,
   rlsAngularMomentumZ,
 
-  rlsStateDim = rlsAngularMomentumZ + 1
+  rlsMEF,
+
+  rlsStateDim = rlsMEF + 1
 };
 
 enum SquattingTaskState

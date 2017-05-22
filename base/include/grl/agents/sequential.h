@@ -31,6 +31,7 @@
 #include <grl/agent.h>
 #include <grl/predictor.h>
 #include <grl/exporter.h>
+#include <grl/signal.h>
 
 namespace grl
 {
@@ -48,11 +49,14 @@ class SequentialMasterAgent : public Agent
     double time_;
     Observation prev_obs_;
     Action prev_action_;
+
+    std::vector<VectorSignal*> action_;
     
   public:
-    SequentialMasterAgent() : predictor_(0), agent_(2), exporter_(NULL)
+    SequentialMasterAgent() : predictor_(0), agent_(2), exporter_(NULL), action_(2)
     {
       agent_[0] = agent_[1] = NULL;
+      action_[0] = action_[1] = NULL;
     }
   
     // From Configurable    
