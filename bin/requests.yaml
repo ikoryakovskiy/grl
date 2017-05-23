@@ -2023,12 +2023,6 @@ mapping/policy/nmpc:
     mutability: configuration
     default: 0
     optional: 1
-  pub_sim_state:
-    type: signal/vector
-    description: Publsher of the simulated state signal
-    mutability: configuration
-    default: 0
-    optional: 1
 mapping/policy/nmpc_mlrti:
   description: "Thread-based nonlinear model predictive control policy using the MUSCOD library and implementing a multi-level real-time iteration "
   verbose:
@@ -2076,18 +2070,6 @@ mapping/policy/nmpc_mlrti:
     description: Name of MUSCOD NMPC model library
     mutability: configuration
     default: ""
-    optional: 1
-  pub_error_signal:
-    type: signal/vector
-    description: Publsher of the model-plant mismatch error signal
-    mutability: configuration
-    default: 0
-    optional: 1
-  pub_sim_state:
-    type: signal/vector
-    description: Publsher of the simulated state signal
-    mutability: configuration
-    default: 0
     optional: 1
 mapping/policy/nmpc_th:
   description: Nonlinear multistep (thread-based) model predictive control policy using the MUSCOD library
@@ -2987,12 +2969,6 @@ policy/nmpc_stages:
   pub_error_signal:
     type: signal/vector
     description: Publsher of the model-plant mismatch error signal
-    mutability: configuration
-    default: 0
-    optional: 1
-  pub_sim_state:
-    type: signal/vector
-    description: Publsher of the simulated state signal
     mutability: configuration
     default: 0
     optional: 1
@@ -6389,6 +6365,14 @@ task/leo_squatting:
     optional: 1
     min: 0
     max: 1.797693134862316e+308
+  use_mef:
+    type: int.use_mef
+    description: Use MEF instead of NMPC cost
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
   setpoint_reward:
     type: int.setpoint_reward
     description: If zero, reward at setpoint is given for setpoint at time t, otherwise - at t+1
@@ -6405,12 +6389,6 @@ task/leo_squatting:
     optional: 1
     min: 0
     max: 1
-  sub_sim_state:
-    type: signal/vector
-    description: Subscriber to external sigma
-    mutability: configuration
-    default: 0
-    optional: 1
   gamma:
     type: double
     description: Discount rate (used in shaping)

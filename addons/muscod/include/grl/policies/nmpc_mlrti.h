@@ -102,8 +102,6 @@ class NMPCPolicyMLRTI: public NMPCBase
     void   muscod_reset(const Vector &initial_obs, double time);
     void   muscod_quit(void* data);
 
-     VectorSignal *pub_error_signal_, *pub_sim_state_;
-
   public:
     NMPCPolicyMLRTI():
         nmpc_ninit_(10),
@@ -116,9 +114,7 @@ class NMPCPolicyMLRTI: public NMPCBase
         cntl_iv_provided_ (true),
         cntl_qc_retrieved_ (true),
         sum_error_(0),
-        sum_error_counter_(0),
-        pub_error_signal_(NULL),
-        pub_sim_state_(NULL)
+        sum_error_counter_(0)
     {}
 
     ~NMPCPolicyMLRTI();

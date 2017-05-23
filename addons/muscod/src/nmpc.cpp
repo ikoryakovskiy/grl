@@ -34,7 +34,6 @@ void NMPCPolicy::request(ConfigurationRequest *config)
   config->push_back(CRP("feedback", "Choose between a non-treaded and a threaded feedback of NMPC", feedback_, CRP::Configuration, {"non-threaded", "threaded"}));
   config->push_back(CRP("n_iter", "Number of iteration", (int)n_iter_, CRP::System, 0, INT_MAX));
   config->push_back(CRP("pub_error_signal", "signal/vector", "Publsher of the model-plant mismatch error signal", pub_error_signal_, true));
-  config->push_back(CRP("pub_sim_state", "signal/vector", "Publsher of the simulated state signal", pub_sim_state_, true));
 }
 
 void NMPCPolicy::configure(Configuration &config)
@@ -43,7 +42,6 @@ void NMPCPolicy::configure(Configuration &config)
   feedback_ = config["feedback"].str();
   n_iter_ = config["n_iter"];
   pub_error_signal_ = (VectorSignal*)config["pub_error_signal"].ptr();
-  pub_sim_state_ = (VectorSignal*)config["pub_sim_state"].ptr();
 
   INFO("Running " << feedback_ << " implementation of NMPC");
 
@@ -363,20 +361,6 @@ void NMPCPolicy::act(double time, const Observation &in, Action *out)
 
   if (verbose_)
     std::cout << "Feedback Control: [" << out->v << "]" << std::endl;
-
-  // simulate model over specified time interval using NMPC internal model
-  if (pub_sim_state_)
-  {
-    double time_interval = 0.03; //nmpc_->getSamplingRate();
-    nmpc_->simulate(
-        initial_sd_,    // current state
-        initial_pf_,    // current parameter
-        initial_qc_,    // applied control
-        time_interval,
-        &final_sd_      // next state
-    );
-    pub_sim_state_->set(final_sd_);
-  }
 
   // record variables for simulation
   initial_sd_prev_ = initial_sd_;

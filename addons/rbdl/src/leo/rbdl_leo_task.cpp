@@ -52,9 +52,9 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("weight_nmpc_qd", "double.weight_nmpc_qd", "Weight on the part of NMPC cost which penalizes large velocities", weight_nmpc_qd_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("weight_shaping", "double.weight_shaping", "Weight on the shaping cost", weight_shaping_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("power", "double.power", "Power of objective functions comprising cost", power_, CRP::System, 0.0, DBL_MAX));
+  config->push_back(CRP("use_mef", "int.use_mef", "Use MEF instead of NMPC cost", use_mef_, CRP::System, 0, 1));
   config->push_back(CRP("setpoint_reward", "int.setpoint_reward", "If zero, reward at setpoint is given for setpoint at time t, otherwise - at t+1", setpoint_reward_, CRP::System, 0, 1));
   config->push_back(CRP("continue_after_fall", "int.continue_after_fall", "Continue exectution of the environemnt even after a fall of Leo", continue_after_fall_, CRP::System, 0, 1));
-  config->push_back(CRP("sub_sim_state", "signal/vector", "Subscriber to external sigma", sub_sim_state_, true));
   config->push_back(CRP("gamma", "Discount rate (used in shaping)", gamma_));
   config->push_back(CRP("fixed_arm", "int.fixed_arm", "Require fixed arm, fa option", fixed_arm_, CRP::System, 0, 1));
 }
@@ -68,10 +68,10 @@ void LeoSquattingTask::configure(Configuration &config)
   weight_nmpc_aux_ = config["weight_nmpc_aux"];
   weight_nmpc_qd_ = config["weight_nmpc_qd"];
   weight_shaping_ = config["weight_shaping"];
+  use_mef_ = config["use_mef"];
   power_ = config["power"];
   setpoint_reward_ = config["setpoint_reward"];
   continue_after_fall_ = config["continue_after_fall"];
-  sub_sim_state_ = (VectorSignal*)config["sub_sim_state"].ptr();
   gamma_ = config["gamma"];
   fixed_arm_ = config["fixed_arm"];
 
@@ -268,21 +268,12 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   task_reward_ += immediate_reward;
   subtask_reward_ += immediate_reward;
 
-  if (sub_sim_state_)
-  {
-    // use reward based on the simulated state if requested
-    Vector sim_state = sub_sim_state_->get();
-    Vector x = next.block(0, 0, 1, dof_) - sim_state.block(0, 0, 1, dof_);
-    *reward = - sqrt(x.cwiseProduct(x).sum());
-  }
+  if (use_mef_)
+    *reward = next[rlsMEF];
   else
     *reward = immediate_reward;
 
   TRACE(*reward);
-  TRACE(next[rlsMEF]);
-
-  if (fabs(*reward - next[rlsMEF]) > 1E-6)
-    ERROR("Something is wrong with MEF");
 
   // adding shaping
   if (weight_shaping_ != 0.0)

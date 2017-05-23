@@ -60,7 +60,6 @@ class LeoSandboxModel: public Sandbox
 
     VectorSignal *sub_true_action_;
     Model *true_model_;
-    //RBDLDynamics *true_dyn_;
 };
 
 class LeoSquattingSandboxModel : public LeoSandboxModel

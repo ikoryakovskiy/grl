@@ -393,18 +393,7 @@ void *muscod_run (void *indata)
             nmpc.timing.time_prepare(tac - tic);
             pthread_mutex_unlock(nmpc.mutex_); // --> Unlock the mutex
         } // END IF NMPC MODE
-/*        else
-        {
-          double time_interval = 0.03; //nmpc_->getSamplingRate();
-          nmpc.simulate(
-              sd,    // current state
-              pf,    // current parameter
-              qc,    // applied control
-              time_interval,
-              &final_sd      // next state
-          );
-        }
-*/
+
         // time total evaluation time of NMPC iteration
         pthread_mutex_lock(nmpc.mutex_); // --> Lock the mutex
         nmpc.timing.time_preparation(ptac);

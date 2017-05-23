@@ -38,8 +38,6 @@ void LeoSandboxModel::request(ConfigurationRequest *config)
 {
   dm_.request(config);
   config->pop_back();
-//  true_dm_.request(config);
-//  config->pop_back();
   config->push_back(CRP("target_dof", "int.target_dof", "Number of degrees of freedom of the target model", target_dof_, CRP::Configuration, 0, INT_MAX));
   config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_, true));
   config->push_back(CRP("dynamics", "dynamics/rbdl", "Equations of motion", dm_.dynamics_));
@@ -273,11 +271,9 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
     (*next)[stsSquats] = state_[stsSquats] + 1;
 
   // Simulate true dynamics for Model Error Feedback algorithm
-  if (true_model_)
+  if (true_model_ && sub_true_action_)
   {
-    Vector true_action = target_action_;
-    if (sub_true_action_)
-      true_action = sub_true_action_->get();
+    Vector true_action = sub_true_action_->get();
     true_model_->step(target_state_, true_action, &true_state_next_);
     Vector x = true_state_next_.head(target_dof_) - target_state_next_.head(target_dof_);
     (*next)[rlsMEF] = - sqrt(x.cwiseProduct(x).sum());
