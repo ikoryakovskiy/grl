@@ -10,25 +10,20 @@ experiment:
     type: environment/sandbox
     model: 
       type: sandbox_model/leo_walk
-      control_step: 0.03
-      integration_steps: 100
+      control_step: 0.0003
+      integration_steps: 1
       dynamics: 
         type: dynamics/rbdl
-        file: /leo_ff_dl.lua
+        file: leo_ff_dl.lua
+        points: tip_left, tip_right, heel_left, heel_right
         auxiliary: com
-      target_dof: 7
+      target_dof: 9
       condition: [0.01, 0.01]
       mode: vc
     task: 
       type: task/leo_walking
       timeout: 20
-      randomize: 1
-    exporter: 
-      type: exporter/csv
-      file: rbdl_test
-      style: line
-      variant: all
-      enabled: 1
+      randomize: 0
   agent: 
     type: agent/zmq_action
     communicator: 

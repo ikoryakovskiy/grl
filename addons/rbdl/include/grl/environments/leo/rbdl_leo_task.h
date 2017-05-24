@@ -37,7 +37,8 @@ namespace grl
 
 enum RbdlLeoWalkState
 {
-
+    rlsTorsoX,
+    rlsTorsoY,
     rlsTorsoAngle,
     rlsLeftHipAngle,
     rlsRightHipAngle,
@@ -46,6 +47,8 @@ enum RbdlLeoWalkState
     rlsLeftAnkleAngle,
     rlsRightAnkleAngle,
 
+    rlsTorsoXRate,
+    rlsTorsoYRate,
     rlsTorsoAngleRate,
     rlsLeftHipAngleRate,
     rlsRightHipAngleRate,
@@ -59,29 +62,45 @@ enum RbdlLeoWalkState
     rlsLeftArmAngleRate,
     rlsRightArmAngleRate,
 
-    rlsTime = 14,
+    rlsTime = 18,
+
+    rlsLeftTipZ,
+    rlsLeftTipVelZ,
+
+    rlsRightTipZ,
+    rlsRightTipVelZ,
+
+    rlsLeftHeelZ,
+    rlsLeftHeelVelZ,
+
+    rlsRightHeelZ,
+    rlsRightHeelVelZ,
 
     rlsComX,
+
+    rlsStateDim,
+
     rlsComY,
     rlsComZ,
 
-    rlsRefRootZ,
-
     rlsLeftTipX,
     rlsLeftTipY,
-    rlsLeftTipZ,
 
     rlsLeftHeelX,
     rlsLeftHeelY,
-    rlsLeftHeelZ,
+
+    rlsRightTipX,
+    rlsRightTipY,
+
+    rlsRightHeelX,
+    rlsRightHeelY,
 
     rlsRootX,
     rlsRootY,
     rlsRootZ,
+    rlsRefRootZ,
 
     rlsMass,
-
-
 
     rlsComVelocityX,
     rlsComVelocityY,
@@ -91,13 +110,13 @@ enum RbdlLeoWalkState
     rlsAngularMomentumY,
     rlsAngularMomentumZ,
 
-    rlsStateDim = 18
+
 };
 
 enum SquattingTaskState
 {
   stsSquats = rlsStateDim,
-  stsStateDim = 18
+  stsStateDim = rlsStateDim
 };
 
 class LeoSquattingTask : public Task

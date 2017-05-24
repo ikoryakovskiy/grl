@@ -413,12 +413,12 @@ void LeoWalkingTask::configure(Configuration &config)
   sub_sim_state_ = (VectorSignal*)config["sub_sim_state"].ptr();
 
   // Target observations: 2*target_dof + time
-  std::vector<double> obs_min = {-M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI,-10*M_PI,-10*M_PI, 0};
-  std::vector<double> obs_max = { M_PI,  M_PI,  M_PI,  M_PI, M_PI, M_PI, M_PI, M_PI, M_PI, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI,  10*M_PI,  10*M_PI,  10*M_PI, 1};
+  std::vector<double> obs_min = {-1000, -1000, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -1000, -1000, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
+  std::vector<double> obs_max = { 1000, 1000, M_PI,  M_PI, M_PI, M_PI, M_PI, M_PI, M_PI, 1000, 1000, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI,  10*M_PI, 1};
   toVector(obs_min, target_obs_min_);
   toVector(obs_max, target_obs_max_);
 
-  dof_ = 7;
+  dof_ = 9;
 
   // Observations and actions exposed to an agent
   config.set("observation_dims", 2*dof_+1);
@@ -426,13 +426,13 @@ void LeoWalkingTask::configure(Configuration &config)
   observation_min.resize(2*dof_+1);
   observation_max.resize(2*dof_+1);
 
-  observation_min << target_obs_min_[rlsTorsoAngle], target_obs_min_[rlsLeftHipAngle], target_obs_min_[rlsRightHipAngle], target_obs_min_[rlsLeftKneeAngle],
-      target_obs_min_[rlsRightKneeAngle], target_obs_min_[rlsLeftAnkleAngle], target_obs_min_[rlsRightAnkleAngle], target_obs_min_[rlsTorsoAngleRate],
+  observation_min << target_obs_min_[rlsTorsoX], target_obs_min_[rlsTorsoY], target_obs_min_[rlsTorsoAngle], target_obs_min_[rlsLeftHipAngle], target_obs_min_[rlsRightHipAngle], target_obs_min_[rlsLeftKneeAngle],
+      target_obs_min_[rlsRightKneeAngle], target_obs_min_[rlsLeftAnkleAngle], target_obs_min_[rlsRightAnkleAngle], target_obs_min_[rlsTorsoXRate], target_obs_min_[rlsTorsoYRate], target_obs_min_[rlsTorsoAngleRate],
       target_obs_min_[rlsLeftHipAngleRate], target_obs_min_[rlsRightHipAngleRate], target_obs_min_[rlsLeftKneeAngleRate],
       target_obs_min_[rlsRightKneeAngleRate], target_obs_min_[rlsLeftAnkleAngleRate], target_obs_min_[rlsRightAnkleAngleRate], target_obs_min_[rlsTime];
 
-  observation_max << target_obs_max_[rlsTorsoAngle], target_obs_max_[rlsLeftHipAngle], target_obs_max_[rlsRightHipAngle], target_obs_max_[rlsLeftKneeAngle],
-      target_obs_max_[rlsRightKneeAngle], target_obs_max_[rlsLeftAnkleAngle], target_obs_max_[rlsRightAnkleAngle], target_obs_max_[rlsTorsoAngleRate],
+  observation_max << target_obs_max_[rlsTorsoX], target_obs_max_[rlsTorsoY], target_obs_max_[rlsTorsoAngle], target_obs_max_[rlsLeftHipAngle], target_obs_max_[rlsRightHipAngle], target_obs_max_[rlsLeftKneeAngle],
+      target_obs_max_[rlsRightKneeAngle], target_obs_max_[rlsLeftAnkleAngle], target_obs_max_[rlsRightAnkleAngle], target_obs_max_[rlsTorsoXRate], target_obs_max_[rlsTorsoYRate], target_obs_max_[rlsTorsoAngleRate],
       target_obs_max_[rlsLeftHipAngleRate], target_obs_max_[rlsRightHipAngleRate], target_obs_max_[rlsLeftKneeAngleRate],
       target_obs_max_[rlsRightKneeAngleRate], target_obs_max_[rlsLeftAnkleAngleRate], target_obs_max_[rlsRightAnkleAngleRate], target_obs_max_[rlsTime];
 
@@ -472,13 +472,14 @@ void LeoWalkingTask::start(int test, Vector *state) const
   {
     // Default initialization for walking pose
     *state <<
-           -0.072, 0.146, 0.905, -0.144, -1.36, 0.07, 0.06,
-           -0.0766, 0.049, 0, 0, 0, 0, 0,
+           0, 0, -0.101485, 0.100951, 0.819996, -0.00146549, -1.27, 4.11e-6, 2.26e-7,
+           //0, 0, 0, 0, 0, 0, 0, 0, 0,
+           0, 0, 0, 0, 0, 0, 0, 0, 0,
             0.0;  // rlsTime
 
     if (randomize)
     {
-      for (int ii=2; ii < dof_; ii+=2)
+      for (int ii=4; ii < dof_; ii+=2)
       {
         (*state)[ii] += RandGen::getUniform(-0.0872, 0.0872);
       }
@@ -501,7 +502,6 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
     *terminal = 2;
   else
     *terminal = 0;
-
 }
 
 void LeoWalkingTask::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const

@@ -126,7 +126,7 @@ void ModeledEnvironment::report(std::ostream &os) const
 
 void DynamicalModel::request(ConfigurationRequest *config)
 {
-  config->push_back(CRP("control_step", "double.control_step", "Control step time", tau_, CRP::Configuration, 0.001, DBL_MAX));
+  config->push_back(CRP("control_step", "double.control_step", "Control step time", tau_, CRP::Configuration, 0.0001, DBL_MAX));
   config->push_back(CRP("integration_steps", "Number of integration steps per control step", (int)steps_, CRP::Configuration, 1));
 
   config->push_back(CRP("dynamics", "dynamics", "Equations of motion", dynamics_));
@@ -163,6 +163,7 @@ double DynamicalModel::step(const Vector &state, const Vector &actuation, Vector
     Vector k4 = h*xd;
 
     *next = *next + (k1+2*k2+2*k3+k4)/6;
+
   }
   
   return tau_;

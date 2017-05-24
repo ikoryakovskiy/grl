@@ -87,7 +87,7 @@ class LeoWalkingSandboxModel : public LeoSandboxModel
     TYPEINFO("sandbox_model/leo_walk", "State transition model that integrates equations of motion and augments state vector with additional elements")
 
   public:
-    LeoWalkingSandboxModel() : mode_("vc") { }
+    LeoWalkingSandboxModel() : mode_("vc"), active_constraint_set_(""), left_tip_contact_(0), right_tip_contact_(0), left_heel_contact_(0), right_heel_contact_(0), num_contacts_(0) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -98,8 +98,16 @@ class LeoWalkingSandboxModel : public LeoSandboxModel
     virtual double step(const Vector &action, Vector *next);
 
   protected:
+    virtual void getCollisionPoints(const Vector &state);
+    virtual void getConstraintSet(std::string &constraint_name);
+    virtual void checkContactForces();
+
+  protected:
     Vector rbdl_addition_;
-    std::string mode_;
+    std::string mode_, active_constraint_set_;
+    double root_to_feet_height_ = -0.393865;
+    int left_tip_contact_, right_tip_contact_, left_heel_contact_, right_heel_contact_, num_contacts_;
+    int previous_left_tip_contact_, previous_right_tip_contact_, previous_left_heel_contact_, previous_right_heel_contact_;
 };
 
 }

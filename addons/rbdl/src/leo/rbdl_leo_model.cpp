@@ -237,7 +237,7 @@ void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
   dynamics_->finalize(*state, rbdl_addition_);
 
   // Compose a complete state <state, time, height, com, ..., squats>
-  state_.resize(18);
+  state_.resize(rlsStateDim);
   state_ << *state, rbdl_addition_;
   *state = state_;
 
@@ -248,6 +248,9 @@ void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
 
 double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 {
+  Vector rbdl_addition_mid, next_state_mid;
+
+  next_state_mid.resize(rlsStateDim);
   target_state_.resize(2*target_dof_+1);
   target_state_next_.resize(2*target_dof_+1);
   target_action_.resize(target_dof_);
@@ -258,15 +261,37 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
   target_action_ << action;
 
   double tau;
-  if (target_env_)
+
+  for (int ii=0; ii < 100; ++ii)
   {
-    Observation obs;
-    tau = target_env_->step(target_action_, &obs, NULL, NULL);
-    target_state_next_ <<  obs.v, VectorConstructor(target_state_[rlsTime] + tau);
-    dynamics_->updateKinematics(target_state_next_); // update kinematics if rbdl integration is not used
+
+    if (target_env_)
+    {
+      Observation obs;
+      tau = target_env_->step(target_action_, &obs, NULL, NULL);
+      target_state_next_ <<  obs.v, VectorConstructor(target_state_[rlsTime] + tau);
+      dynamics_->updateKinematics(target_state_next_); // update kinematics if rbdl integration is not used
+    }
+    else
+    {
+      tau = dm_.step(target_state_, target_action_, &target_state_next_);
+      dynamics_->finalize(target_state_next_, rbdl_addition_mid);
+      next_state_mid << target_state_next_, rbdl_addition_mid;
+
+      grl_assert(next_state_mid.size() == rlsStateDim);
+
+      // Check for collision points
+      getCollisionPoints(next_state_mid);
+      checkContactForces();
+      getConstraintSet(active_constraint_set_);
+      dynamics_->updateActiveConstraintSet(active_constraint_set_);
+      target_state_ = target_state_next_;
+      previous_left_heel_contact_ = left_heel_contact_;
+      previous_right_heel_contact_ = right_heel_contact_;
+      previous_left_tip_contact_ = left_tip_contact_;
+      previous_right_tip_contact_ = right_tip_contact_;
+    }
   }
-  else
-    tau = dm_.step(target_state_, target_action_, &target_state_next_);
 
   dynamics_->finalize(target_state_next_, rbdl_addition_);
 
@@ -276,4 +301,125 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 
   state_ = *next;
   return tau;
+}
+
+
+void LeoWalkingSandboxModel::getCollisionPoints(const Vector &state)
+{
+  grl_assert(state.size() == rlsStateDim);
+
+  if ((state[rlsLeftTipZ] < root_to_feet_height_) && (state[rlsLeftTipVelZ] < 0) && (!left_tip_contact_))
+  {
+    left_tip_contact_ = 1;
+    num_contacts_ += 1;
+  }
+  if ((state[rlsRightTipZ] < root_to_feet_height_) && (state[rlsRightTipVelZ] < 0) && (!right_tip_contact_))
+  {
+    right_tip_contact_ = 1;
+    num_contacts_ += 1;
+  }
+  if ((state[rlsLeftHeelZ] < root_to_feet_height_) && (state[rlsLeftHeelVelZ] < 0) && (!left_heel_contact_))
+  {
+    left_heel_contact_ = 1;
+    num_contacts_ += 1;
+  }
+  if ((state[rlsRightHeelZ] < root_to_feet_height_) && (state[rlsRightHeelVelZ] < 0) && (!right_heel_contact_))
+  {
+    right_heel_contact_ = 1;
+    num_contacts_ += 1;
+  }
+}
+
+void LeoWalkingSandboxModel::getConstraintSet(std::string &constraint_name)
+{
+  constraint_name = "";
+
+  if (num_contacts_ == 0)
+      return;
+  else if (num_contacts_ == 1)
+  {
+    if (left_tip_contact_ == 1)
+      constraint_name = "single_support_tip_left";
+    else if (right_tip_contact_ == 1)
+      constraint_name = "single_support_tip_right";
+    else if (left_heel_contact_ == 1)
+      constraint_name = "single_support_heel_left";
+    else
+      constraint_name = "single_support_heel_right";
+  }
+  else if (num_contacts_ == 2)
+  {
+    if ((left_tip_contact_ == 1) && (left_heel_contact_ == 1))
+      constraint_name = "single_support_flat_left";
+    if ((right_tip_contact_ == 1) && (right_heel_contact_ == 1))
+       constraint_name = "single_support_flat_right";
+    if ((right_tip_contact_ == 1) && (left_heel_contact_ == 1))
+       constraint_name = "double_support_hl_tr";
+    if ((right_tip_contact_ == 1) && (left_tip_contact_ == 1))
+       constraint_name = "double_support_tip";
+    if ((right_heel_contact_ == 1) && (left_heel_contact_ == 1))
+       constraint_name = "double_support_heel";
+    if ((right_heel_contact_ == 1) && (left_tip_contact_ == 1))
+       constraint_name = "double_support_hr_tl";
+  }
+  else if (num_contacts_ == 3)
+  {
+    if (!left_tip_contact_)
+      constraint_name = "double_support_fr_hl";
+    if (!right_tip_contact_)
+      constraint_name = "double_support_fl_hr";
+    if (!left_heel_contact_)
+      constraint_name = "double_support_fr_tl";
+    if (!right_heel_contact_)
+      constraint_name = "double_support_fl_tr";
+  }
+  else if (num_contacts_ == 4)
+    constraint_name = "double_support";
+}
+
+void LeoWalkingSandboxModel::checkContactForces()
+{
+  Vector3_t force;
+  double precision = 1E-5;
+
+  if (!(active_constraint_set_.empty()))
+  {
+    if (right_tip_contact_  && previous_right_tip_contact_)
+    {
+      dynamics_->getPointForce("tip_right", force);
+      if (force[0] <= precision && force[2] <= precision)
+      {
+        right_tip_contact_ = 0;
+        num_contacts_ -= 1;
+      }
+    }
+    if (left_tip_contact_ && previous_left_tip_contact_)
+    {
+      dynamics_->getPointForce("tip_left", force);
+      if (force[0] <= precision && force[2] <= precision)
+      {
+        left_tip_contact_ = 0;
+        num_contacts_ -= 1;
+      }
+    }
+    if (right_heel_contact_ && previous_right_heel_contact_)
+    {
+      dynamics_->getPointForce("heel_right", force);
+      if (force[0] <= precision && force[2] <= precision)
+      {
+        right_heel_contact_ = 0;
+        num_contacts_ -= 1;
+      }
+    }
+    if (left_heel_contact_ && previous_left_heel_contact_)
+    {
+      dynamics_->getPointForce("heel_left", force);
+      if (force[0] <= precision && force[2] <= precision)
+      {
+        left_heel_contact_ = 0;
+        num_contacts_ -= 1;
+      }
+    }
+  }
+
 }

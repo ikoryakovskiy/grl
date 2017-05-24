@@ -59,13 +59,16 @@ class RBDLDynamics : public Dynamics
 
   public:
     std::string file_, options_;
+    mutable std::string active_constraint_set_;
+    mutable bool dynamics_computed_, impulses_computed_, kinematics_computed_, momentum_computed_;
     mutable Instance<RBDLState> rbdl_state_;
   
     mutable std::map<std::string, Point> points;
     mutable std::map<std::string, RigidBodyDynamics::ConstraintSet> constraints;
+    mutable std::map<std::string, ConstraintSetInfo> constraintSetInfos;
 
   public:
-    RBDLDynamics() : rbdl_state_(std::bind(&RBDLDynamics::createRBDLState, this)) { }
+    RBDLDynamics() : active_constraint_set_(""), dynamics_computed_(false), impulses_computed_(false), kinematics_computed_(false), momentum_computed_(false), rbdl_state_(std::bind(&RBDLDynamics::createRBDLState, this)) { }
   
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -81,8 +84,11 @@ class RBDLDynamics : public Dynamics
     // or updateKinematics() then finalize()
     virtual void finalize(const Vector &state, Vector &out) const;
 
-    // Update kinematics without making a step
+    // Update kinematics and active constraint set without making a step
     virtual void updateKinematics(const Vector &state) const;
+    virtual void updateActiveConstraintSet(const std::string point) const;
+    virtual void calcCollisionImpactRhs(const Vector &state, Vector &out) const;
+    virtual void getPointForce (const std::string point_name, Vector3_t &out) const;
 
   protected:
     // own
@@ -94,6 +100,10 @@ class RBDLDynamics : public Dynamics
     bool loadConstraintSetsFromFile(const char* filename, RigidBodyDynamics::Model *model) const;
     void getPointPosition(const Vector &state, const std::string point_name, Vector &out) const;
     void getAuxiliary(const Vector &state, double &modelMass, Vector &centerOfMass, Vector &centerOfMassVelocity, Vector &angularMomentum) const;
+    void getPointVelocity(const Vector &state, const std::string point_name, Vector &out) const;
+    void updateForwardDynamics(const Vector &state, const Vector &qd, const Vector &controls, Vector &qdd) const;
+
+
 };
 
 struct LuaState
