@@ -261,7 +261,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
   target_state_ << state_.head(2*target_dof_+1);
   target_action_ << action;
 
-  double tau;
+  double tau = 0;
 
   for (int ii=0; ii < 100; ++ii)
   {
@@ -275,7 +275,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
     }
     else
     {
-      tau = dm_.step(target_state_, target_action_, &target_state_next_);
+      tau += dm_.step(target_state_, target_action_, &target_state_next_);
       dynamics_->finalize(target_state_next_, rbdl_addition_mid);
       next_state_mid << target_state_next_, rbdl_addition_mid;
 
