@@ -248,8 +248,9 @@ void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
 
 double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 {
-  Vector rbdl_addition_mid, next_state_mid;
+  Vector rbdl_addition_mid, next_state_mid, qd_plus;
 
+  qd_plus.resize(target_dof_);
   next_state_mid.resize(rlsStateDim);
   target_state_.resize(2*target_dof_+1);
   target_state_next_.resize(2*target_dof_+1);
@@ -262,7 +263,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 
   double tau;
 
-  for (int ii=0; ii < 200; ++ii)
+  for (int ii=0; ii < 100; ++ii)
   {
 
     if (target_env_)
@@ -280,11 +281,23 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 
       grl_assert(next_state_mid.size() == rlsStateDim);
 
-      // Check for collision points
+      // Check for collision points and update active constraint set
       getCollisionPoints(next_state_mid);
       checkContactForces();
       getConstraintSet(active_constraint_set_);
       dynamics_->updateActiveConstraintSet(active_constraint_set_);
+
+      // Update velocities if found in violation of constraints
+      dynamics_->calcCollisionImpactRhs(next_state_mid, qd_plus);
+
+      // Update state based on new velocities
+      for (int ij=0; ij < target_dof_; ++ij)
+      {
+        next_state_mid[target_dof_+ij] = qd_plus[ij];
+      }
+      target_state_next_ = next_state_mid.head(2*target_dof_+1);
+
+      // Transfer old values to new
       target_state_ = target_state_next_;
       previous_left_heel_contact_ = left_heel_contact_;
       previous_right_heel_contact_ = right_heel_contact_;

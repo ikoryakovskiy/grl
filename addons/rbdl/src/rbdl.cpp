@@ -108,19 +108,18 @@ void RBDLDynamics::eom(const Vector &state, const Vector &actuation, Vector *xd)
     qd[ii] = state[ii + dim];
 
   // Update velocities based on collision
-  Vector qd_plus, qdd;
-  qd_plus.resize(dim);
+  Vector qdd;
   qdd.resize(dim);
 
-  calcCollisionImpactRhs(state, qd_plus);
-  updateForwardDynamics(state, qd_plus, controls, qdd);
+//  calcCollisionImpactRhs(state, qd_plus);
+  updateForwardDynamics(state, qd, controls, qdd);
 
 
   xd->resize(2*dim+1);
 
   for (size_t ii=0; ii < dim; ++ii)
   {
-    (*xd)[ii] = qd_plus[ii];
+    (*xd)[ii] = qd[ii];
     (*xd)[ii + dim] = qdd[ii];
   }
   (*xd)[2*dim] = 1.;
