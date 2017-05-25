@@ -454,7 +454,7 @@ void LeoWalkingTask::configure(Configuration &config)
 void LeoWalkingTask::start(int test, Vector *state) const
 {
   *state = ConstantVector(2*dof_+1, 0); // Same size for both tasts with FA and without
-  int randomize = 0;
+  int randomize;
 
   if (test)
     randomize = 0;
