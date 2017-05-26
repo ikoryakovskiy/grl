@@ -491,7 +491,7 @@ void LeoWalkingTask::start(int test, Vector *state) const
 
 void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *terminal) const
 {
-  grl_assert(state.size() == stsStateDim);
+  grl_assert(state.size() == rlsStateDim);
 
   obs->v.resize(2*dof_);
   obs->v << state.head(2*dof_);
@@ -556,7 +556,7 @@ double LeoWalkingTask::getEnergyUsage(const Vector &state, const Vector &next, c
   double mDesiredFrequency = 30;
   double I, U; // Electrical work: P = U*I
 
-  for (int ii=1; ii<dof_; ii++)  //Start from 1 to ignore work by torso joint
+  for (int ii=3; ii<dof_; ii++)  //Start from 3 to ignore work by torso joint
   {
     // We take the joint velocity as the average of the previous and the current velocity measurement
     double omega = 0.5*(state[ii+dof_] + next[ii+dof_]);
