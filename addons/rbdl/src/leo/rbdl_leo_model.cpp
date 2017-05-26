@@ -250,7 +250,7 @@ void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
 
   export_meshup_animation(state_, ConstantVector(target_dof_, 0));
 
-  TRACE("Initial state: " << state_);
+  //TRACE("Initial state: " << state_);
 }
 
 double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
