@@ -405,7 +405,7 @@ void LeoWalkingSandboxModel::getConstraintSet(std::string &constraint_name)
 void LeoWalkingSandboxModel::checkContactForces()
 {
   Vector3_t force;
-  double precision = 1E-10;
+  double precision = 0;
 
   if (!(active_constraint_set_.empty()))
   {
