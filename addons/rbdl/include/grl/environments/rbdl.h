@@ -59,7 +59,7 @@ class RBDLDynamics : public Dynamics
 
   public:
     std::string file_, options_;
-    mutable std::string active_constraint_set_;
+    mutable std::string acting_constraint_set_, active_constraint_set_;
     mutable bool dynamics_computed_, impulses_computed_, kinematics_computed_, momentum_computed_;
     mutable Instance<RBDLState> rbdl_state_;
   
@@ -68,7 +68,7 @@ class RBDLDynamics : public Dynamics
     mutable std::map<std::string, ConstraintSetInfo> constraintSetInfos;
 
   public:
-    RBDLDynamics() : active_constraint_set_(""), dynamics_computed_(false), impulses_computed_(false), kinematics_computed_(false), momentum_computed_(false), rbdl_state_(std::bind(&RBDLDynamics::createRBDLState, this)) { }
+    RBDLDynamics() : acting_constraint_set_(""), active_constraint_set_(""), dynamics_computed_(false), impulses_computed_(false), kinematics_computed_(false), momentum_computed_(false), rbdl_state_(std::bind(&RBDLDynamics::createRBDLState, this)) { }
   
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -87,6 +87,7 @@ class RBDLDynamics : public Dynamics
     // Update kinematics and active constraint set without making a step
     virtual void updateKinematics(const Vector &state) const;
     virtual void updateActiveConstraintSet(const std::string point) const;
+    virtual void updateActingConstraintSet(const std::string point) const;
     virtual void calcCollisionImpactRhs(const Vector &state, Vector &out) const;
     virtual void getPointForce (const std::string point_name, Vector3_t &out) const;
 

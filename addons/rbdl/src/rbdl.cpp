@@ -143,8 +143,8 @@ void RBDLDynamics::updateForwardDynamics(const Vector &state, const Vector &qd_p
     qd[ii] = qd_plus[ii];
   }
 
-  if (!active_constraint_set_.empty())
-    RigidBodyDynamics::ForwardDynamicsContactsDirect (*rbdl->model, q, qd, u, constraints[active_constraint_set_], qdd);
+  if (!acting_constraint_set_.empty())
+    RigidBodyDynamics::ForwardDynamicsContactsDirect (*rbdl->model, q, qd, u, constraints[acting_constraint_set_], qdd);
   else
     RigidBodyDynamics::ForwardDynamics (*rbdl->model, q, qd, u, qdd);
 
@@ -156,10 +156,16 @@ void RBDLDynamics::updateForwardDynamics(const Vector &state, const Vector &qd_p
   dynamics_computed_ = true;
 }
 
+void RBDLDynamics::updateActingConstraintSet(std::string point) const
+{
+  acting_constraint_set_ = point;
+}
+
 void RBDLDynamics::updateActiveConstraintSet(std::string point) const
 {
   active_constraint_set_ = point;
 }
+
 
 void RBDLDynamics::calcCollisionImpactRhs(const Vector &state, Vector &out) const
 {
@@ -432,17 +438,17 @@ void RBDLDynamics::getPointForce (const std::string point_name, Vector3_t &out) 
   }
 
   // check existence of constraint set
-  if ( !constraints.count(active_constraint_set_) ) {
+  if ( !constraints.count(acting_constraint_set_) ) {
           std::cerr << "ERROR in " << __func__ << std::endl;
-          std::cerr << "Could not find constraint set '" << active_constraint_set_ << "'!" << std::endl;
+          std::cerr << "Could not find constraint set '" << acting_constraint_set_ << "'!" << std::endl;
           std::cerr << "bailing out ..." << std::endl;
           abort();
   }
 
   bool found = false;
 
-  const RigidBodyDynamics::ConstraintSet &active_constraint_set = constraints[active_constraint_set_];
-  const ConstraintSetInfo constraint_set_info = constraintSetInfos[active_constraint_set_];;
+  const RigidBodyDynamics::ConstraintSet &active_constraint_set = constraints[acting_constraint_set_];
+  const ConstraintSetInfo constraint_set_info = constraintSetInfos[acting_constraint_set_];;
 
   //std::vector<ConstraintInfo>::const_iterator constraint_iter = constraintSetInfos[active_constraint_set_].constraints.begin();
 
