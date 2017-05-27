@@ -295,21 +295,24 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
       next_state_mid << target_state_next_, rbdl_addition_mid;
 
       // Check for collision points and update active constraint set
-      getCollisionPoints(next_state_mid);
-      acting_left_heel_contact_ = (int)(active_left_heel_contact_ || acting_left_heel_contact_);
-      acting_right_heel_contact_ = (int)(active_right_heel_contact_ || acting_right_heel_contact_);
-      acting_left_tip_contact_ = (int)(active_left_tip_contact_ || acting_left_tip_contact_);
-      acting_right_tip_contact_ = (int)(active_right_tip_contact_ || acting_right_tip_contact_);
-      acting_num_contacts_ = acting_left_tip_contact_ + acting_right_tip_contact_ + acting_left_heel_contact_ + acting_right_heel_contact_;
-
-      getConstraintSet(active_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
-      dynamics_->updateActiveConstraintSet(active_constraint_set_);
+      bool check = getCollisionPoints(next_state_mid);
       // Update velocities if found in violation of constraints
-      dynamics_->calcCollisionImpactRhs(target_state_next_, qd_plus);
-      // Update state based on new velocities
-      for (int ij=0; ij < target_dof_; ++ij)
+      if (check)
       {
-        target_state_next_[target_dof_+ij] = qd_plus[ij];
+        acting_left_heel_contact_ = (int)(active_left_heel_contact_ || acting_left_heel_contact_);
+        acting_right_heel_contact_ = (int)(active_right_heel_contact_ || acting_right_heel_contact_);
+        acting_left_tip_contact_ = (int)(active_left_tip_contact_ || acting_left_tip_contact_);
+        acting_right_tip_contact_ = (int)(active_right_tip_contact_ || acting_right_tip_contact_);
+        acting_num_contacts_ = acting_left_tip_contact_ + acting_right_tip_contact_ + acting_left_heel_contact_ + acting_right_heel_contact_;
+
+        getConstraintSet(active_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
+        dynamics_->updateActiveConstraintSet(active_constraint_set_);
+        dynamics_->calcCollisionImpactRhs(target_state_next_, qd_plus);
+        // Update state based on new velocities
+        for (int ij=0; ij < target_dof_; ++ij)
+        {
+          target_state_next_[target_dof_+ij] = qd_plus[ij];
+        }
       }
 
       checkContactForces();
@@ -340,30 +343,37 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 }
 
 
-void LeoWalkingSandboxModel::getCollisionPoints(const Vector &state)
+bool LeoWalkingSandboxModel::getCollisionPoints(const Vector &state)
 {
   grl_assert(state.size() == rlsStateDim);
+
+  bool check = false;
 
   if ((state[rlsLeftTipZ] < root_to_feet_height_) && (state[rlsLeftTipVelZ] < 0) && (!acting_left_tip_contact_))
   {
     active_left_tip_contact_ = 1;
     active_num_contacts_ += 1;
+    check = true;
   }
   if ((state[rlsRightTipZ] < root_to_feet_height_) && (state[rlsRightTipVelZ] < 0) && (!acting_right_tip_contact_))
   {
     active_right_tip_contact_ = 1;
     active_num_contacts_ += 1;
+    check = true;
   }
   if ((state[rlsLeftHeelZ] < root_to_feet_height_) && (state[rlsLeftHeelVelZ] < 0) && (!acting_left_heel_contact_))
   {
     active_left_heel_contact_ = 1;
     active_num_contacts_ += 1;
+    check = true;
   }
   if ((state[rlsRightHeelZ] < root_to_feet_height_) && (state[rlsRightHeelVelZ] < 0) && (!acting_right_heel_contact_))
   {
     active_right_heel_contact_ = 1;
     active_num_contacts_ += 1;
+    check = true;
   }
+  return check;
 }
 
 void LeoWalkingSandboxModel::getConstraintSet(std::string &constraint_name, const int contacts, const int left_tip_contact, const int right_tip_contact, const int left_heel_contact, const int right_heel_contact)
