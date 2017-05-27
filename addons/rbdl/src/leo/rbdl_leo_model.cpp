@@ -296,7 +296,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 
       // Check for collision points and update active constraint set
       getCollisionPoints(next_state_mid);
-      getConstraintSet(active_constraint_set_, active_num_contacts_, active_left_tip_contact_, acting_right_tip_contact_, active_left_heel_contact_, active_right_heel_contact_);
+      getConstraintSet(active_constraint_set_, active_num_contacts_, active_left_tip_contact_, active_right_tip_contact_, active_left_heel_contact_, active_right_heel_contact_);
       dynamics_->updateActiveConstraintSet(active_constraint_set_);
       // Update velocities if found in violation of constraints
       dynamics_->calcCollisionImpactRhs(target_state_next_, qd_plus);
