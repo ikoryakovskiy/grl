@@ -426,13 +426,13 @@ void LeoWalkingTask::configure(Configuration &config)
   observation_min.resize(2*dof_+1);
   observation_max.resize(2*dof_+1);
 
-  observation_min << target_obs_min_[rlsTorsoX], target_obs_min_[rlsTorsoY], target_obs_min_[rlsTorsoAngle], target_obs_min_[rlsLeftHipAngle], target_obs_min_[rlsRightHipAngle], target_obs_min_[rlsLeftKneeAngle],
-      target_obs_min_[rlsRightKneeAngle], target_obs_min_[rlsLeftAnkleAngle], target_obs_min_[rlsRightAnkleAngle], target_obs_min_[rlsTorsoXRate], target_obs_min_[rlsTorsoYRate], target_obs_min_[rlsTorsoAngleRate],
+  observation_min << target_obs_min_[rlsTorsoX], target_obs_min_[rlsTorsoZ], target_obs_min_[rlsTorsoAngle], target_obs_min_[rlsLeftHipAngle], target_obs_min_[rlsRightHipAngle], target_obs_min_[rlsLeftKneeAngle],
+      target_obs_min_[rlsRightKneeAngle], target_obs_min_[rlsLeftAnkleAngle], target_obs_min_[rlsRightAnkleAngle], target_obs_min_[rlsTorsoXRate], target_obs_min_[rlsTorsoZRate], target_obs_min_[rlsTorsoAngleRate],
       target_obs_min_[rlsLeftHipAngleRate], target_obs_min_[rlsRightHipAngleRate], target_obs_min_[rlsLeftKneeAngleRate],
       target_obs_min_[rlsRightKneeAngleRate], target_obs_min_[rlsLeftAnkleAngleRate], target_obs_min_[rlsRightAnkleAngleRate], target_obs_min_[rlsTime];
 
-  observation_max << target_obs_max_[rlsTorsoX], target_obs_max_[rlsTorsoY], target_obs_max_[rlsTorsoAngle], target_obs_max_[rlsLeftHipAngle], target_obs_max_[rlsRightHipAngle], target_obs_max_[rlsLeftKneeAngle],
-      target_obs_max_[rlsRightKneeAngle], target_obs_max_[rlsLeftAnkleAngle], target_obs_max_[rlsRightAnkleAngle], target_obs_max_[rlsTorsoXRate], target_obs_max_[rlsTorsoYRate], target_obs_max_[rlsTorsoAngleRate],
+  observation_max << target_obs_max_[rlsTorsoX], target_obs_max_[rlsTorsoZ], target_obs_max_[rlsTorsoAngle], target_obs_max_[rlsLeftHipAngle], target_obs_max_[rlsRightHipAngle], target_obs_max_[rlsLeftKneeAngle],
+      target_obs_max_[rlsRightKneeAngle], target_obs_max_[rlsLeftAnkleAngle], target_obs_max_[rlsRightAnkleAngle], target_obs_max_[rlsTorsoXRate], target_obs_max_[rlsTorsoZRate], target_obs_max_[rlsTorsoAngleRate],
       target_obs_max_[rlsLeftHipAngleRate], target_obs_max_[rlsRightHipAngleRate], target_obs_max_[rlsLeftKneeAngleRate],
       target_obs_max_[rlsRightKneeAngleRate], target_obs_max_[rlsLeftAnkleAngleRate], target_obs_max_[rlsRightAnkleAngleRate], target_obs_max_[rlsTime];
 
@@ -539,10 +539,11 @@ double LeoWalkingTask::calculateReward(const Vector &state, const Vector &next) 
 
 bool LeoWalkingTask::isDoomedToFall(const Vector &state) const
 {
-  double torsoComstraint = 1; // 1
-  double stanceComstraint = 0.36*M_PI; // 0.36*M_PI
+  double torsoConstraint = 1; // 1
+  double stanceConstraint = 0.36*M_PI; // 0.36*M_PI
+  double torsoHeightConstraint = -0.13;
 
-  if ((fabs(state[rlsTorsoAngle]) > torsoComstraint) || (fabs(state[rlsRightAnkleAngle]) > stanceComstraint) || (fabs(state[rlsLeftAnkleAngle]) > stanceComstraint))
+  if ((fabs(state[rlsTorsoAngle]) > torsoConstraint) || (fabs(state[rlsRightAnkleAngle]) > stanceConstraint) || (fabs(state[rlsLeftAnkleAngle]) > stanceConstraint) || (fabs(state[rlsTorsoZ]) < torsoHeightConstraint))
   {
     return true;
   }

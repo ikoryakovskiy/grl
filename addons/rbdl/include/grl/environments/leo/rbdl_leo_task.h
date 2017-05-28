@@ -38,7 +38,7 @@ namespace grl
 enum RbdlLeoWalkState
 {
     rlsTorsoX,
-    rlsTorsoY,
+    rlsTorsoZ,
     rlsTorsoAngle,
     rlsLeftHipAngle,
     rlsRightHipAngle,
@@ -48,7 +48,7 @@ enum RbdlLeoWalkState
     rlsRightAnkleAngle,
 
     rlsTorsoXRate,
-    rlsTorsoYRate,
+    rlsTorsoZRate,
     rlsTorsoAngleRate,
     rlsLeftHipAngleRate,
     rlsRightHipAngleRate,
