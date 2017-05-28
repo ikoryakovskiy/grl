@@ -497,10 +497,14 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
   obs->v.resize(2*dof_);
   obs->v << state.head(2*dof_);
 
+  obs->absorbing = false;
   if ((timeout_> 0) && (state[rlsTime] >= timeout_))
     *terminal = 1;
   else if (isDoomedToFall(state))
+  {
+    obs->absorbing = false;
     *terminal = 2;
+  }
   else
     *terminal = 0;
 }
@@ -541,7 +545,7 @@ bool LeoWalkingTask::isDoomedToFall(const Vector &state) const
 {
   double torsoConstraint = 1; // 1
   double stanceConstraint = 0.36*M_PI; // 0.36*M_PI
-  double torsoHeightConstraint = -0.13;
+  double torsoHeightConstraint = -0.15;
 
   if ((fabs(state[rlsTorsoAngle]) > torsoConstraint) || (fabs(state[rlsRightAnkleAngle]) > stanceConstraint) || (fabs(state[rlsLeftAnkleAngle]) > stanceConstraint) || (fabs(state[rlsTorsoZ]) < torsoHeightConstraint))
   {
