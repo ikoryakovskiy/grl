@@ -107,8 +107,8 @@ double SandboxEnvironment::step(const Action &action, Observation *obs, double *
   
   task_->observe(next, obs, terminal);
   task_->evaluate(state_, action, next, reward);
-  NOTICE(state_);
-  NOTICE(next);
+  //NOTICE(state_);
+  //NOTICE(next);
   double &time = test_?time_test_:time_learn_;
 
   if (exporter_)
