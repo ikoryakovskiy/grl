@@ -1,15 +1,13 @@
 # Setup build environment
 set(TARGET nmpc_leo_squat_fb_sl_tc)
 
-ADD_LIBRARY ( ${TARGET} SHARED 
+ADD_LIBRARY ( ${TARGET} SHARED
               ${SRC}/${TARGET}.cpp
               ${SRC}/leomodel.cpp
             )
 
 TARGET_LINK_LIBRARIES ( ${TARGET}
                         muscod_base
-                        ${PGPLOT_CPGPLOT_LIBRARY}
-                        ${PGPLOT_PGPLOT_LIBRARY}
                       )
 
 grl_link_libraries(${TARGET} base externals/rbdl)
