@@ -546,8 +546,9 @@ bool LeoWalkingTask::isDoomedToFall(const Vector &state) const
   double torsoConstraint = 1; // 1
   double stanceConstraint = 0.36*M_PI; // 0.36*M_PI
   double torsoHeightConstraint = -0.15;
+  CRAWL(state[rlsTorsoZ]);
 
-  if ((fabs(state[rlsTorsoAngle]) > torsoConstraint) || (fabs(state[rlsRightAnkleAngle]) > stanceConstraint) || (fabs(state[rlsLeftAnkleAngle]) > stanceConstraint) || (fabs(state[rlsTorsoZ]) < torsoHeightConstraint))
+  if ((fabs(state[rlsTorsoAngle]) > torsoConstraint) || (fabs(state[rlsRightAnkleAngle]) > stanceConstraint) || (fabs(state[rlsLeftAnkleAngle]) > stanceConstraint) || (state[rlsTorsoZ] < torsoHeightConstraint))
   {
     return true;
   }
