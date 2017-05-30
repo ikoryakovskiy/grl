@@ -69,11 +69,11 @@ bool ODESTGEnvironment::configure(Configuration &config)
     ERROR("Could not init simulation!");
     return false;
   }
-  
+
   CConfigSection configNode = xmlConfig.root().section("policy");
 
   bool configresult = true;
-  
+
   double trialTimeoutSeconds=20;
   configNode.get("trialTimeoutSeconds", &trialTimeoutSeconds);
   timeout_ = (uint64_t)(trialTimeoutSeconds*1E6);
@@ -88,7 +88,7 @@ bool ODESTGEnvironment::configure(Configuration &config)
     configresult &= statevar.readConfig(stateNode);
     configresult &= statevar.resolve(&simulator_); // bind sensor values to specific indecies of a state vector
     sensors_.push_back(statevar);
-    
+
     configresult &= stateNode.get("min", &val); observation_min = extend(observation_min, VectorConstructor(val));
     configresult &= stateNode.get("max", &val); observation_max = extend(observation_max, VectorConstructor(val));
   }
@@ -127,7 +127,7 @@ bool ODESTGEnvironment::configure(Configuration &config)
     ERROR("Could not load state and action variables");
     return false;
   }
-  
+
   config.set("observation_dims", observation_min.size());
   config.set("observation_min", observation_min);
   config.set("observation_max", observation_max);
@@ -148,19 +148,19 @@ bool ODESTGEnvironment::configure(Configuration &config)
     ERROR("Could not start simulation!");
     return false;
   }
-  
+
   TRACE("Waiting for initial STG state");
-    
+
   if (!listener_.waitForNewState())
   {
     ERROR("Error getting initial state from simulator");
     return false;
   }
-  
+
   return true;
 }
 
-bool ODESTGEnvironment::reconfigure(const Configuration &config)
+void ODESTGEnvironment::reconfigure(const Configuration &config)
 {
   if (config.has("randomize"))
   {
@@ -176,7 +176,7 @@ void ODESTGEnvironment::start(int test, Observation *obs)
   //simulator_.read("robot.com", com);
   simulator_.resetActuationValues();
   simulator_.activateActions(listener_.getState()->mStateID);
-  
+
   CRAWL("Waiting for start STG state");
 
   if (!listener_.waitForNewState())
@@ -185,7 +185,7 @@ void ODESTGEnvironment::start(int test, Observation *obs)
   obs->v.resize(sensors_.size());
   for (size_t ii=0; ii < sensors_.size(); ++ii)
     (*obs)[ii] = sensors_[ii].evaluate(listener_.getState());
-    
+
   start_time_ = simulator_.getAbsTime();
 
   //simulator_.read("robot.com", com);
@@ -197,14 +197,14 @@ double ODESTGEnvironment::step(const Action &action, Observation *obs, double *r
 {
   if (action.size() != actuators_.size())
     ERROR("Got action vector size " << action.size() << " (" << actuators_.size() << " expected)");
-  
+
   for (size_t ii=0; ii < actuators_.size(); ++ii)
     actuators_[ii].actuate(action[ii], &simulator_);
-  
+
   simulator_.activateActions(listener_.getState()->mStateID);
 
   CRAWL("Waiting for next STG state");
-  
+
   if (!listener_.waitForNewState())
     throw Exception("Error getting next state from simulator");
 
@@ -212,9 +212,9 @@ double ODESTGEnvironment::step(const Action &action, Observation *obs, double *r
   for (size_t ii=0; ii < sensors_.size(); ++ii)
     (*obs)[ii] = sensors_[ii].evaluate(listener_.getState());
   obs->absorbing = false;
-    
+
   *reward = reward_.evaluate(listener_.getState());
-  
+
   if (termination_.evaluate(listener_.getState()))
   {
     *terminal = 2;
@@ -226,7 +226,7 @@ double ODESTGEnvironment::step(const Action &action, Observation *obs, double *r
     *terminal = 0;
 
   emit drawFrame();
-  
+
   return simulator_.getSim()->getTotalStepTime();
 }
 
@@ -242,13 +242,13 @@ ODEEnvironment::~ODEEnvironment()
   while (app_)
   {
     Guard guard(mutex_);
-    
+
     if (app_)
       app_->exit();
-      
+
     usleep(0);
   }
-  
+
   itc::Thread::stopAndJoin();
 }
 
@@ -256,7 +256,7 @@ void ODEEnvironment::request(ConfigurationRequest *config)
 {
   config->push_back(CRP("xml", "XML configuration filename", xml_));
   config->push_back(CRP("visualize", "Whether to display 3D visualization", visualize_, CRP::Configuration, 0, 1));
-  
+
   config->push_back(CRP("observation_dims", "int.observation_dims", "Number of observation dimensions", CRP::Provided));
   config->push_back(CRP("observation_min", "vector.observation_min", "Lower limit on observations", CRP::Provided));
   config->push_back(CRP("observation_max", "vector.observation_max", "Upper limit on observations", CRP::Provided));
@@ -272,14 +272,14 @@ void ODEEnvironment::configure(Configuration &config)
   visualize_ = config["visualize"];
 
   config_ = &config;
-    
+
   itc::Thread::start();
-  
+
   while (init_state_ == isUninitialized)
     usleep(0);
-    
+
   config_ = NULL;
-  
+
   if (init_state_ == isError)
     throw Exception("Could not start environment thread");
 }
@@ -317,27 +317,27 @@ void ODEEnvironment::run()
   if (visualize_)
   {
     NOTICE("Initializing Qt");
-  
+
     app_ = new QApplication(argc, argv);
     ODEDialog *dialog = new ODEDialog(env_);
-    
+
     setlocale(LC_ALL, "C");
 
     init_state_ = isInitialized;
-    
+
     NOTICE("Starting Qt main loop");
     app_->exec();
     WARNING("Return from Qt main loop");
-    
+
     Guard guard(mutex_);
-    
+
     env_->getSim()->stop();
     safe_delete(&dialog);
     safe_delete(&app_);
   }
   else
     init_state_ = isInitialized;
- 
+
   while (ok()) usleep(1000);
 
   free(argv[0]);

@@ -21,23 +21,23 @@ class ODESTGEnvironment: public QObject
   protected:
     ODESimulator                   simulator_;
     CSTGListener<GenericState>     listener_;
-    
+
     std::vector<CGenericStateVar>  sensors_;
     std::vector<CGenericActionVar> actuators_;
     CGenericStateVar               termination_, reward_;
-    
+
     uint64_t                       start_time_, timeout_;
     double                         randomize_;
   public:
     ODESTGEnvironment() : listener_(&simulator_), timeout_(0), randomize_(0) { }
     ~ODESTGEnvironment();
-  
+
     bool configure(Configuration &config);
-    bool reconfigure(const Configuration &config);
+    void reconfigure(const Configuration &config);
     void start(int test, Observation *obs);
     double step(const Action &action, Observation *obs, double *reward, int *terminal);
     bool read(const std::string name, double *out) const;
-    
+
     ODESimulator *getSim() { return &simulator_; }
     const std::vector<CGenericStateVar>  &getSensors()   const { return sensors_; }
     const std::vector<CGenericActionVar> &getActuators() const { return actuators_; }
@@ -50,7 +50,7 @@ class ODEEnvironment: public grl::Environment, public itc::Thread
 {
   public:
     TYPEINFO("environment/ode", "Open Dynamics Engine simulation environment")
-    
+
     enum InitializationState {isUninitialized, isInitialized, isError};
 
   protected:
@@ -65,7 +65,7 @@ class ODEEnvironment: public grl::Environment, public itc::Thread
   public:
     ODEEnvironment() : app_(NULL), env_(NULL), config_(NULL), xml_("../addons/odesim/cfg/robot.xml"), visualize_(1), init_state_(isUninitialized) { }
     ~ODEEnvironment();
-  
+
     // From Configurable
     virtual void request(ConfigurationRequest *config);
     virtual void configure(Configuration &config);
@@ -75,12 +75,12 @@ class ODEEnvironment: public grl::Environment, public itc::Thread
     {
       env_->start(test, obs);
     }
-    
+
     virtual double step(const Action &action, Observation *obs, double *reward, int *terminal)
     {
       return env_->step(action, obs, reward, terminal);
     }
-    
+
     // From Thread
     virtual void run();
 };
