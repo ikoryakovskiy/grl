@@ -176,7 +176,7 @@ function control(state, action)
 --      print(action[ii])
       -- action[ii] = action[ii] - 0.0*state[dof + ii]; -- Friction
     end
-    return {action[0], action[1], action[2], action[3], action[4], action[5], action[6], action[7], action[8]}
+    return {0.0, 0.0, 0.0, action[3], action[4], action[5], action[6], action[7], action[8]}
 end
 
 -- **************************************************************************
