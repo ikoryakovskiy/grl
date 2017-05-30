@@ -64,8 +64,7 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
   if (verbose_) {
     muscod_A_->setLogLevelAndFile(-1, NULL, NULL);
   } else {
-    muscod_A_->setLogLevelAndFile(-1, NULL, NULL);
-    muscod_A_->setLogLevelScreen(-1);
+    muscod_A_->setLogLevelTotal(-1);
   }
 
   // initialize NMPCProblem instance
@@ -100,8 +99,7 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
   if (verbose_) {
     muscod_B_->setLogLevelAndFile(-1, NULL, NULL);
   } else {
-    muscod_B_->setLogLevelAndFile(-1, NULL, NULL);
-    muscod_B_->setLogLevelScreen(-1);
+    muscod_B_->setLogLevelTotal(-1);
   }
 
   nmpc_B_ = new NMPCProblem(
