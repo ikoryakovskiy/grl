@@ -299,13 +299,13 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
       // Update velocities if found in violation of constraints
       if (check)
       {
-        active_left_heel_contact_ = (int)(active_left_heel_contact_ || acting_left_heel_contact_);
-        active_right_heel_contact_ = (int)(active_right_heel_contact_ || acting_right_heel_contact_);
-        active_left_tip_contact_ = (int)(active_left_tip_contact_ || acting_left_tip_contact_);
-        active_right_tip_contact_ = (int)(active_right_tip_contact_ || acting_right_tip_contact_);
-        active_num_contacts_ = active_left_tip_contact_ + active_right_tip_contact_ + active_left_heel_contact_ + active_right_heel_contact_;
+        acting_left_heel_contact_ = (int)(active_left_heel_contact_ || acting_left_heel_contact_);
+        acting_right_heel_contact_ = (int)(active_right_heel_contact_ || acting_right_heel_contact_);
+        acting_left_tip_contact_ = (int)(active_left_tip_contact_ || acting_left_tip_contact_);
+        acting_right_tip_contact_ = (int)(active_right_tip_contact_ || acting_right_tip_contact_);
+        active_num_contacts_ = acting_left_tip_contact_ + acting_right_tip_contact_ + acting_left_heel_contact_ + acting_right_heel_contact_;
 
-        getConstraintSet(active_constraint_set_, active_num_contacts_, active_left_tip_contact_, active_right_tip_contact_, active_left_heel_contact_, active_right_heel_contact_);
+        getConstraintSet(active_constraint_set_, active_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
         dynamics_->updateActiveConstraintSet(active_constraint_set_);
         dynamics_->calcCollisionImpactRhs(target_state_next_, qd_plus);
         // Update state based on new velocities
@@ -316,10 +316,6 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
       }
 
       checkContactForces();
-      acting_left_heel_contact_ = (int)(active_left_heel_contact_ || acting_left_heel_contact_);
-      acting_right_heel_contact_ = (int)(active_right_heel_contact_ || acting_right_heel_contact_);
-      acting_left_tip_contact_ = (int)(active_left_tip_contact_ || acting_left_tip_contact_);
-      acting_right_tip_contact_ = (int)(active_right_tip_contact_ || acting_right_tip_contact_);
       acting_num_contacts_ = acting_left_tip_contact_ + acting_right_tip_contact_ + acting_left_heel_contact_ + acting_right_heel_contact_;
       getConstraintSet(acting_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
       dynamics_->updateActingConstraintSet(acting_constraint_set_);
@@ -434,7 +430,7 @@ void LeoWalkingSandboxModel::checkContactForces()
 
   if (!(acting_constraint_set_.empty()))
   {
-    if (acting_right_tip_contact_)
+    if (acting_right_tip_contact_ && (!active_right_tip_contact_))
     {
       dynamics_->getPointForce("tip_right", force);
       if (force[0] <= precision && force[2] <= precision)
@@ -442,7 +438,7 @@ void LeoWalkingSandboxModel::checkContactForces()
         acting_right_tip_contact_ = 0;
       }
     }
-    if (acting_left_tip_contact_)
+    if (acting_left_tip_contact_ && (!active_left_tip_contact_))
     {
       dynamics_->getPointForce("tip_left", force);
       if (force[0] <= precision && force[2] <= precision)
@@ -450,7 +446,7 @@ void LeoWalkingSandboxModel::checkContactForces()
         acting_left_tip_contact_ = 0;
       }
     }
-    if (acting_right_heel_contact_)
+    if (acting_right_heel_contact_ && (!active_right_heel_contact_))
     {
       dynamics_->getPointForce("heel_right", force);
       if (force[0] <= precision && force[2] <= precision)
@@ -458,7 +454,7 @@ void LeoWalkingSandboxModel::checkContactForces()
         acting_right_heel_contact_ = 0;
       }
     }
-    if (acting_left_heel_contact_)
+    if (acting_left_heel_contact_ && (!active_left_heel_contact_))
     {
       dynamics_->getPointForce("heel_left", force);
       if (force[0] <= precision && force[2] <= precision)
