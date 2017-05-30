@@ -299,13 +299,13 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
       // Update velocities if found in violation of constraints
       if (check)
       {
-        acting_left_heel_contact_ = (int)(active_left_heel_contact_ || acting_left_heel_contact_);
-        acting_right_heel_contact_ = (int)(active_right_heel_contact_ || acting_right_heel_contact_);
-        acting_left_tip_contact_ = (int)(active_left_tip_contact_ || acting_left_tip_contact_);
-        acting_right_tip_contact_ = (int)(active_right_tip_contact_ || acting_right_tip_contact_);
-        acting_num_contacts_ = acting_left_tip_contact_ + acting_right_tip_contact_ + acting_left_heel_contact_ + acting_right_heel_contact_;
+        active_left_heel_contact_ = (int)(active_left_heel_contact_ || acting_left_heel_contact_);
+        active_right_heel_contact_ = (int)(active_right_heel_contact_ || acting_right_heel_contact_);
+        active_left_tip_contact_ = (int)(active_left_tip_contact_ || acting_left_tip_contact_);
+        active_right_tip_contact_ = (int)(active_right_tip_contact_ || acting_right_tip_contact_);
+        active_num_contacts_ = active_left_tip_contact_ + active_right_tip_contact_ + active_left_heel_contact_ + active_right_heel_contact_;
 
-        getConstraintSet(active_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
+        getConstraintSet(active_constraint_set_, active_num_contacts_, active_left_tip_contact_, active_right_tip_contact_, active_left_heel_contact_, active_right_heel_contact_);
         dynamics_->updateActiveConstraintSet(active_constraint_set_);
         dynamics_->calcCollisionImpactRhs(target_state_next_, qd_plus);
         // Update state based on new velocities
@@ -316,6 +316,10 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
       }
 
       checkContactForces();
+      acting_left_heel_contact_ = (int)(active_left_heel_contact_ || acting_left_heel_contact_);
+      acting_right_heel_contact_ = (int)(active_right_heel_contact_ || acting_right_heel_contact_);
+      acting_left_tip_contact_ = (int)(active_left_tip_contact_ || acting_left_tip_contact_);
+      acting_right_tip_contact_ = (int)(active_right_tip_contact_ || acting_right_tip_contact_);
       acting_num_contacts_ = acting_left_tip_contact_ + acting_right_tip_contact_ + acting_left_heel_contact_ + acting_right_heel_contact_;
       getConstraintSet(acting_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
       dynamics_->updateActingConstraintSet(acting_constraint_set_);
