@@ -402,7 +402,6 @@ void LeoWalkingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_, true));
   config->push_back(CRP("timeout", "double.timeout", "Task timeout", timeout_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
-  config->push_back(CRP("sub_sim_state", "signal/vector", "Subscriber to external sigma", sub_sim_state_, true));
 }
 
 void LeoWalkingTask::configure(Configuration &config)
@@ -410,7 +409,6 @@ void LeoWalkingTask::configure(Configuration &config)
   target_env_ = (Environment*)config["target_env"].ptr(); // Select a real enviromnent if needed
   timeout_ = config["timeout"];
   randomize_ = config["randomize"];
-  sub_sim_state_ = (VectorSignal*)config["sub_sim_state"].ptr();
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-1000, -1000, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -1000, -1000, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
@@ -482,7 +480,7 @@ void LeoWalkingTask::start(int test, Vector *state) const
       for (int ii=4; ii < dof_; ii+=2)
       {
         (*state)[ii] += RandGen::getUniform(-0.0872, 0.0872);
-        (*state)[dof_+ii] += RandGen::getUniform(-0.1,0.1);
+        //(*state)[dof_+ii] += RandGen::getUniform(-0.1,0.1);
       }
      }
   }
@@ -494,14 +492,14 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
 {
   grl_assert(state.size() == rlsStateDim);
 
-  obs->v.resize(2*dof_-4);
+  obs->v.resize(2*dof_);
 
-  //obs->v << state.head(2*dof_);
-  for (int ii=2,count=0; ii<dof_; ++ii,++count)
-  {
-    (obs->v)[count] = state[ii];
-    (obs->v)[count+dof_-2] = state[ii+dof_];
-  }
+  obs->v << state.head(2*dof_);
+//  for (int ii=2,count=0; ii<dof_; ++ii,++count)
+//  {
+//    (obs->v)[count] = state[ii];
+//    (obs->v)[count+dof_-2] = state[ii+dof_];
+//  }
 
 
   obs->absorbing = false;

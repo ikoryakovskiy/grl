@@ -222,12 +222,14 @@ void LeoWalkingSandboxModel::request(ConfigurationRequest *config)
 {
   LeoSandboxModel::request(config);
   config->push_back(CRP("mode", "Control mode (torque/voltage )", mode_, CRP::Configuration, {"tc", "vc"}));
+  config->push_back(CRP("sub_state_drl","signal/vector","state received from deep rl agent", sub_state_drl_, true));
 }
 
 void LeoWalkingSandboxModel::configure(Configuration &config)
 {
   LeoSandboxModel::configure(config);
   mode_ = config["mode"].str();
+  sub_state_drl_ = (VectorSignal*)config["sub_state_drl"].ptr();
 }
 
 void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
@@ -245,12 +247,10 @@ void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
   active_right_heel_contact_ = 0;
   active_left_tip_contact_ = 0;
   active_right_tip_contact_ = 0;
-  active_num_contacts_ = 0;
   acting_left_heel_contact_ = 0;
   acting_right_heel_contact_ = 0;
   acting_left_tip_contact_ = 0;
   acting_right_tip_contact_ = 0;
-  acting_num_contacts_ = 0;
   active_constraint_set_ = "";
   acting_constraint_set_ = "";
 
@@ -261,7 +261,7 @@ void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
 
 double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 {
-  Vector rbdl_addition_mid, next_state_mid, qd_plus;
+  Vector rbdl_addition_mid, next_state_mid, qd_plus, sub_state_drl;
 
   qd_plus.resize(target_dof_);
   next_state_mid.resize(rlsStateDim);
@@ -270,9 +270,26 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
   target_action_.resize(target_dof_);
   next->resize(state_.size());
 
-  // reduce state
-  target_state_ << state_.head(2*target_dof_+1);
+  if (sub_state_drl_)
+  {
+    sub_state_drl = sub_state_drl_->get();
+    target_state_ << sub_state_drl, state_[rlsTime];
+    dynamics_->finalize(target_state_,rbdl_addition_mid);
+    state_ << target_state_, rbdl_addition_mid;
+    acting_left_heel_contact_ = 0;
+    acting_right_heel_contact_ = 0;
+    acting_left_tip_contact_ = 0;
+    acting_right_tip_contact_ = 0;
+    active_constraint_set_ = "";
+    acting_constraint_set_ = "";
+  }
+  else
+  {
+    // reduce state
+    target_state_ << state_.head(2*target_dof_+1);
+  }
   target_action_ << action;
+
 
   double tau = 0;
 
