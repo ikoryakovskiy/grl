@@ -191,11 +191,21 @@ void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *termi
   }
 
   if ((timeout_> 0) && (state[rlsTime] >= timeout_))
+  {
     *terminal = 1;
+    obs->absorbing = false;
+  }
   else if (failed(state))
+  {
     *terminal = 2;
+    obs->absorbing = true;
+  }
   else
+ {
     *terminal = 0;
+    obs->absorbing = false;
+  }
+
 /*
   // debugging (until first switch)
   if (state[rlsRefRootZ] == 0.28)

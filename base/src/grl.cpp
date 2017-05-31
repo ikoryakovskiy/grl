@@ -78,7 +78,8 @@ static void loadPlugins1(const std::string &pattern)
     NOTICE("Loading plugin '" << globbuf.gl_pathv[ii] << "'");
     if (!dlopen(globbuf.gl_pathv[ii], RTLD_NOW|RTLD_LOCAL))
       ERROR("Error loading plugin '" << globbuf.gl_pathv[ii] << "': " << dlerror());
-  } 
+  }
+  globfree(&globbuf);
 }
 
 std::string grl::getLibraryPath()
