@@ -54,7 +54,7 @@ struct MHEProblem : public MUSCODProblem {
       (*m_meas_ss).col(imsn) = ss;
     }
     for (int imsn = 0; imsn < NMSN_-1; ++imsn) {
-      m_muscod->setNodeQC(imsn, qs.data());
+      m_muscod->setNodeQC(imsn, qs.data(), NULL, NULL);
     }
   }
 

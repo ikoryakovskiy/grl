@@ -445,7 +445,7 @@ struct MUSCODProblem {
     void setHF (
         grl::Vector& hf
     ){
-        m_muscod->setHF(hf.data());
+        m_muscod->setHF(hf.data(), NULL, NULL);
     }
 
     void getNodeSD (
@@ -459,7 +459,7 @@ struct MUSCODProblem {
         const unsigned long imsn,
         grl::Vector& sd
     ){
-        m_muscod->setNodeSD(imsn, sd.data());
+        m_muscod->setNodeSD(imsn, sd.data(), NULL, NULL);
     }
 
     void getNodeQC (
@@ -473,7 +473,7 @@ struct MUSCODProblem {
         const unsigned long imsn,
         grl::Vector& qc
     ){
-        m_muscod->setNodeQC(imsn, qc.data());
+        m_muscod->setNodeQC(imsn, qc.data(), NULL, NULL);
     }
 
 }; // END MUSCODProblem

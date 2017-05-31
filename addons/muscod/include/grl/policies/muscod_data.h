@@ -65,12 +65,12 @@ struct MuscodData {
 
   inline void restore_muscod_state(MUSCOD* muscod)
   {
-      muscod->setHF(backup_h.data());
-      muscod->setPF(backup_p.data());
+      muscod->setHF(backup_h.data(), NULL, NULL);
+      muscod->setPF(backup_p.data(), NULL, NULL);
       for (unsigned int imsn = 0; imsn < NMSN; ++imsn)
       {
-        muscod->setNodeSD(imsn, backup_xd.row(imsn).data());
-        muscod->setNodeQC(imsn, backup_qc.row(imsn).data());
+        muscod->setNodeSD(imsn, backup_xd.row(imsn).data(), NULL, NULL);
+        muscod->setNodeQC(imsn, backup_qc.row(imsn).data(), NULL, NULL);
       }
   };
 

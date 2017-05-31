@@ -204,6 +204,19 @@ struct NMPCProblem : public MUSCODProblem {
     abort();
   }
 
+  // // retrieve unscaled state vector on first shooting node
+  // grl::Vector getNodeSD (const unsigned long imsn){
+  //     if (mutex_) {
+  //         grl::Vector ret = grl::Vector::Zero(NXD());
+  //         pthread_mutex_lock(mutex_);
+  //         m_muscod->getNodeSD (imsn, ret.data());
+  //         pthread_mutex_unlock(mutex_);
+  //         return ret;
+  //     }
+  //     std::cout << "In function '" << __func__ << "' no mutex is assigned!" << std::endl;
+  //     abort();
+  // }
+
 // -----------------------------------------------------------------------------
 
   ~NMPCProblem ()
