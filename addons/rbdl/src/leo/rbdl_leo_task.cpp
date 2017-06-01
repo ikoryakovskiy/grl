@@ -482,6 +482,9 @@ void LeoWalkingTask::start(int test, Vector *state) const
         (*state)[ii] += RandGen::getUniform(-0.0872, 0.0872);
         //(*state)[dof_+ii] += RandGen::getUniform(-0.1,0.1);
       }
+      (*state)[rlsLeftKneeAngle] += RandGen::getUniform(-2*0.0872, 0);
+      (*state)[rlsLeftHipAngle] += RandGen::getUniform(-0.0872, 0.0872);
+      (*state)[rlsLeftAnkleAngle] +=RandGen::getUniform(-0.0872, 0.0872);
      }
   }
 
