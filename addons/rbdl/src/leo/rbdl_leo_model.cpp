@@ -270,18 +270,17 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
   target_action_.resize(target_dof_);
   next->resize(state_.size());
 
-  if (sub_state_drl_)
+  if (sub_state_drl_) //If you receive the state from DRL
   {
     sub_state_drl = sub_state_drl_->get();
     target_state_ << sub_state_drl, state_[rlsTime];
+    dynamics_->updateKinematics(target_state_);
     dynamics_->finalize(target_state_,rbdl_addition_mid);
     state_ << target_state_, rbdl_addition_mid;
-    acting_left_heel_contact_ = 0;
-    acting_right_heel_contact_ = 0;
-    acting_left_tip_contact_ = 0;
-    acting_right_tip_contact_ = 0;
-    active_constraint_set_ = "";
-    acting_constraint_set_ = "";
+    getActingConstraintPoints(state_);
+    acting_num_contacts_ = getNumActingConstraintPoints();
+    getConstraintSet(acting_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
+    dynamics_->updateActingConstraintSet(acting_constraint_set_);
   }
   else
   {
@@ -320,7 +319,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
         acting_right_heel_contact_ = (int)(active_right_heel_contact_ || acting_right_heel_contact_);
         acting_left_tip_contact_ = (int)(active_left_tip_contact_ || acting_left_tip_contact_);
         acting_right_tip_contact_ = (int)(active_right_tip_contact_ || acting_right_tip_contact_);
-        active_num_contacts_ = acting_left_tip_contact_ + acting_right_tip_contact_ + acting_left_heel_contact_ + acting_right_heel_contact_;
+        active_num_contacts_ = getNumActingConstraintPoints();
 
         getConstraintSet(active_constraint_set_, active_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
         dynamics_->updateActiveConstraintSet(active_constraint_set_);
@@ -333,7 +332,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
       }
 
       checkContactForces();
-      acting_num_contacts_ = acting_left_tip_contact_ + acting_right_tip_contact_ + acting_left_heel_contact_ + acting_right_heel_contact_;
+      acting_num_contacts_ = getNumActingConstraintPoints();
       getConstraintSet(acting_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
       dynamics_->updateActingConstraintSet(acting_constraint_set_);
 
@@ -482,3 +481,34 @@ void LeoWalkingSandboxModel::checkContactForces()
   }
 
 }
+
+void LeoWalkingSandboxModel::getActingConstraintPoints(const Vector &state)
+{
+  grl_assert(state.size() == rlsStateDim);
+
+  if ((state[rlsLeftTipZ] < root_to_feet_height_) && (state[rlsLeftTipVelZ] < 0))
+    acting_left_tip_contact_ = 1;
+  else
+    acting_left_tip_contact_ = 0;
+
+  if ((state[rlsRightTipZ] < root_to_feet_height_) && (state[rlsRightTipVelZ] < 0))
+    acting_right_tip_contact_ = 1;
+  else
+    acting_right_tip_contact_ = 0;
+
+  if ((state[rlsLeftHeelZ] < root_to_feet_height_) && (state[rlsLeftHeelVelZ] < 0))
+    acting_left_heel_contact_ = 1;
+  else
+    acting_left_heel_contact_ = 0;
+
+  if ((state[rlsRightHeelZ] < root_to_feet_height_) && (state[rlsRightHeelVelZ] < 0))
+    acting_right_heel_contact_ = 1;
+  else
+    acting_right_heel_contact_ = 0;
+}
+
+int LeoWalkingSandboxModel::getNumActingConstraintPoints()
+{
+  return acting_left_tip_contact_ + acting_right_tip_contact_ + acting_left_heel_contact_ + acting_right_heel_contact_;
+}
+

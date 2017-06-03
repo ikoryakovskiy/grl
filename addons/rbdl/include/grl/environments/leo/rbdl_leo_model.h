@@ -101,6 +101,8 @@ class LeoWalkingSandboxModel : public LeoSandboxModel
     virtual bool getCollisionPoints(const Vector &state);
     virtual void getConstraintSet(std::string &constraint_name, const int contacts, const int left_tip_contact, const int right_tip_contact, const int left_hip_contact, const int right_hip_contact);
     virtual void checkContactForces();
+    virtual void getActingConstraintPoints(const Vector &state);
+    virtual int getNumActingConstraintPoints();
 
   protected:
     Vector rbdl_addition_;

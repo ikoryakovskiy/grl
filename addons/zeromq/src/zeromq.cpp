@@ -299,8 +299,6 @@ void ZeromqAgentDRL::start(const Observation &obs, Action *action)
   action->v << b.head((action->v.cols()));
   c << b.tail(obs.v.cols());
   pub_state_drl_->set(c);
-  NOTICE(b);
-  NOTICE(c);
 }
 
 void ZeromqAgentDRL::step(double tau, const Observation &obs, double reward, Action *action)
@@ -318,7 +316,7 @@ void ZeromqAgentDRL::step(double tau, const Observation &obs, double reward, Act
   action->v << b.head(action->v.cols());
   c << b.tail(obs.v.cols());
   pub_state_drl_->set(c);
-  NOTICE(pub_state_drl_);
+  //NOTICE(pub_state_drl_);
 }
 
 void ZeromqAgentDRL::end(double tau, const Observation &obs, double reward)

@@ -199,7 +199,7 @@ void RBDLDynamics::updateKinematics(const Vector &state) const
   RBDLState *rbdl = rbdl_state_.instance();
 
   size_t dim = rbdl->model->dof_count;
-  NOTICE(state.size());
+  CRAWL(state.size());
   if (state.size() != 2*dim+1)
     throw Exception("dynamics/rbdl is incompatible with specified task");
 

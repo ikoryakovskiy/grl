@@ -452,12 +452,6 @@ void LeoWalkingTask::configure(Configuration &config)
 void LeoWalkingTask::start(int test, Vector *state) const
 {
   *state = ConstantVector(2*dof_+1, 0); // Same size for both tasts with FA and without
-  int randomize;
-
-  if (test)
-    randomize = 0;
-  else
-    randomize = randomize_;
 
   if (target_env_)
   {
@@ -475,17 +469,16 @@ void LeoWalkingTask::start(int test, Vector *state) const
            0, 0, 0, 0, 0, 0, 0, 0, 0,
             0.0;  // rlsTime
 
-    if (randomize)
+    if ((randomize_) || (!test))
     {
       for (int ii=4; ii < dof_; ii+=2)
       {
         (*state)[ii] += RandGen::getUniform(-0.0872, 0.0872);
-        //(*state)[dof_+ii] += RandGen::getUniform(-0.1,0.1);
       }
       (*state)[rlsLeftKneeAngle] += RandGen::getUniform(-2*0.0872, 0);
       (*state)[rlsLeftHipAngle] += RandGen::getUniform(-0.0872, 0.0872);
       (*state)[rlsLeftAnkleAngle] +=RandGen::getUniform(-0.0872, 0.0872);
-     }
+    }
   }
 
   CRAWL("Initial state: " << *state);
