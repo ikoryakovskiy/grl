@@ -321,7 +321,7 @@ void ZeromqAgentDRL::step(double tau, const Observation &obs, double reward, Act
 
 void ZeromqAgentDRL::end(double tau, const Observation &obs, double reward)
 {
-  Vector temp(action_dims_);
+  Vector temp(action_dims_+obs.v.cols());
 
   Vector a(obs.v.cols()+3);
   a << test_, obs.v, reward, 2;

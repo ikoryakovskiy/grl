@@ -402,6 +402,8 @@ void LeoWalkingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_, true));
   config->push_back(CRP("timeout", "double.timeout", "Task timeout", timeout_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
+  config->push_back(CRP("measurement_noise", "int.measurement_noise", "Adding measurement noise to observations", measurement_noise_, CRP::System, 0, 1));
+
 }
 
 void LeoWalkingTask::configure(Configuration &config)
@@ -409,6 +411,7 @@ void LeoWalkingTask::configure(Configuration &config)
   target_env_ = (Environment*)config["target_env"].ptr(); // Select a real enviromnent if needed
   timeout_ = config["timeout"];
   randomize_ = config["randomize"];
+  measurement_noise_ = config["measurement_noise"];
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-1000, -1000, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -1000, -1000, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
@@ -491,12 +494,16 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
   obs->v.resize(2*dof_);
 
   obs->v << state.head(2*dof_);
-//  for (int ii=2,count=0; ii<dof_; ++ii,++count)
-//  {
-//    (obs->v)[count] = state[ii];
-//    (obs->v)[count+dof_-2] = state[ii+dof_];
-//  }
 
+  //Adding measurement noise
+  if (measurement_noise_)
+  {
+    for (int ij=2; ij<dof_; ++ij)
+    {
+      (obs->v)[ij] += RandGen::getUniform(-0.05,0.05);
+      (obs->v)[ij+dof_] += RandGen::getUniform(-0.1,0.1);
+    }
+  }
 
   obs->absorbing = false;
   if ((timeout_> 0) && (state[rlsTime] >= timeout_))

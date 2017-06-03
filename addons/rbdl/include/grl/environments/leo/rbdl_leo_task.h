@@ -167,7 +167,7 @@ class LeoWalkingTask : public Task
     TYPEINFO("task/leo_walking", "Task specification for Leo walking with all joints actuated (except for shoulder)")
 
   public:
-    LeoWalkingTask() : target_env_(NULL), randomize_(0), dof_(4), timeout_(0) { }
+    LeoWalkingTask() : target_env_(NULL), randomize_(0), measurement_noise_(0), dof_(4), timeout_(0) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -182,6 +182,7 @@ class LeoWalkingTask : public Task
   protected:
     Environment *target_env_;
     int randomize_;
+    int measurement_noise_;
     int dof_;
     double timeout_;
     Vector target_obs_min_, target_obs_max_;
