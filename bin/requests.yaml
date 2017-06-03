@@ -5984,6 +5984,14 @@ task/leo_walking:
     optional: 1
     min: 0
     max: 1
+  measurement_noise:
+    type: int.measurement_noise
+    description: Adding measurement noise to observations
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
 task/lua:
   description: User-provided task specification in LUA
   observation_dims:
