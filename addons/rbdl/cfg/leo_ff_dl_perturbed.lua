@@ -58,7 +58,7 @@ armJointZ = (0.091275)
 upleglength = (0.116)
 interlegdist = (0.06390)
 
-uplegMass = 0.5 --0.19978
+uplegMass = 0.35 --0.19978
 uplegCMX = 0.00285
 uplegCMZ = -0.00481 - upleglength/2
 uplegIYY = 0.000273133
@@ -73,7 +73,7 @@ uplegRightJointZ = (torsoHipDistZ)
 
 loleglength = 0.1085
 
-lolegMass = 0.3 --0.13691
+lolegMass = 0.25 --0.13691
 lolegCMX = 0.00804 + 0.00405
 lolegCMZ = -0.00867 - loleglength/2
 lolegIYY = 0.000153379
