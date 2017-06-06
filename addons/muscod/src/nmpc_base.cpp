@@ -189,11 +189,49 @@ void initialize_controller (
 void initialize_thread(
     pthread_t* muscod_thread_,
     void* (*function) (void*) ,
-    void* data,
+    NMPCProblem* nmpc_,
+    std::string problem_path,
+    std::string nmpc_model_name_,
+    MUSCOD* muscod_,
+    const std::string thread_id,
     pthread_cond_t*  cond_iv_ready_,
     pthread_mutex_t* mutex_,
+    bool grl_verbose,
     bool verbose
 ) {
+    // initialize MUSCOD instance
+    if (muscod_ == 0) {
+        muscod_ = new MUSCOD();
+    }
+    if (grl_verbose) {
+        muscod_->setLogLevelAndFile(-1, NULL, NULL);
+    } else {
+        muscod_->setLogLevelTotal(-1);
+    }
+
+    // initialize NMPCProblem instance
+    if (nmpc_ == 0) {
+        nmpc_ = new NMPCProblem(
+            problem_path.c_str(), nmpc_model_name_.c_str(), muscod_
+        );
+    }
+    nmpc_->thread_id = thread_id;
+    if (grl_verbose)
+    {
+        nmpc_->m_verbose = true;
+    } else {
+        nmpc_->m_verbose = false;
+    }
+
+    // run single SQP iteration to be able to write a restart file
+    nmpc_->feedback();
+    nmpc_->transition();
+    nmpc_->preparation();
+
+    // provide condition variable and mutex to NMPC instance
+    nmpc_->cond_iv_ready_ = cond_iv_ready_;
+    nmpc_->mutex_ = mutex_;
+
     // initialize mutex and condition variable
     pthread_mutex_init(mutex_, NULL);
     pthread_cond_init (cond_iv_ready_, NULL);
@@ -206,7 +244,7 @@ void initialize_thread(
 
     // create thread running execution loop
     int rc = pthread_create (
-        muscod_thread_, NULL, function, data
+        muscod_thread_, NULL, function, static_cast<void*> (nmpc_)
     );
 
     // error message on error (rc > 0 if error happened!)

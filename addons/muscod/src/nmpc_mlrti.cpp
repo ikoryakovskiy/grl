@@ -27,7 +27,7 @@ NMPCPolicyMLRTI::~NMPCPolicyMLRTI()
   if (nmpc_A_)
     stop_thread (*nmpc_A_, &thread_A_, true);
   if (nmpc_B_)
-  stop_thread (*nmpc_B_, &thread_B_, true);
+    stop_thread (*nmpc_B_, &thread_B_, true);
 
   // safely delete instances
   safe_delete(&nmpc_A_);
@@ -59,73 +59,23 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
   setup_model_path(problem_path, nmpc_model_name_, lua_model_);
 
   //------------------- Initialize NMPC thread A ------------------- //
-  // initialize MUSCOD instance
-  muscod_A_ = new MUSCOD();
-  if (verbose_) {
-    muscod_A_->setLogLevelAndFile(-1, NULL, NULL);
-  } else {
-    muscod_A_->setLogLevelTotal(-1);
-  }
-
-  // initialize NMPCProblem instance
-  nmpc_A_ = new NMPCProblem(
-    problem_path.c_str(), nmpc_model_name_.c_str(), muscod_A_
-  );
-  nmpc_A_->thread_id = thread_id_A;
-  if (verbose_)
-  {
-        nmpc_A_->m_verbose = true;
-  } else {
-        nmpc_A_->m_verbose = false;
-  }
-
-  // run single SQP iteration to be able to write a restart file
-  nmpc_A_->feedback();
-  nmpc_A_->transition();
-  nmpc_A_->preparation();
-
-  // provide condition variable and mutex to NMPC instance
-  nmpc_A_->cond_iv_ready_ = &cond_iv_ready_A_;
-  nmpc_A_->mutex_ = &mutex_A_;
-
   // start NMPC controller in own thread running signal controlled event loop
   initialize_thread(
-    &thread_A_, muscod_run, static_cast<void*> (nmpc_A_),
-    &cond_iv_ready_A_, &mutex_A_, true
+    &thread_A_, muscod_run, nmpc_A_,
+    problem_path, nmpc_model_name_,
+    muscod_A_, thread_id_A,
+    &cond_iv_ready_A_, &mutex_A_,
+    verbose_, true
   );
 
   //------------------- Initialize NMPC thread B ------------------- //
-  muscod_B_ = new MUSCOD();
-  if (verbose_) {
-    muscod_B_->setLogLevelAndFile(-1, NULL, NULL);
-  } else {
-    muscod_B_->setLogLevelTotal(-1);
-  }
-
-  nmpc_B_ = new NMPCProblem(
-    problem_path.c_str(), nmpc_model_name_.c_str(), muscod_A_
-  );
-  nmpc_B_->thread_id = thread_id_B;
-  if (verbose_)
-  {
-        nmpc_B_->m_verbose = true;
-  } else {
-        nmpc_B_->m_verbose = false;
-  }
-
-  // run single SQP iteration to be able to write a restart file
-  nmpc_B_->feedback();
-  nmpc_B_->transition();
-  nmpc_B_->preparation();
-
-  // provide condition variable and mutex to NMPC instance
-  nmpc_B_->cond_iv_ready_ = &cond_iv_ready_B_;
-  nmpc_B_->mutex_ = &mutex_B_;
-
   // start NMPC controller in own thread running signal controlled event loop
   initialize_thread(
-    &thread_B_, muscod_run, static_cast<void*> (nmpc_B_),
-    &cond_iv_ready_B_, &mutex_B_, true
+    &thread_B_, muscod_run, nmpc_B_,
+    problem_path, nmpc_model_name_,
+    muscod_B_, thread_id_B,
+    &cond_iv_ready_B_, &mutex_B_,
+    verbose_, true
   );
 
   //------------------- Define state of MLRTI NMPC ------------------- //
@@ -240,16 +190,23 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
   }
 
   //-------------------- Start MLRTI NMPC threads -------------------- //
+
   nmpc_A_->m_quit = false;
   initialize_thread(
-    &thread_A_, muscod_run, static_cast<void*> (nmpc_A_),
-    &cond_iv_ready_A_, &mutex_A_, true
+    &thread_A_, muscod_run, nmpc_A_,
+    nmpc_A_->m_problem_path, nmpc_A_->m_model_name,
+    muscod_A_, thread_id_A,
+    &cond_iv_ready_A_, &mutex_A_,
+    verbose_, true
   );
 
   nmpc_B_->m_quit = false;
   initialize_thread(
-    &thread_B_, muscod_run, static_cast<void*> (nmpc_B_),
-    &cond_iv_ready_B_, &mutex_B_, true
+    &thread_B_, muscod_run, nmpc_B_,
+    nmpc_B_->m_problem_path, nmpc_B_->m_model_name,
+    muscod_B_, thread_id_B,
+    &cond_iv_ready_B_, &mutex_B_,
+    verbose_, true
   );
 
   //------------------- Define state of MLRTI NMPC ------------------- //

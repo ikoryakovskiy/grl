@@ -63,27 +63,13 @@ void NMPCPolicy::configure(Configuration &config)
   setup_model_path(problem_path, nmpc_model_name_, lua_model_);
 
   //------------------- Initialize NMPC ------------------- //
-  muscod_nmpc_ = new MUSCOD();
-  if (verbose_) {
-    muscod_nmpc_->setLogLevelAndFile(-1, NULL, NULL);
-  } else {
-    muscod_nmpc_->setLogLevelTotal(-1);
-  }
-  nmpc_ = new NMPCProblem(problem_path.c_str(), nmpc_model_name_.c_str(), muscod_nmpc_);
-  if (verbose_) {
-    nmpc_->m_verbose = true;
-  } else {
-    nmpc_->m_verbose = false;
-  }
-
-  // provide condition variable and mutex to NMPC instance
-  nmpc_->cond_iv_ready_ = &cond_iv_ready_;
-  nmpc_->mutex_ = &mutex_;
-
   // start NMPC controller in own thread running signal controlled event loop
   initialize_thread(
-    &thread_, muscod_run, static_cast<void*> (nmpc_),
-    &cond_iv_ready_, &mutex_, true
+    &thread_, muscod_run, nmpc_,
+    problem_path, nmpc_model_name_,
+    muscod_nmpc_, "",
+    &cond_iv_ready_, &mutex_,
+    verbose_, true
   );
 
   // Allocate memory

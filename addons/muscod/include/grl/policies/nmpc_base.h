@@ -79,10 +79,15 @@ void initialize_controller (
 void initialize_thread(
     pthread_t* muscod_thread_,
     void* (*function) (void*) ,
-    void* data,
+    NMPCProblem* data,
+    std::string problem_path,
+    std::string nmpc_model_name_,
+    MUSCOD* muscod,
+    const std::string thread_id,
     pthread_cond_t*  cond_iv_ready_,
     pthread_mutex_t* mutex_,
-    bool verbose = false
+    bool grl_verbose,
+    bool verbose
 );
 
 // MUSCOD-II main thread setup and execution loop
