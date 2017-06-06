@@ -32,14 +32,12 @@ class NMPCPolicyMLRTI: public NMPCBase
     Vector initial_sd_prev_, initial_pf_prev_, initial_qc_prev_;
     double sum_error_;
     int sum_error_counter_;
-    MUSCOD *muscod_A_;
     NMPCProblem *nmpc_A_;
     const std::string thread_id_A = "A";
     pthread_t thread_A_;
     pthread_cond_t cond_iv_ready_A_;
     pthread_mutex_t mutex_A_;
 
-    MUSCOD *muscod_B_;
     NMPCProblem *nmpc_B_;
     const std::string thread_id_B = "B";
     pthread_t thread_B_;
@@ -105,9 +103,7 @@ class NMPCPolicyMLRTI: public NMPCBase
   public:
     NMPCPolicyMLRTI():
         nmpc_ninit_(10),
-        muscod_A_(NULL),
         nmpc_A_(NULL),
-        muscod_B_(NULL),
         nmpc_B_(NULL),
         idle_iv_provided_ (true),
         idle_qc_retrieved_ (true),

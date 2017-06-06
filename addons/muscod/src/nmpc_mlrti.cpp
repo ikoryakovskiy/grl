@@ -32,8 +32,6 @@ NMPCPolicyMLRTI::~NMPCPolicyMLRTI()
   // safely delete instances
   safe_delete(&nmpc_A_);
   safe_delete(&nmpc_B_);
-  safe_delete(&muscod_A_);
-  safe_delete(&muscod_B_);
 }
 
 void NMPCPolicyMLRTI::request(ConfigurationRequest *config)
@@ -63,7 +61,7 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
   initialize_thread(
     &thread_A_, muscod_run, nmpc_A_,
     problem_path, nmpc_model_name_,
-    muscod_A_, thread_id_A,
+    NULL, thread_id_A,
     &cond_iv_ready_A_, &mutex_A_,
     verbose_, true
   );
@@ -73,7 +71,7 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
   initialize_thread(
     &thread_B_, muscod_run, nmpc_B_,
     problem_path, nmpc_model_name_,
-    muscod_B_, thread_id_B,
+    NULL, thread_id_B,
     &cond_iv_ready_B_, &mutex_B_,
     verbose_, true
   );
@@ -195,7 +193,7 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
   initialize_thread(
     &thread_A_, muscod_run, nmpc_A_,
     nmpc_A_->m_problem_path, nmpc_A_->m_model_name,
-    muscod_A_, thread_id_A,
+    NULL, thread_id_A,
     &cond_iv_ready_A_, &mutex_A_,
     verbose_, true
   );
@@ -204,7 +202,7 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
   initialize_thread(
     &thread_B_, muscod_run, nmpc_B_,
     nmpc_B_->m_problem_path, nmpc_B_->m_model_name,
-    muscod_B_, thread_id_B,
+    NULL, thread_id_B,
     &cond_iv_ready_B_, &mutex_B_,
     verbose_, true
   );

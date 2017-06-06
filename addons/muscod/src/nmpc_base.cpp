@@ -189,10 +189,10 @@ void initialize_controller (
 void initialize_thread(
     pthread_t* muscod_thread_,
     void* (*function) (void*) ,
-    NMPCProblem* nmpc_,
+    NMPCProblem* &nmpc_,
     std::string problem_path,
     std::string nmpc_model_name_,
-    MUSCOD* muscod_,
+    MUSCOD* muscod,
     const std::string thread_id,
     pthread_cond_t*  cond_iv_ready_,
     pthread_mutex_t* mutex_,
@@ -200,19 +200,19 @@ void initialize_thread(
     bool verbose
 ) {
     // initialize MUSCOD instance
-    if (muscod_ == 0) {
-        muscod_ = new MUSCOD();
+    if (muscod == 0) {
+        muscod = new MUSCOD();
     }
     if (grl_verbose) {
-        muscod_->setLogLevelAndFile(-1, NULL, NULL);
+        muscod->setLogLevelAndFile(-1, NULL, NULL);
     } else {
-        muscod_->setLogLevelTotal(-1);
+        muscod->setLogLevelTotal(-1);
     }
 
     // initialize NMPCProblem instance
     if (nmpc_ == 0) {
         nmpc_ = new NMPCProblem(
-            problem_path.c_str(), nmpc_model_name_.c_str(), muscod_
+            problem_path.c_str(), nmpc_model_name_.c_str(), muscod
         );
     }
     nmpc_->thread_id = thread_id;
