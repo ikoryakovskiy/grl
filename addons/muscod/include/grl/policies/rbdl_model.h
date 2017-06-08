@@ -55,6 +55,7 @@ struct RBDLModel {
       if (u) {
         tau[0] = u[0];
       }
+      //tau[1] = -0.15*sd[3]; // <-- has no influence on the resulting policy!
       if (p) {
         tau[1] = -p[0]*sd[3]; // tau[1] = -mu * pend_rte
       }

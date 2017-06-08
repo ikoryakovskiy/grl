@@ -81,8 +81,8 @@ void NMPCPolicy::configure(Configuration &config)
   initial_pf_prev_ = ConstantVector(nmpc_->NP(), 0);
   initial_qc_prev_ = ConstantVector(nmpc_->NU(), 0);
 
-  grl_assert(nmpc_->NU() == action_max_.size() || nmpc_->NU() == action_max_.size());
-  grl_assert(nmpc_->NU() == action_min_.size() || nmpc_->NU() == action_max_.size());
+  grl_assert(nmpc_->NU() == action_max_.size());
+  grl_assert(nmpc_->NU() == action_min_.size());
 
   // run single SQP iteration to be able to write a restart file
   nmpc_->feedback();
@@ -235,6 +235,9 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, Vector &initial_qc)
 void NMPCPolicy::act(double time, const Observation &in, Action *out)
 {
   grl_assert((in.v.size() == nmpc_->NXD() + nmpc_->NP()) || (in.v.size() == nmpc_->NXD()));
+
+  int np = nmpc_->NP();
+  int nxd = nmpc_->NXD();
 
   // subdivide 'in' into state and setpoint
   if (in.v.size() == nmpc_->NXD() + nmpc_->NP())
