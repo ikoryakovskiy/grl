@@ -262,6 +262,7 @@ void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
 double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 {
   Vector rbdl_addition_mid, next_state_mid, qd_plus, sub_state_drl;
+  bool check;
 
   qd_plus.resize(target_dof_);
   next_state_mid.resize(rlsStateDim);
@@ -277,6 +278,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
     dynamics_->updateKinematics(target_state_);
     dynamics_->finalize(target_state_,rbdl_addition_mid);
     state_ << target_state_, rbdl_addition_mid;
+
     getActingConstraintPoints(state_);
     acting_num_contacts_ = getNumActingConstraintPoints();
     getConstraintSet(acting_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
@@ -286,6 +288,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
     getConstraintSet(acting_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
     dynamics_->updateActingConstraintSet(acting_constraint_set_);
   }
+
   else
   {
     // reduce state
@@ -315,7 +318,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
       next_state_mid << target_state_next_, rbdl_addition_mid;
 
       // Check for collision points and update active constraint set
-      bool check = getCollisionPoints(next_state_mid);
+      check = getCollisionPoints(next_state_mid);
       // Update velocities if found in violation of constraints
       if (check)
       {
@@ -490,25 +493,26 @@ void LeoWalkingSandboxModel::getActingConstraintPoints(const Vector &state)
 {
   grl_assert(state.size() == rlsStateDim);
 
-  if ((state[rlsLeftTipZ] < root_to_feet_height_) && (state[rlsLeftTipVelZ] < 0))
+  if ((state[rlsLeftTipZ] < root_to_feet_height_))// && (state[rlsLeftTipVelZ] < 0))
     acting_left_tip_contact_ = 1;
   else
     acting_left_tip_contact_ = 0;
 
-  if ((state[rlsRightTipZ] < root_to_feet_height_) && (state[rlsRightTipVelZ] < 0))
+  if ((state[rlsRightTipZ] < root_to_feet_height_))// && (state[rlsRightTipVelZ] < 0))
     acting_right_tip_contact_ = 1;
   else
     acting_right_tip_contact_ = 0;
 
-  if ((state[rlsLeftHeelZ] < root_to_feet_height_) && (state[rlsLeftHeelVelZ] < 0))
+  if ((state[rlsLeftHeelZ] < root_to_feet_height_))// && (state[rlsLeftHeelVelZ] < 0))
     acting_left_heel_contact_ = 1;
   else
     acting_left_heel_contact_ = 0;
 
-  if ((state[rlsRightHeelZ] < root_to_feet_height_) && (state[rlsRightHeelVelZ] < 0))
+  if ((state[rlsRightHeelZ] < root_to_feet_height_))// && (state[rlsRightHeelVelZ] < 0))
     acting_right_heel_contact_ = 1;
   else
     acting_right_heel_contact_ = 0;
+
 }
 
 int LeoWalkingSandboxModel::getNumActingConstraintPoints()
