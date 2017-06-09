@@ -4,7 +4,7 @@ experiment:
   trials: 0
   steps: 0
   rate: 0
-  test_interval: -1
+  test_interval: 10
   environment: 
     type: environment/modeled
     model: 
@@ -22,7 +22,7 @@ experiment:
   agent: 
     type: agent/td
     policy: 
-      type: policy/action
+      type: mapping/policy/action
       sigma: [ 1 ]
       output_min: experiment/environment/task/action_min
       output_max: experiment/environment/task/action_max
@@ -69,7 +69,7 @@ experiment:
   test_agent: 
     type: agent/fixed
     policy: 
-      type: policy/action
+      type: mapping/policy/action
       sigma: [  ]
       output_min: experiment/environment/task/action_min
       output_max: experiment/environment/task/action_max
