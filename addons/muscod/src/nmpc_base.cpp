@@ -192,41 +192,22 @@ void initialize_thread(
     NMPCProblem* &nmpc_,
     std::string problem_path,
     std::string nmpc_model_name_,
-    MUSCOD* muscod,
     const std::string thread_id,
-    pthread_cond_t*  cond_iv_ready_,
-    pthread_mutex_t* mutex_,
+    pthread_cond_t* &cond_iv_ready_,
+    pthread_mutex_t* &mutex_,
     bool grl_verbose,
     bool verbose
 ) {
-    // initialize MUSCOD instance
-    if (muscod == 0) {
-        muscod = new MUSCOD();
-    }
-    if (grl_verbose) {
-        muscod->setLogLevelAndFile(-1, NULL, NULL);
-    } else {
-        muscod->setLogLevelTotal(-1);
-    }
-
     // initialize NMPCProblem instance
     if (nmpc_ == 0) {
         nmpc_ = new NMPCProblem(
-            problem_path.c_str(), nmpc_model_name_.c_str(), muscod
+            problem_path, nmpc_model_name_,
+            // forward verbosity from grl
+            grl_verbose
         );
     }
+    // assign ID to thread
     nmpc_->thread_id = thread_id;
-    if (grl_verbose)
-    {
-        nmpc_->m_verbose = true;
-    } else {
-        nmpc_->m_verbose = false;
-    }
-
-    // run single SQP iteration to be able to write a restart file
-    nmpc_->feedback();
-    nmpc_->transition();
-    nmpc_->preparation();
 
     // provide condition variable and mutex to NMPC instance
     nmpc_->cond_iv_ready_ = cond_iv_ready_;
@@ -276,21 +257,45 @@ void *muscod_run (void *indata)
     }
     NMPCProblem& nmpc = *static_cast<NMPCProblem*> (indata);
 
-    // retrieve verbose flag from controller
     pthread_mutex_lock(nmpc.mutex_);
+
+    // retrieve verbose flag from controller
     bool verbose = nmpc.m_verbose;
-    pthread_mutex_unlock(nmpc.mutex_);
 
     // retrieve thread identifier from NMPC instance
-    pthread_mutex_lock(nmpc.mutex_);
     std::string thread_id = nmpc.thread_id;
+
     pthread_mutex_unlock(nmpc.mutex_);
 
-    if (!thread_id.empty()) {
-        if (verbose) {
+    if (verbose) {
+        if (!thread_id.empty()) {
+
             std::cout << "THREAD '" << thread_id << "': got thread id! " << std::endl;
         }
     }
+    // initialize MUSCOD instance
+    MUSCOD* muscod_;
+    if (nmpc.m_muscod == 0) {
+        if (verbose) {
+            std::cout << "THREAD '" << thread_id << "': created MUSCOD instance!" << std::endl;
+        }
+        muscod_ = new MUSCOD();
+    }
+
+    // forward verbosity from grl
+    if (verbose) {
+        muscod_->setLogLevelAndFile(-1, NULL, NULL);
+    } else {
+        muscod_->setLogLevelTotal(-1);
+    }
+
+    // assign MUSCOD instance to NMPC problem
+    nmpc.create_MUSCOD(muscod_);
+
+    // run single SQP iteration to be able to write a restart file
+    nmpc.feedback();
+    nmpc.transition();
+    nmpc.preparation();
 
     // instantiate values of NMPC structure
     pthread_mutex_lock(nmpc.mutex_);

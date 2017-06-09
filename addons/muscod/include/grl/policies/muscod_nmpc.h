@@ -223,9 +223,8 @@ struct NMPCProblem : public MUSCODProblem {
   {}
 
   NMPCProblem(
-    std::string problem_path, std::string model_name,
-    MUSCOD* muscod = NULL
-  ) : MUSCODProblem(problem_path, model_name, muscod),
+    std::string problem_path, std::string model_name, bool verbose=false
+  ) : MUSCODProblem(problem_path, model_name, verbose),
     m_quit (false),
     m_is_initialized (false),
     iv_ready_ (false),

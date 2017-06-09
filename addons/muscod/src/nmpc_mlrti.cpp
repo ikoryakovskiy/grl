@@ -61,7 +61,7 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
   initialize_thread(
     &thread_A_, muscod_run, nmpc_A_,
     problem_path, nmpc_model_name_,
-    NULL, thread_id_A,
+    thread_id_A,
     &cond_iv_ready_A_, &mutex_A_,
     verbose_, true
   );
@@ -71,7 +71,7 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
   initialize_thread(
     &thread_B_, muscod_run, nmpc_B_,
     problem_path, nmpc_model_name_,
-    NULL, thread_id_B,
+    thread_id_B,
     &cond_iv_ready_B_, &mutex_B_,
     verbose_, true
   );
@@ -193,7 +193,7 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
   initialize_thread(
     &thread_A_, muscod_run, nmpc_A_,
     nmpc_A_->m_problem_path, nmpc_A_->m_model_name,
-    NULL, thread_id_A,
+    thread_id_A,
     &cond_iv_ready_A_, &mutex_A_,
     verbose_, true
   );
@@ -202,7 +202,7 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
   initialize_thread(
     &thread_B_, muscod_run, nmpc_B_,
     nmpc_B_->m_problem_path, nmpc_B_->m_model_name,
-    NULL, thread_id_B,
+    thread_id_B,
     &cond_iv_ready_B_, &mutex_B_,
     verbose_, true
   );
