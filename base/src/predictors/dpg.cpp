@@ -90,6 +90,10 @@ void DPGPredictor::update(const Transition &transition)
   // Here we "read out" the local advantage model by taking the dot product.
   double delta = transition.reward - (dot(q, amu) + v);
   
+  // 'alpha' should be tuned accoding to the signal scale 'amu'.
+  // Error happens when alpha should be decreased.
+  grl_assert(std::isfinite(q[0]) && fabs(q[0]) < 1E100);
+
   if (transition.action.size())
   {
     ProjectionPtr pp = projector_->project(transition.obs);

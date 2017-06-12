@@ -336,7 +336,6 @@ void NMPCPolicy::act(double time, const Observation &in, Action *out)
     } // END FOR NMPC ITERATIONS
   }
 
-  // Here we can return the feedback control
   // NOTE feedback control is cut of at action limits 'action_min/max'
   for (int i = 0; i < action_min_.size(); i++)
   {
