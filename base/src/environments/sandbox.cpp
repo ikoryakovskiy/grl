@@ -111,7 +111,8 @@ double SandboxEnvironment::step(const Action &action, Observation *obs, double *
   double &time = test_?time_test_:time_learn_;
 
   if (exporter_)
-    exporter_->write({VectorConstructor(time), state_, *obs, action, VectorConstructor(*reward), VectorConstructor((double)*terminal)});
+    // was action !!
+    exporter_->write({VectorConstructor(time), state_, *obs, actuation, VectorConstructor(*reward), VectorConstructor((double)*terminal)});
 
   time += tau;
 

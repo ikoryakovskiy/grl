@@ -174,6 +174,29 @@ void LeoSquattingTask::start(int test, Vector *state) const
   CRAWL("Initial state: " << *state);
 }
 
+bool LeoSquattingTask::actuate(const Vector &state, const Action &action, Vector *actuation) const
+{
+  *actuation = action;
+
+  // *** HACK TO MAKE LEO SQUAT IN VOLTAGE CONTROL ***
+
+  /*
+  if (fabs(state_[rlsRefRootZ] - 0.28) < 0.00001)
+    target_action_ *= VectorConstructor(0.5, 0.15, 0.5, 1); // 0.5 for warm dynamixels
+  else
+    target_action_ *= VectorConstructor(1.15, 1.15, 1.15, 1); // 1.1 for warm dynamixels
+  */
+
+  double f = 0.1*DXL_RESISTANCE/(DXL_TORQUE_CONST*DXL_GEARBOX_RATIO);
+
+  if (fabs(state[rlsRefRootZ] - 0.28) < 0.00001)
+    *actuation += VectorConstructor(+1, -1, +1, 0)*f*5;
+  else
+    *actuation += VectorConstructor(-1, +1, -1, 0)*f;
+
+  return true;
+}
+
 void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *terminal) const
 {
   grl_assert(state.size() == stsStateDim);

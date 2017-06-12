@@ -106,6 +106,7 @@ class LeoSquattingTask : public Task
     virtual void observe(const Vector &state, Observation *obs, int *terminal) const;
     virtual void evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const;
     virtual void report(std::ostream &os, const Vector &state) const;
+    virtual bool actuate(const Vector &state, const Action &action, Vector *actuation) const;
 
   protected:
     virtual int failed(const Vector &state) const;
