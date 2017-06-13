@@ -22,7 +22,7 @@
 #include "model.hpp" // providing 'get_pname'
 
 // RBLD model includes
-#include "leomodel.h"
+#include "../include/leomodel.h"
 
 // -----------------------------------------------------------------------------
 

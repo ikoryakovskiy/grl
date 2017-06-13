@@ -44,6 +44,7 @@ struct LeoModel {
 
     // Values that are used when calling RBDL
     // RigidBodyDynamics::Math::VectorNd p;
+    RigidBodyDynamics::Math::VectorNd swts;
     RigidBodyDynamics::Math::VectorNd q;
     RigidBodyDynamics::Math::VectorNd qdot;
     RigidBodyDynamics::Math::VectorNd qdot_plus;

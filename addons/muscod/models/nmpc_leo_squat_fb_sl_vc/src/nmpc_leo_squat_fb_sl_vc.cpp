@@ -22,7 +22,7 @@
 #include "model.hpp" // providing 'get_pname'
 
 // RBLD model includes
-#include "leomodel.h"
+#include "../include/leomodel.h"
 
 // -----------------------------------------------------------------------------
 
@@ -149,7 +149,7 @@ const unsigned int LSQFCN_HEIGHT_TRACKING_NE = 0
 	// + 1 // minimize angular momentum
 	+ 1 // upright torso
 	// + 1 // upright torso
-	// + 1 // regularizing arm motion
+  // + 1 // regularizing arm motion
 	+ NXD/2 // reguralizing joint velocities
 	// + NU // reguralizing controls
 	;
@@ -254,7 +254,7 @@ void lsqfcn_height_tracking (
 	// );
 
 	// regularize: || q - q_desired ||_2^2
-	// res[res_cnt++] = 1.00 * (sd[QS["arm"]]         - (-0.26)); // arm
+  // res[res_cnt++] = 1.00 * (sd[QS["arm"]]         - (-0.26)); // arm
 	// res[res_cnt++] = 1.00 * (sd[QS["hip_left"]]    - (-0.01)); // hip_left
 	// res[res_cnt++] = 0.01 * (sd[QS["knee_left"]]   - (-0.01)); // knee_left
 	// res[res_cnt++] = 0.01 * (sd[QS["ankle_left"]]  - (0.05)); // ankle_left

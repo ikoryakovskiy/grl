@@ -26,7 +26,7 @@ LeoModel::LeoModel() :
 	dynamicsComputed (false),
 	impulsesComputed (false),
 	kinematicsUpdated (false),
-	momentumComputed (false)
+  momentumComputed (false)
 {
 }
 
@@ -44,44 +44,32 @@ double LeoModel::voltage_from_torque_and_angular_velocity (
 	return (R*tau)/(Kt*G) + Kt*G*w;
 }
 
-// -----------------------------------------------------------------------------
-
 double LeoModel::joint_friction(const double& p, const double& v) {
-  /*
-  Implement friction according to::
-    http://de.mathworks.com/help/physmod/simscape/ref/translationalfriction.html?requestedDomain=www.mathworks.com
-  */
-  // unpack parameters
-  const double mu_s = 0.00;
-  const double mu_c = 0.005;
-  const double mu_v = 0.10;
+	/*
+	Implement friction according to::
+		http://de.mathworks.com/help/physmod/simscape/ref/translationalfriction.html?requestedDomain=www.mathworks.com
+	*/
+	// unpack parameters
+	const double mu_s = 0.00;
+	const double mu_c = 0.10;
+	const double mu_v = 0.0;
 
-  // velocity thresholds  after which certain effects jump in
-  const double v_brk = 0.1;
-  const double v_st = v_brk*sqrt(2.0);
-  const double v_c = v_brk / 10.0;
+	// velocity thresholds  after which certain effects jump in
+	const double v_brk = 0.1;
+	const double v_st = v_brk*sqrt(2.0);
+	const double v_c = v_brk / 10.0;
 
-  // std::cout << "PENIS" << std::endl;
-  double friction = 0.0
-  // 	// + sqrt(2*exp(1)) * (mu_s - mu_c) * exp(-(v/v_st)*(v/v_st)) * v/v_st
-    + mu_c * (tanh(v/v_c))
-    + mu_v * v
-  ;
-  // if (v >= 0) {
-  // 	friction = friction
-  // 		+ mu_c
-  // 		+ mu_v * v
-  // 	;
-  // } else {
-  // 	friction = friction
-  // 		- mu_c
-  // 		+ mu_v * v
-  // 	;
-  // }
+	double friction = 0.0
+	// 	// + sqrt(2*exp(1)) * (mu_s - mu_c) * exp(-(v/v_st)*(v/v_st)) * v/v_st
+		// + mu_c * (tanh(v/v_c))
+		+ mu_v * v
+	;
 
-  // std::cout << "mu = " << friction << std::endl;
-  return friction;
+	return friction;
 }
+
+
+// -----------------------------------------------------------------------------
 
 void LeoModel::updateState (
 	const double *sd, const double *u, const double *p_in,
@@ -99,12 +87,33 @@ void LeoModel::updateState (
 		qdot[i] = sd[i + nDof];
 	}
 
+  double f = 0.1*DXL_RESISTANCE/(DXL_TORQUE_CONST*DXL_GEARBOX_RATIO);
+
+	if (fabs(p_in[0] - 0.28) < 0.01) {
+		swts << 1.0, -1.0, 1.0, 0.0;
+		// swts << 0.0, 0.0, 0.0;
+    swts *= 3*f;
+	} else if (fabs(p_in[0] - 0.35) < 0.01) {
+		swts << -1.0, 1.0, -1.0, 0.0;
+		// swts << 0.0, 0.0, 0.0;
+    swts *= f;
+	} else {
+		std::cout << "woopsie!" << std::endl;
+		swts << 0.0, 0.0, 0.0;
+	}
 	assert (nDof == nActuatedDof);
 	for (unsigned int i = 0; i < nActuatedDof; i++) {
+		// tau[i] = u[i];// - 0.01*qdot[i];
 		// TODO control on voltage level
-    tau[i] = torque_from_voltage_and_angular_velocity (u[i], qdot[i]);
-             //- joint_friction(q[i], qdot[i]) );
+		tau[i] =
+			torque_from_voltage_and_angular_velocity (u[i], qdot[i])
+      // - joint_friction(q[i], qdot[i])
+      // - swts
+			// + torque_from_voltage_and_angular_velocity (swts[i], qdot[i]);
+		// tau[i] = u[i] - joint_friction(q[i], qdot[i]);
+		;
 	}
+  // tau += -swts;
 }
 
 // -----------------------------------------------------------------------------
@@ -156,7 +165,7 @@ void LeoModel::calcForwardDynamicsRhs (double *res)
 		);
 	} else {
 		// std::cout << "evaluating 'ForwardDynamics'" << std::endl;
-	ForwardDynamics (model, q, qdot, tau, qddot);
+		ForwardDynamics (model, q, qdot, tau, qddot);
 	}
 	dynamicsComputed = true;
 
@@ -400,14 +409,16 @@ bool LeoModel::loadModelFromFile (const char* filename, bool verbose)
 
 	nDof = model.dof_count;
 	nActuatedDof = nDof;
-
 	assert (nActuatedDof >= 1 && nActuatedDof <= nDof);
+
+	swts = VectorNd::Zero (nDof);
 
 	q = VectorNd::Zero (nDof);
 	qdot = VectorNd::Zero (nDof);
 	qdot_plus = VectorNd::Zero (nDof);
 	qddot = VectorNd::Zero (nDof);
-	// tau has size nDof but not every entry is nonzero!
+
+	// NOTE: tau has size nDof but not every entry is nonzero!
 	tau = VectorNd::Zero (nDof);
 
 	return true;

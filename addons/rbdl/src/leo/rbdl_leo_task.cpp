@@ -180,12 +180,12 @@ bool LeoSquattingTask::actuate(const Vector &state, const Action &action, Vector
 
   // *** HACK TO MAKE LEO SQUAT IN VOLTAGE CONTROL ***
 
-  /*
+/*
   if (fabs(state_[rlsRefRootZ] - 0.28) < 0.00001)
     target_action_ *= VectorConstructor(0.5, 0.15, 0.5, 1); // 0.5 for warm dynamixels
   else
     target_action_ *= VectorConstructor(1.15, 1.15, 1.15, 1); // 1.1 for warm dynamixels
-  */
+*/
 
   double f = 0.1*DXL_RESISTANCE/(DXL_TORQUE_CONST*DXL_GEARBOX_RATIO);
 
@@ -252,6 +252,9 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
     subtask_reward_ += -100;
     return;
   }
+
+  // Since action is not used in the cost function, there is no need to add the friction bias
+  //actuate(next, action, &actuation);
 
   double cost_nmpc = 0, cost_nmpc_aux = 0, cost_nmpc_qd = 0;
   double refRootZ = setpoint_reward_ ? next[rlsRefRootZ] : state[rlsRefRootZ];
