@@ -61,30 +61,28 @@ class NMPCBase : public Policy
 double stop_watch();
 
 // clean-up MUSCOD-II main thread
-void stop_thread (
-    NMPCProblem& data_,
-    pthread_t* muscod_thread_,
+void stop_thread (NMPCProblem& data,
+    pthread_t* muscod_thread,
     bool verbose = false
 );
 
 // run MUSCOD-II NMPC for several iterations to initialize controller for
 // current initial sd/pf, first qc is optional
 void initialize_controller (
-    MUSCODProblem& nmpc, const int nmpc_ninit_,
+    MUSCODProblem& nmpc, const int nmpc_ninit,
     Vector& sd, Vector& pf,
     Vector* qc = NULL
 );
 
 // Initialize mutex and condition variable objects and the controller thread
-void initialize_thread(
-    pthread_t& muscod_thread_,
+void initialize_thread(pthread_t& muscod_thread,
     void* (*function) (void*) ,
     NMPCProblem*& data,
     std::string problem_path,
-    std::string nmpc_model_name_,
+    std::string nmpc_model_name,
     const std::string thread_id,
-    pthread_cond_t& cond_iv_ready_,
-    pthread_mutex_t& mutex_,
+    pthread_cond_t& cond_iv_ready,
+    pthread_mutex_t& mutex,
     bool grl_verbose,
     bool verbose
 );

@@ -245,7 +245,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
 
   // Compose the next state
   (*next) << target_state_next_, VectorConstructor(state_[rlsRefRootZ]),
-      rbdl_addition_, VectorConstructor(state_[rlsMEF], state_[stsSquats]);
+      rbdl_addition_, VectorConstructor(state_[rlsMEF], state_[rlsSMAState], state_[stsSquats]);
 
   if (sub_sma_state_)
     (*next)[rlsSMAState] = sub_sma_state_->get()[0];
@@ -310,8 +310,6 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   std::cout << "  > Height: " << std::fixed << std::setprecision(3) << std::right
             << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
             << std::setw(10) << (*next)[rlsRefRootZ] << std::endl;
-    //std::cout << "  > Next state: " << std::fixed << std::setprecision(3) << std::right << std::setw(10) << *next << std::endl;
-
 
   export_meshup_animation(*next, target_action_);
 
