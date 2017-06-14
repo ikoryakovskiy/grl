@@ -234,6 +234,14 @@ agent/leo/sma:
     mutability: configuration
     default: 0
     optional: 0
+  main_timeout:
+    type: double
+    description: Timeout for the main agent to work, switched to agent_standup afterwards
+    mutability: configuration
+    default: 0
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
   upright_trigger:
     type: trigger
     description: Trigger which finishes stand-up phase and triggers preparation agent
@@ -1242,6 +1250,38 @@ environment/ode:
     type: double.reward_max
     description: Upper limit on immediate reward
     mutability: provided
+environment/post/benchmarking:
+  description: Benchmark external action on an ideal model
+  environment:
+    type: environment
+    description: Environment to inject noise into
+    mutability: configuration
+    default: 0
+    optional: 0
+  task:
+    type: task
+    description: Task to perform in the environment (should match model)
+    mutability: configuration
+    default: 0
+    optional: 0
+  state:
+    type: signal/vector
+    description: Current state of the real model
+    mutability: configuration
+    default: 0
+    optional: 0
+  nominal_model:
+    type: model
+    description: True dynamical model
+    mutability: configuration
+    default: 0
+    optional: 0
+  sub_nominal_action:
+    type: signal/vector
+    description: Subscriber to an external action from a nominal controller
+    mutability: configuration
+    default: 0
+    optional: 0
 environment/post/mef:
   description: Substitutes reward with model-error reward
   environment:

@@ -39,6 +39,7 @@ void LeoStateMachineAgent::request(ConfigurationRequest *config)
   config->push_back(CRP("agent_standup", "agent", "Safe standup agent", agent_standup_, false));
   config->push_back(CRP("agent_starter", "agent", "Starting agent", agent_starter_, true));
   config->push_back(CRP("agent_main", "agent", "Main agent", agent_main_, false));
+  config->push_back(CRP("main_timeout", "Timeout for the main agent to work, switched to agent_standup afterwards", (double)agent_main_timeout_, CRP::Configuration, 0.0, DBL_MAX));
 
   config->push_back(CRP("upright_trigger", "trigger", "Trigger which finishes stand-up phase and triggers preparation agent", upright_trigger_, false));
   config->push_back(CRP("feet_on_trigger", "trigger", "Trigger which checks for foot contact to ensure that robot is prepared to walk", feet_on_trigger_, true));
@@ -54,6 +55,7 @@ void LeoStateMachineAgent::configure(Configuration &config)
   agent_standup_ = (Agent*)config["agent_standup"].ptr();
   agent_starter_ = (Agent*)config["agent_starter"].ptr();
   agent_main_ = (Agent*)config["agent_main"].ptr();
+  agent_main_timeout_ = config["main_timeout"];
 
   upright_trigger_ = (Trigger*)config["upright_trigger"].ptr();
   feet_on_trigger_ = (Trigger*)config["feet_on_trigger"].ptr();
@@ -122,8 +124,8 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
   }
 
   // if Leo fell down and we are not trying to stand up already, then try!
-  if (failed(obs, stanceLegLeft))
-    return set_agent(agent_standup_, tau, obs, reward, action, "Leo fall down, need to stand up!");
+  if (failed(obs, stanceLegLeft) || (agent_main_timeout_ && agent_ == agent_main_ && time_ - agent_main_time_ > agent_main_timeout_))
+    return set_agent(agent_standup_, tau, obs, reward, action, "Main terminated (fall or timeout). Idle controller is applied.");
 
   if (agent_ == agent_prepare_)
   {
@@ -134,7 +136,7 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
       if (agent_starter_ && starter_trigger_ && !starter_trigger_->check(time_, Vector()))
         return set_agent(agent_starter_, tau, obs, reward, action, "Starter!");
       else
-        return set_agent(agent_main_, tau, obs, reward, action, "Main directly!");
+        set_agent_main(tau, obs, reward, action, "Main directly!");
     }
   }
 
@@ -142,7 +144,7 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
   {
     // run starter agent for some time, it helps the main agent to start
     if (starter_trigger_->check(time_, Vector()))
-      return set_agent(agent_main_, tau, obs, reward, action, "Main!");
+      set_agent_main(tau, obs, reward, action, "Main!");
   }
 
   if (agent_ == agent_standup_)
@@ -166,3 +168,14 @@ void LeoStateMachineAgent::set_agent(Agent *agent, double tau, const Observation
   }
 }
 
+void LeoStateMachineAgent::set_agent_main(double tau, const Observation &obs, double reward, Action *action, const char* msg)
+{
+  struct timespec start_time, now;
+  clock_gettime(CLOCK_MONOTONIC, &start_time);
+  set_agent(agent_main_, tau, obs, reward, action, msg);
+  clock_gettime(CLOCK_MONOTONIC, &now);
+
+  // add start-up time (critical for NMPC because it is long, 1-2s)
+  agent_main_time_ = time_ + now.tv_sec - start_time.tv_sec + (now.tv_nsec - start_time.tv_nsec) / 1000000000.0;;
+  return;
+}

@@ -44,10 +44,24 @@ class LeoStateMachineAgent : public LeoBaseAgent
     Agent *agent_prepare_, *agent_standup_, *agent_starter_, *agent_main_;
     Agent *agent_;
     Trigger *upright_trigger_, *feet_on_trigger_, *feet_off_trigger_, *starter_trigger_;
-    double time_;
+    double time_, agent_main_time_, agent_main_timeout_;
     
   public:
-    LeoStateMachineAgent() : agent_prepare_(NULL), agent_standup_(NULL), agent_starter_(NULL), agent_main_(NULL), agent_(NULL), upright_trigger_(NULL), feet_on_trigger_(NULL), feet_off_trigger_(NULL), starter_trigger_(NULL), /*sub_ic_signal_(NULL),*/ time_(0.) { }
+    LeoStateMachineAgent() :
+      agent_prepare_(NULL),
+      agent_standup_(NULL),
+      agent_starter_(NULL),
+      agent_main_(NULL),
+      agent_(NULL),
+      upright_trigger_(NULL),
+      feet_on_trigger_(NULL),
+      feet_off_trigger_(NULL),
+      starter_trigger_(NULL),
+      /*sub_ic_signal_(NULL),*/
+      time_(0.),
+      agent_main_time_(0.),
+      agent_main_timeout_(0.)
+    { }
   
     // From Configurable    
     virtual void request(ConfigurationRequest *config);
@@ -61,6 +75,8 @@ class LeoStateMachineAgent : public LeoBaseAgent
 
   protected:
     virtual void set_agent(Agent *agent, double tau, const Observation &obs, double reward, Action *action, const char* msg);
+    virtual void set_agent_main(double tau, const Observation &obs, double reward, Action *action, const char* msg);
+
     virtual void act(double tau, const Observation &obs, double reward, Action *action);
 };
 

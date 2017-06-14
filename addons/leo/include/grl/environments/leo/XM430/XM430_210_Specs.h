@@ -52,8 +52,14 @@
 // ( stallTorque / stallCurrent ) / gearRatio
 #define DXL_XM430_210_TORQUE_CONST          (DXL_XM430_210_MAX_TORQUE/DXL_XM430_210_MAX_CURRENT) // = 1.344712182 [Nm/A]
 
-// ... and torque constant of the Maxon motor inside
+// ... and torque constant of the Maxon motor inside (datasheet estimation)
 #define MAXON_TORQUE_CONST                  (DXL_XM430_210_TORQUE_CONST/DXL_XM430_210_GEARBOX_RATIO) // = 0.006325081 [Nm/A]
+
+// ... and torque constant of the Maxon motor inside (from an e-mail conversation with Robotis)
+//#define MAXON_TORQUE_CONST                  0.004245627  // [Nm/A]
+
+// ... and torque constant of the Maxon motor inside (my estimation)
+//#define MAXON_TORQUE_CONST                 (1.2880886 / DXL_XM430_210_GEARBOX_RATIO)   // = 0.006058742 [Nm/A]
 
 // Temperature coefficients
 #define DXL_XM430_210_COPPER_COEF           0.004041                // @20 deg C, according to: http://www.cirris.com/learning-center/general-testing/special-topics/177-temperature-coefficient-of-copper
