@@ -179,6 +179,7 @@ bool LeoSquattingTask::actuate(const Vector &state, const Action &action, Vector
   *actuation = action;
 
   // *** HACK TO MAKE REAL LEO SQUAT IN VOLTAGE CONTROL ***
+
 /*
   // Gearbox effeciency is 75%
   *actuation *= 0.75;
@@ -189,7 +190,8 @@ bool LeoSquattingTask::actuate(const Vector &state, const Action &action, Vector
     *actuation += VectorConstructor(+1, -1, +1, 0)*f;
   else
     *actuation += VectorConstructor(-1, +1, -1, 0)*f;
-*/
+  */
+
   return true;
 }
 
