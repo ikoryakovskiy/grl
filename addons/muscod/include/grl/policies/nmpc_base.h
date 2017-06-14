@@ -76,14 +76,15 @@ void initialize_controller (
 );
 
 // Initialize mutex and condition variable objects and the controller thread
-void initialize_thread(pthread_t* muscod_thread_,
+void initialize_thread(
+    pthread_t& muscod_thread_,
     void* (*function) (void*) ,
-    NMPCProblem *&data,
+    NMPCProblem*& data,
     std::string problem_path,
     std::string nmpc_model_name_,
     const std::string thread_id,
-    pthread_cond_t* &cond_iv_ready_,
-    pthread_mutex_t* &mutex_,
+    pthread_cond_t& cond_iv_ready_,
+    pthread_mutex_t& mutex_,
     bool grl_verbose,
     bool verbose
 );

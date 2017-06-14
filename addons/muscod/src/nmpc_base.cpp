@@ -168,6 +168,7 @@ void stop_thread (
     data_.iv_ready_ = false;
     data_.qc_ready_ = false;
 }
+
 // run MUSCOD-II NMPC for several iterations to initialize controller for
 // current initial sd/pf, first qc is optional
 void initialize_controller (
@@ -187,14 +188,14 @@ void initialize_controller (
 }
 
 void initialize_thread(
-    pthread_t* muscod_thread_,
+    pthread_t& muscod_thread_,
     void* (*function) (void*) ,
-    NMPCProblem* &nmpc_,
+    NMPCProblem*& nmpc_,
     std::string problem_path,
     std::string nmpc_model_name_,
     const std::string thread_id,
-    pthread_cond_t* &cond_iv_ready_,
-    pthread_mutex_t* &mutex_,
+    pthread_cond_t& cond_iv_ready_,
+    pthread_mutex_t& mutex_,
     bool grl_verbose,
     bool verbose
 ) {
@@ -210,22 +211,22 @@ void initialize_thread(
     nmpc_->thread_id = thread_id;
 
     // provide condition variable and mutex to NMPC instance
-    nmpc_->cond_iv_ready_ = cond_iv_ready_;
-    nmpc_->mutex_ = mutex_;
+    nmpc_->cond_iv_ready_ = &cond_iv_ready_;
+    nmpc_->mutex_ = &mutex_;
 
     // initialize mutex and condition variable
-    pthread_mutex_init(mutex_, NULL);
-    pthread_cond_init (cond_iv_ready_, NULL);
+    pthread_mutex_init(&mutex_, NULL);
+    pthread_cond_init (&cond_iv_ready_, NULL);
 
     // start MUSCOD-II in a thread running a signal triggered execution loop
-    pthread_mutex_lock(mutex_); // LOCK
+    pthread_mutex_lock(&mutex_); // LOCK
     if (verbose) {
         std::cout << "In " << __func__ << ": creating MUSCOD-II thread" << std::endl;
     }
 
     // create thread running execution loop
     int rc = pthread_create (
-        muscod_thread_, NULL, function, static_cast<void*> (nmpc_)
+        &muscod_thread_, NULL, function, static_cast<void*> (nmpc_)
     );
 
     // error message on error (rc > 0 if error happened!)
@@ -239,8 +240,8 @@ void initialize_thread(
     if (verbose) {
         std::cout << "MUSCOD: Waiting for MUSCOD thread..." << std::endl;
     }
-    pthread_cond_wait(cond_iv_ready_, mutex_); // WAIT FOR SIGNAL FROM THREAD
-    pthread_mutex_unlock(mutex_);  // UNLOCK
+    pthread_cond_wait(&cond_iv_ready_, &mutex_); // WAIT FOR SIGNAL FROM THREAD
+    pthread_mutex_unlock(&mutex_);  // UNLOCK
 }
 
 // MUSCOD-II main thread setup and execution loop
@@ -281,6 +282,8 @@ void *muscod_run (void *indata)
         }
         muscod_ = new MUSCOD();
     }
+    muscod_->print_MCData_address();
+    muscod_->print_data_address();
 
     // forward verbosity from grl
     if (verbose) {
@@ -290,12 +293,16 @@ void *muscod_run (void *indata)
     }
 
     // assign MUSCOD instance to NMPC problem
+    pthread_mutex_lock(nmpc.mutex_);
     nmpc.create_MUSCOD(muscod_);
+    pthread_mutex_unlock(nmpc.mutex_);
 
     // run single SQP iteration to be able to write a restart file
+    pthread_mutex_lock(nmpc.mutex_);
     nmpc.feedback();
     nmpc.transition();
     nmpc.preparation();
+    pthread_mutex_unlock(nmpc.mutex_);
 
     // instantiate values of NMPC structure
     pthread_mutex_lock(nmpc.mutex_);
@@ -447,6 +454,10 @@ void *muscod_run (void *indata)
     if (verbose) {
         std::cout << "THREAD '" << thread_id << "': exiting MUSCOD thread" << std::endl;
     }
+    pthread_mutex_lock(nmpc.mutex_);
+    nmpc.delete_MUSCOD ();
+    delete muscod_;
+    pthread_mutex_unlock(nmpc.mutex_);
     pthread_exit(NULL);
 } // END OF muscod_run
 

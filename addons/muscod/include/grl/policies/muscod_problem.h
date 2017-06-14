@@ -315,7 +315,25 @@ struct MUSCODProblem {
 
     so_set_plot_counter = (void (*) (bool))
       load_symbol(m_problem_so_handle, "set_plot_counter");
+  }
 
+  void delete_MUSCOD () {
+    if (m_extern_muscod) {
+      m_muscod = NULL;
+    } else {
+      delete m_muscod;
+    }
+
+    // close shared library
+    so_get_plot_counter = NULL;
+    so_set_plot_counter = NULL;
+
+    std::string so_path  = m_problem_path + "/" + "lib" + m_model_name + ".so";
+    if (m_verbose) {
+      std::cout << "unloading shared library";
+      std::cout << so_path << "'" << std::endl;
+    }
+    dlclose(m_problem_so_handle);
   }
 
   // ---------------------------------------------------------------------------
