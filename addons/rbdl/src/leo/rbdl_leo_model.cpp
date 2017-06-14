@@ -255,33 +255,33 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   if (((*next)[rlsSMAState] == SMA_MAIN && sub_sma_state_) || (!sub_sma_state_))
   {
     main_time_ += tau;
-    if (timer_switch_)
+    INFO("elapsed: " << main_time_);
+    if (main_time_ > 25.0)
+      (*next)[rlsRefRootZ] = lower_height_;
+    else
     {
-      INFO("elapsed: " << main_time_);
-      // time-based setpoint switch
-      if (main_time_ < 25.0)
+      if (timer_switch_)
       {
+        // time-based setpoint switch
         double switch_every = 5.0; // [s]
         double time_loc = std::fmod(main_time_, 2*switch_every);
         (*next)[rlsRefRootZ] = (time_loc < switch_every) ? upper_height_ : lower_height_;
       }
       else
-        (*next)[rlsRefRootZ] = lower_height_;
-    }
-    else
-    {
-      // State-based setpoint switch
-      if (fabs((*next)[rlsComVelocityZ] - 0.0) < precision_[1])
       {
-        if (fabs((*next)[rlsRootZ] - lower_height_) < precision_[0])
+        // State-based setpoint switch
+        if (fabs((*next)[rlsComVelocityZ] - 0.0) < precision_[1])
         {
-          (*next)[rlsRefRootZ] = upper_height_;
-          //std::cout << "Lower setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
-        }
-        else if (fabs((*next)[rlsRootZ] - upper_height_) < precision_[0])
-        {
-          (*next)[rlsRefRootZ] = lower_height_;
-          //std::cout << "Upper setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
+          if (fabs((*next)[rlsRootZ] - lower_height_) < precision_[0])
+          {
+            (*next)[rlsRefRootZ] = upper_height_;
+            //std::cout << "Lower setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
+          }
+          else if (fabs((*next)[rlsRootZ] - upper_height_) < precision_[0])
+          {
+            (*next)[rlsRefRootZ] = lower_height_;
+            //std::cout << "Upper setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
+          }
         }
       }
     }
