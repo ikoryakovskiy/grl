@@ -252,7 +252,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
 
   INFO("SMA: " << (*next)[rlsSMAState]);
 
-  if ((*next)[rlsSMAState] == SMA_MAIN)
+  if (((*next)[rlsSMAState] == SMA_MAIN && sub_sma_state_) || (!sub_sma_state_))
   {
     main_time_ += tau;
     if (timer_switch_)
