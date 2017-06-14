@@ -44,6 +44,7 @@ add_library(${TARGET} SHARED
             ${SRC}/environments/flyer2d.cpp
             ${SRC}/environments/puddle.cpp
             ${SRC}/environments/mountain.cpp
+            ${SRC}/environments/mef.cpp
             ${SRC}/environments/communicator.cpp
             ${SRC}/experiments/approx_test.cpp
             ${SRC}/experiments/online_learning.cpp

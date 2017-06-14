@@ -64,6 +64,8 @@ struct LeoModel {
     std::map<std::string, ConstraintSetInfo> constraintSetInfos;
     std::map<std::string, RigidBodyDynamics::ConstraintSet> constraints;
 
+    double joint_friction(const double& p, const double& v);
+
     // Copies state information from MUSCOD to the model and switches to the given constraint set.
     void updateState (
         const double* sd, const double* u, const double* p_in,

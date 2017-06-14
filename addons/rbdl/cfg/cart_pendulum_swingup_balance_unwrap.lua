@@ -40,6 +40,9 @@ end
 
 function failed(state)
   if state[0] < -cart_pos_max or state[0] > cart_pos_max then
+--     state[1] < -5*math.pi or state[1] > 5*math.pi or 
+--     state[2] < -5 or state[2] > 5 or 
+--     state[3] < -10*math.pi or state[3] > 10*math.pi then
     return true
   else
     return false

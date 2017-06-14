@@ -348,6 +348,58 @@ class ShapingEnvironment : public Environment
     virtual void report(std::ostream &os) const;
 };
 
+/// Environment modifier that substitutes reward with Model-error reward.
+class MEFEnvironment : public Environment
+{
+  public:
+    TYPEINFO("environment/post/mef", "Substitutes reward with model-error reward")
+
+  public:
+    Environment *environment_;
+    Task *task_;
+
+    Vector prev_state_;
+    double total_reward_, mef_total_reward_;
+
+    VectorSignal *sub_nominal_action_;
+    Model *nominal_model_;
+    VectorSignal *state_obj_;
+
+    int test_;
+
+  public:
+    MEFEnvironment() : environment_(NULL), task_(NULL), total_reward_(0.), mef_total_reward_(0.), sub_nominal_action_(NULL), nominal_model_(NULL), state_obj_(NULL), test_(0)
+    {
+    }
+
+    // From Configurable
+    virtual void request(ConfigurationRequest *config);
+    virtual void configure(Configuration &config);
+    virtual void reconfigure(const Configuration &config);
+    virtual MEFEnvironment &copy(const Configurable &obj);
+
+    // From Environment
+    virtual void start(int test, Observation *obs);
+    virtual double step(const Action &action, Observation *obs, double *reward, int *terminal);
+    virtual void report(std::ostream &os) const;
+};
+
+/// Environment that benchmarks external action on a different (ideal) model.
+class BenchmarkingEnvironment : public MEFEnvironment
+{
+  public:
+    TYPEINFO("environment/post/benchmarking", "Benchmark external action on an ideal model")
+
+  public:
+    BenchmarkingEnvironment()
+    //: environment_(NULL), task_(NULL), nominal_total_reward_(0.), mef_total_reward_(0.), sub_nominal_action_(NULL), nominal_model_(NULL), state_obj_(NULL)
+    {
+    }
+
+    // From Environment
+    virtual double step(const Action &action, Observation *obs, double *reward, int *terminal);
+};
+
 /// Sequential-access transition model.
 class Sandbox : public Configurable
 {

@@ -8,7 +8,7 @@
 // Author(s): Manuel Kudruss <manuel.kudruss@iwr.uni-heidelberg.de>
 // -----------------------------------------------------------------------------
 
-#include <leomodel.h>
+#include "../include/leomodel.h"
 
 // -----------------------------------------------------------------------------
 
@@ -46,6 +46,43 @@ double LeoModel::voltage_from_torque_and_angular_velocity (
 
 // -----------------------------------------------------------------------------
 
+double LeoModel::joint_friction(const double& p, const double& v) {
+  /*
+  Implement friction according to::
+    http://de.mathworks.com/help/physmod/simscape/ref/translationalfriction.html?requestedDomain=www.mathworks.com
+  */
+  // unpack parameters
+  const double mu_s = 0.00;
+  const double mu_c = 0.005;
+  const double mu_v = 0.10;
+
+  // velocity thresholds  after which certain effects jump in
+  const double v_brk = 0.1;
+  const double v_st = v_brk*sqrt(2.0);
+  const double v_c = v_brk / 10.0;
+
+  // std::cout << "PENIS" << std::endl;
+  double friction = 0.0
+  // 	// + sqrt(2*exp(1)) * (mu_s - mu_c) * exp(-(v/v_st)*(v/v_st)) * v/v_st
+    + mu_c * (tanh(v/v_c))
+    + mu_v * v
+  ;
+  // if (v >= 0) {
+  // 	friction = friction
+  // 		+ mu_c
+  // 		+ mu_v * v
+  // 	;
+  // } else {
+  // 	friction = friction
+  // 		- mu_c
+  // 		+ mu_v * v
+  // 	;
+  // }
+
+  // std::cout << "mu = " << friction << std::endl;
+  return friction;
+}
+
 void LeoModel::updateState (
 	const double *sd, const double *u, const double *p_in,
 	const string cs_name
@@ -65,7 +102,8 @@ void LeoModel::updateState (
 	assert (nDof == nActuatedDof);
 	for (unsigned int i = 0; i < nActuatedDof; i++) {
 		// TODO control on voltage level
-		tau[i] = torque_from_voltage_and_angular_velocity (u[i], qdot[i]);
+    tau[i] = torque_from_voltage_and_angular_velocity (u[i], qdot[i]);
+             //- joint_friction(q[i], qdot[i]) );
 	}
 }
 
