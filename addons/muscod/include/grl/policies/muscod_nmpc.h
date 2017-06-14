@@ -204,6 +204,35 @@ struct NMPCProblem : public MUSCODProblem {
     abort();
   }
 
+  std::string get_model_directory () {
+    if (mutex_) {
+        std::string ret;
+        pthread_mutex_lock(mutex_);
+        ret = m_options->modelDirectory;
+        pthread_mutex_unlock(mutex_);
+        return ret;
+    }
+    std::cout << "In function '" << __func__ << "' no mutex is assigned!" << std::endl;
+    abort();
+  }
+
+  void writeRestartFile (
+    const std::string& restart_rel_path_,
+    const std::string& restart_name_
+  ) {
+    if (mutex_) {
+        pthread_mutex_lock(mutex_);
+        m_muscod->writeRestartFile(
+          restart_rel_path_.c_str(),
+          restart_name_.c_str()
+        );
+        pthread_mutex_unlock(mutex_);
+        return;
+    }
+    std::cout << "In function '" << __func__ << "' no mutex is assigned!" << std::endl;
+    abort();
+  }
+
   // // retrieve unscaled state vector on first shooting node
   // grl::Vector getNodeSD (const unsigned long imsn){
   //     if (mutex_) {
@@ -223,9 +252,8 @@ struct NMPCProblem : public MUSCODProblem {
   {}
 
   NMPCProblem(
-    std::string problem_path, std::string model_name,
-    MUSCOD* muscod = NULL
-  ) : MUSCODProblem(problem_path, model_name, muscod),
+    std::string problem_path, std::string model_name, bool verbose=false
+  ) : MUSCODProblem(problem_path, model_name, verbose),
     m_quit (false),
     m_is_initialized (false),
     iv_ready_ (false),

@@ -59,20 +59,20 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
   //------------------- Initialize NMPC thread A ------------------- //
   // start NMPC controller in own thread running signal controlled event loop
   initialize_thread(
-    &thread_A_, muscod_run, nmpc_A_,
+    thread_A_, muscod_run, nmpc_A_,
     problem_path, nmpc_model_name_,
-    NULL, thread_id_A,
-    &cond_iv_ready_A_, &mutex_A_,
+    thread_id_A,
+    cond_iv_ready_A_, mutex_A_,
     verbose_, true
   );
 
   //------------------- Initialize NMPC thread B ------------------- //
   // start NMPC controller in own thread running signal controlled event loop
   initialize_thread(
-    &thread_B_, muscod_run, nmpc_B_,
+    thread_B_, muscod_run, nmpc_B_,
     problem_path, nmpc_model_name_,
-    NULL, thread_id_B,
-    &cond_iv_ready_B_, &mutex_B_,
+    thread_id_B,
+    cond_iv_ready_B_, mutex_B_,
     verbose_, true
   );
 
@@ -104,11 +104,9 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
   // Save MUSCOD state
   if (verbose_) {
     std::cout << "saving MUSCOD-II state to" << std::endl;
-    std::cout << "  " << nmpc_A_->m_options->modelDirectory << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
+    std::cout << "  " << nmpc_A_->get_model_directory() << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
   }
-  nmpc_A_->m_muscod->writeRestartFile(
-    restart_path_.c_str(), restart_name_.c_str()
-  );
+  // nmpc_A_->writeRestartFile(restart_path_, restart_name_);
 
   // Muscod params
   initFeedback_ = config["initFeedback"];
@@ -125,85 +123,26 @@ void NMPCPolicyMLRTI::reconfigure(const Configuration &config)
 
 void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
 {
-  // restore muscod state
-  if (verbose_) {
-    std::cout << "restoring MUSCOD-II state to" << std::endl;
-    std::cout << "  " << nmpc_A_->m_options->modelDirectory << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
-  }
-
   //-------------------- Stop MLRTI NMPC threads --------------------- //
   stop_thread(*nmpc_A_, &thread_A_, verbose_);
   stop_thread(*nmpc_B_, &thread_B_, verbose_);
-
-  //------------------- Initialize MLRTI NMPC data ------------------- //
-  nmpc_A_->m_muscod->readRestartFile(restart_path_.c_str(), restart_name_.c_str());
-  nmpc_A_->m_muscod->nmpcInitialize (
-      4, // guess_type = 4 for warm start
-      restart_path_.c_str(), restart_name_.c_str()
-  );
-  // turn on mode '0' for proper re-initialization
-  nmpc_A_->set_nmpc_mode(0);
-
-  // initialize NMPC
-  for (int inmpc = 0; inmpc < 10; ++inmpc)
-  {
-    // 1) Feedback: Embed parameters and initial value from MHE
-    if (initFeedback_) {
-      nmpc_A_->feedback(initial_obs, initial_pf_, &initial_qc_);
-    } else {
-      nmpc_A_->feedback();
-    }
-    // 2) Transition
-    nmpc_A_->transition();
-    // 3) Preparation
-    nmpc_A_->preparation();
-  }
-
-  // restore muscod state
-  if (verbose_) {
-    std::cout << "restoring MUSCOD-II state to" << std::endl;
-    std::cout << "  " << nmpc_B_->m_options->modelDirectory << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
-  }
-  nmpc_B_->m_muscod->readRestartFile(restart_path_.c_str(), restart_name_.c_str());
-  nmpc_B_->m_muscod->nmpcInitialize (
-      4, // guess_type = 4 for warm start
-      restart_path_.c_str(), restart_name_.c_str()
-  );
-  // turn on mode '0' for proper re-initialization
-  nmpc_B_->set_nmpc_mode(0);
-
-  // initialize NMPC
-  for (int inmpc = 0; inmpc < 10; ++inmpc)
-  {
-    // 1) Feedback: Embed parameters and initial value from MHE
-    if (initFeedback_) {
-      nmpc_B_->feedback(initial_obs, initial_pf_, &initial_qc_);
-    } else {
-      nmpc_B_->feedback();
-    }
-    // 2) Transition
-    nmpc_B_->transition();
-    // 3) Preparation
-    nmpc_B_->preparation();
-  }
-
   //-------------------- Start MLRTI NMPC threads -------------------- //
 
   nmpc_A_->m_quit = false;
   initialize_thread(
-    &thread_A_, muscod_run, nmpc_A_,
+    thread_A_, muscod_run, nmpc_A_,
     nmpc_A_->m_problem_path, nmpc_A_->m_model_name,
-    NULL, thread_id_A,
-    &cond_iv_ready_A_, &mutex_A_,
+    thread_id_A,
+    cond_iv_ready_A_, mutex_A_,
     verbose_, true
   );
 
   nmpc_B_->m_quit = false;
   initialize_thread(
-    &thread_B_, muscod_run, nmpc_B_,
+    thread_B_, muscod_run, nmpc_B_,
     nmpc_B_->m_problem_path, nmpc_B_->m_model_name,
-    NULL, thread_id_B,
-    &cond_iv_ready_B_, &mutex_B_,
+    thread_id_B,
+    cond_iv_ready_B_, mutex_B_,
     verbose_, true
   );
 
