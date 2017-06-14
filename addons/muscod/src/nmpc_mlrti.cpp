@@ -102,10 +102,10 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
   final_sd_   = ConstantVector(nmpc_A_->NXD(), 0);
 
   // Save MUSCOD state
-  if (verbose_) {
-    std::cout << "saving MUSCOD-II state to" << std::endl;
-    std::cout << "  " << nmpc_A_->get_model_directory() << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
-  }
+  // if (verbose_) {
+  //   std::cout << "saving MUSCOD-II state to" << std::endl;
+  //   std::cout << "  " << nmpc_A_->get_model_directory() << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
+  // }
   // nmpc_A_->writeRestartFile(restart_path_, restart_name_);
 
   // Muscod params
@@ -124,8 +124,10 @@ void NMPCPolicyMLRTI::reconfigure(const Configuration &config)
 void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
 {
   //-------------------- Stop MLRTI NMPC threads --------------------- //
+
   stop_thread(*nmpc_A_, &thread_A_, verbose_);
   stop_thread(*nmpc_B_, &thread_B_, verbose_);
+
   //-------------------- Start MLRTI NMPC threads -------------------- //
 
   nmpc_A_->m_quit = false;
