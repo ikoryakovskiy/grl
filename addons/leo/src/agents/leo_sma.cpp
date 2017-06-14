@@ -35,10 +35,10 @@ REGISTER_CONFIGURABLE(LeoStateMachineAgent)
 void LeoStateMachineAgent::request(ConfigurationRequest *config)
 {
   LeoBaseAgent::request(config);
-  config->push_back(CRP("agent_prepare", "agent", "Prepare agent", agent_prepare_, false));
-  config->push_back(CRP("agent_standup", "agent", "Safe standup agent", agent_standup_, false));
-  config->push_back(CRP("agent_starter", "agent", "Starting agent", agent_starter_, true));
-  config->push_back(CRP("agent_main", "agent", "Main agent", agent_main_, false));
+  config->push_back(CRP("agent_prepare", "agent", "Prepare agent", agent_prepare_.a, false));
+  config->push_back(CRP("agent_standup", "agent", "Safe standup agent", agent_standup_.a, false));
+  config->push_back(CRP("agent_starter", "agent", "Starting agent", agent_starter_.a, true));
+  config->push_back(CRP("agent_main", "agent", "Main agent", agent_main_.a, false));
   config->push_back(CRP("main_timeout", "Timeout for the main agent to work, switched to agent_standup afterwards", (double)agent_main_timeout_, CRP::Configuration, 0.0, DBL_MAX));
 
   config->push_back(CRP("upright_trigger", "trigger", "Trigger which finishes stand-up phase and triggers preparation agent", upright_trigger_, false));
@@ -51,10 +51,15 @@ void LeoStateMachineAgent::configure(Configuration &config)
 {
   LeoBaseAgent::configure(config);
 
-  agent_prepare_ = (Agent*)config["agent_prepare"].ptr();
-  agent_standup_ = (Agent*)config["agent_standup"].ptr();
-  agent_starter_ = (Agent*)config["agent_starter"].ptr();
-  agent_main_ = (Agent*)config["agent_main"].ptr();
+  agent_prepare_.a = (Agent*)config["agent_prepare"].ptr();
+  agent_prepare_.t = SMA_PREPARE;
+  agent_standup_.a = (Agent*)config["agent_standup"].ptr();
+  agent_standup_.t = SMA_STANDUP;
+  agent_starter_.a = (Agent*)config["agent_starter"].ptr();
+  agent_starter_.t = SMA_STARTER;
+  agent_main_.a = (Agent*)config["agent_main"].ptr();
+  agent_main_.t = SMA_MAIN;
+
   agent_main_timeout_ = config["main_timeout"];
 
   upright_trigger_ = (Trigger*)config["upright_trigger"].ptr();
@@ -77,7 +82,7 @@ void LeoStateMachineAgent::start(const Observation &obs, Action *action)
   else
     agent_ = agent_prepare_; // prepare from hanging position
 
-  agent_->start(obs, action);
+  agent_.a->start(obs, action);
 
   for (int i = 0; i < action_max_.size(); i++)
     (*action)[i] = fmin(action_max_[i], fmax((*action)[i], action_min_[i]));
@@ -88,6 +93,8 @@ void LeoStateMachineAgent::step(double tau, const Observation &obs, double rewar
   time_ += tau;
 
   act(tau, obs, reward, action);
+
+  //INFO("Type: " << agent_.t);
 
   for (int i = 0; i < action_max_.size(); i++)
     (*action)[i] = fmin(action_max_[i], fmax((*action)[i], action_min_[i]));
@@ -133,7 +140,7 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
     // or the main agent
     if (feet_on_trigger_->check(time_, gc))
     {
-      if (agent_starter_ && starter_trigger_ && !starter_trigger_->check(time_, Vector()))
+      if (agent_starter_.a && starter_trigger_ && !starter_trigger_->check(time_, Vector()))
         return set_agent(agent_starter_, tau, obs, reward, action, "Starter!");
       else
         set_agent_main(tau, obs, reward, action, "Main directly!");
@@ -154,16 +161,16 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
       return set_agent(agent_prepare_, tau, obs, reward, action, "Prepare!");
   }
 
-  agent_->step(tau, obs, reward, action);
+  agent_.a->step(tau, obs, reward, action);
 }
 
-void LeoStateMachineAgent::set_agent(Agent *agent, double tau, const Observation &obs, double reward, Action *action, const char* msg)
+void LeoStateMachineAgent::set_agent(SMAgent &agent, double tau, const Observation &obs, double reward, Action *action, const char* msg)
 {
   if (agent_ != agent)
   {
-    agent_->end(tau, obs, reward);  // finish previous agent
-    agent_ = agent;                 // switch to the new agent
-    agent_->start(obs, action);     // start it to obtain action
+    agent_.a->end(tau, obs, reward);  // finish previous agent
+    agent_ = agent;                   // switch to the new agent
+    agent_.a->start(obs, action);     // start it to obtain action
     INFO(msg);
   }
 }

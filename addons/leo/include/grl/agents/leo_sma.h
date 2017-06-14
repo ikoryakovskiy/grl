@@ -34,15 +34,27 @@
 namespace grl
 {
 
+enum SMAgentType {SMA_NONE, SMA_PREPARE, SMA_STANDUP, SMA_STARTER, SMA_MAIN};
+
 /// State machine agent.
 class LeoStateMachineAgent : public LeoBaseAgent
 {
+  struct SMAgent
+  {
+    SMAgent(Agent *_agent, SMAgentType _type = SMA_NONE) : a(_agent), t(_type) {}
+    bool operator==(const SMAgent &other) const { return (this->a == other.a); }
+    bool operator!=(const SMAgent &other) const { return (this->a != other.a); }
+    //bool operator&&(const void *rhs) const { return this->a && rhs; }
+    Agent *a;
+    SMAgentType t;
+  };
+
   public:
     TYPEINFO("agent/leo/sma", "State-machine agent for Leo")
 
   protected:
-    Agent *agent_prepare_, *agent_standup_, *agent_starter_, *agent_main_;
-    Agent *agent_;
+    SMAgent agent_prepare_, agent_standup_, agent_starter_, agent_main_;
+    SMAgent agent_;
     Trigger *upright_trigger_, *feet_on_trigger_, *feet_off_trigger_, *starter_trigger_;
     double time_, agent_main_time_, agent_main_timeout_;
     
@@ -74,7 +86,7 @@ class LeoStateMachineAgent : public LeoBaseAgent
     virtual void end(double tau, const Observation &obs, double reward);
 
   protected:
-    virtual void set_agent(Agent *agent, double tau, const Observation &obs, double reward, Action *action, const char* msg);
+    virtual void set_agent(SMAgent &agent, double tau, const Observation &obs, double reward, Action *action, const char* msg);
     virtual void set_agent_main(double tau, const Observation &obs, double reward, Action *action, const char* msg);
 
     virtual void act(double tau, const Observation &obs, double reward, Action *action);
