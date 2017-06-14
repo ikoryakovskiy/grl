@@ -266,6 +266,12 @@ agent/leo/sma:
     mutability: configuration
     default: 0
     optional: 1
+  pub_sma_state:
+    type: signal/vector
+    description: Publisher of the type of the agent currently used by state machine
+    mutability: configuration
+    default: 0
+    optional: 1
 agent/leo/sym_wrapper:
   description: Leo agent that symmetrically wraps angles and controls
   sub_ic_signal:
@@ -5325,6 +5331,20 @@ sandbox_model/leo_squatting:
     mutability: configuration
     default: 0
     optional: 1
+  sub_sma_state:
+    type: signal/vector
+    description: Subscriber of the type of the agent currently used by state machine
+    mutability: configuration
+    default: 0
+    optional: 1
+  timer_switch:
+    type: int
+    description: State-based direction switch (0) and time-based direction switch (1)
+    mutability: configuration
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
 signal/matrix:
   description: Matrix-based signal (trajectory, etc.)
 signal/vector:

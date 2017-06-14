@@ -46,7 +46,7 @@ void LeoStateMachineAgent::request(ConfigurationRequest *config)
   config->push_back(CRP("feet_off_trigger", "trigger", "Trigger which checks for foot contact to detect lifts of the robot", feet_off_trigger_, true));
   config->push_back(CRP("starter_trigger", "trigger", "Trigger which initiates a preprogrammed walking at the beginning", starter_trigger_, true));
 
-  config->push_back(CRP("pub_agent_type", "signal/vector", "Publisher of the agent type", pub_agent_type_, true));
+  config->push_back(CRP("pub_sma_state", "signal/vector", "Publisher of the type of the agent currently used by state machine", pub_sma_state_, true));
 
 }
 
@@ -55,13 +55,13 @@ void LeoStateMachineAgent::configure(Configuration &config)
   LeoBaseAgent::configure(config);
 
   agent_prepare_.a = (Agent*)config["agent_prepare"].ptr();
-  agent_prepare_.t = SMA_PREPARE;
+  agent_prepare_.s = SMA_PREPARE;
   agent_standup_.a = (Agent*)config["agent_standup"].ptr();
-  agent_standup_.t = SMA_STANDUP;
+  agent_standup_.s = SMA_STANDUP;
   agent_starter_.a = (Agent*)config["agent_starter"].ptr();
-  agent_starter_.t = SMA_STARTER;
+  agent_starter_.s = SMA_STARTER;
   agent_main_.a = (Agent*)config["agent_main"].ptr();
-  agent_main_.t = SMA_MAIN;
+  agent_main_.s = SMA_MAIN;
 
   agent_main_timeout_ = config["main_timeout"];
 
@@ -70,7 +70,7 @@ void LeoStateMachineAgent::configure(Configuration &config)
   feet_off_trigger_ = (Trigger*)config["feet_off_trigger"].ptr();
   starter_trigger_ = (Trigger*)config["starter_trigger"].ptr();
 
-  pub_agent_type_ = (VectorSignal*)config["pub_agent_type"].ptr();
+  pub_sma_state_ = (VectorSignal*)config["pub_sma_state"].ptr();
 }
 
 void LeoStateMachineAgent::reconfigure(const Configuration &config)
@@ -92,8 +92,8 @@ void LeoStateMachineAgent::start(const Observation &obs, Action *action)
   for (int i = 0; i < action_max_.size(); i++)
     (*action)[i] = fmin(action_max_[i], fmax((*action)[i], action_min_[i]));
 
-  if (pub_agent_type_)
-    pub_agent_type_->set(VectorConstructor(agent_.t));
+  if (pub_sma_state_)
+    pub_sma_state_->set(VectorConstructor(agent_.s));
 }
 
 void LeoStateMachineAgent::step(double tau, const Observation &obs, double reward, Action *action)
@@ -105,8 +105,8 @@ void LeoStateMachineAgent::step(double tau, const Observation &obs, double rewar
   for (int i = 0; i < action_max_.size(); i++)
     (*action)[i] = fmin(action_max_[i], fmax((*action)[i], action_min_[i]));
 
-  if (pub_agent_type_)
-    pub_agent_type_->set(VectorConstructor(agent_.t));
+  if (pub_sma_state_)
+    pub_sma_state_->set(VectorConstructor(agent_.s));
 }
 
 void LeoStateMachineAgent::end(double tau, const Observation &obs, double reward)
