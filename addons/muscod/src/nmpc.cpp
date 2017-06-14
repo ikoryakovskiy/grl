@@ -65,10 +65,10 @@ void NMPCPolicy::configure(Configuration &config)
   //------------------- Initialize NMPC ------------------- //
   // start NMPC controller in own thread running signal controlled event loop
   initialize_thread(
-    &thread_, muscod_run, nmpc_,
+    thread_, muscod_run, nmpc_,
     problem_path, nmpc_model_name_,
-    muscod_nmpc_, "",
-    &cond_iv_ready_, &mutex_,
+    "",
+    cond_iv_ready_, mutex_,
     verbose_, true
   );
 

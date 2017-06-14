@@ -264,18 +264,24 @@ struct MUSCODProblem {
 
   MUSCODProblem(
     std::string problem_path, std::string model_name,
-    MUSCOD* muscod = NULL
+    bool verbose=false
   ) :
     m_verbose (false),
     thread_id (""),
     cond_iv_ready_ (NULL),
     mutex_ (NULL),
-    m_extern_muscod(false)
+    m_extern_muscod(false),
+    m_muscod (NULL),
+    m_data (NULL),
+    m_options (NULL)
   {
     // assign model and problem path
     m_problem_path = problem_path;
     m_model_name = model_name;
+    m_verbose = verbose;
+  }
 
+  void create_MUSCOD (MUSCOD* muscod = NULL) {
     // reference or create new MUSCOD-II instance
     if (!muscod) {
       m_extern_muscod = false;
@@ -309,7 +315,25 @@ struct MUSCODProblem {
 
     so_set_plot_counter = (void (*) (bool))
       load_symbol(m_problem_so_handle, "set_plot_counter");
+  }
 
+  void delete_MUSCOD () {
+    if (m_extern_muscod) {
+      m_muscod = NULL;
+    } else {
+      delete m_muscod;
+    }
+
+    // close shared library
+    so_get_plot_counter = NULL;
+    so_set_plot_counter = NULL;
+
+    std::string so_path  = m_problem_path + "/" + "lib" + m_model_name + ".so";
+    if (m_verbose) {
+      std::cout << "unloading shared library";
+      std::cout << so_path << "'" << std::endl;
+    }
+    dlclose(m_problem_so_handle);
   }
 
   // ---------------------------------------------------------------------------
