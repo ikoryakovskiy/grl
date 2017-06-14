@@ -85,18 +85,18 @@ void NMPCPolicy::configure(Configuration &config)
   grl_assert(nmpc_->NU() == action_min_.size());
 
   // run single SQP iteration to be able to write a restart file
-  nmpc_->feedback();
-  nmpc_->transition();
-  nmpc_->preparation();
+  // nmpc_->feedback();
+  // nmpc_->transition();
+  // nmpc_->preparation();
 
   // Save MUSCOD state
-  if (verbose_) {
-    std::cout << "saving MUSCOD-II state to" << std::endl;
-    std::cout << "  " << nmpc_->m_options->modelDirectory << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
-  }
-  nmpc_->m_muscod->writeRestartFile(
-    restart_path_.c_str(), restart_name_.c_str()
-  );
+  // if (verbose_) {
+  //   std::cout << "saving MUSCOD-II state to" << std::endl;
+  //   std::cout << "  " << nmpc_->m_options->modelDirectory << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
+  // }
+  // nmpc_->m_muscod->writeRestartFile(
+  //   restart_path_.c_str(), restart_name_.c_str()
+  // );
 
   if (verbose_)
     std::cout << "MUSCOD-II is ready!" << std::endl;
@@ -108,6 +108,21 @@ void NMPCPolicy::reconfigure(const Configuration &config)
 
 void NMPCPolicy::muscod_reset(const Vector &initial_obs, const Vector &initial_pf, Vector &initial_qc)
 {
+  //-------------------- Stop NMPC threads --------------------- //
+  stop_thread(*nmpc_, &thread_, verbose_);
+
+  //-------------------- Start NMPC threads -------------------- //
+
+  nmpc_->m_quit = false;
+  initialize_thread(
+    thread_, muscod_run, nmpc_,
+    nmpc_->m_problem_path, nmpc_->m_model_name,
+    thread_id_,
+    cond_iv_ready_, mutex_,
+    verbose_, true
+  );
+
+  /*
   // wait for preparation phase
   if (true) { // TODO Add wait flag
     wait_for_iv_ready(nmpc_, verbose_);
@@ -119,16 +134,16 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, const Vector &initial_p
   }
 
   // restore muscod state
-  if (verbose_) {
-    std::cout << "restoring MUSCOD-II state to" << std::endl;
-    std::cout << "  " << nmpc_->m_options->modelDirectory << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
-  }
+  // if (verbose_) {
+  //   std::cout << "restoring MUSCOD-II state to" << std::endl;
+  //   std::cout << "  " << nmpc_->m_options->modelDirectory << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
+  // }
 
-  nmpc_->m_muscod->readRestartFile(restart_path_.c_str(), restart_name_.c_str());
-  nmpc_->m_muscod->nmpcInitialize (
-      4,  // 4 for restart
-      restart_path_.c_str(), restart_name_.c_str()
-  );
+  // nmpc_->m_muscod->readRestartFile(restart_path_.c_str(), restart_name_.c_str());
+  // nmpc_->m_muscod->nmpcInitialize (
+  //     4,  // 4 for restart
+  //     restart_path_.c_str(), restart_name_.c_str()
+  // );
 
   // initialize NMPC
   for (int inmpc = 0; inmpc < 10; ++inmpc)
@@ -161,6 +176,7 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, const Vector &initial_p
         abort();
     }
   }
+  */
 
   sum_error_ = 0;
   sum_error_counter_ = 0;
@@ -171,6 +187,21 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, const Vector &initial_p
 
 void NMPCPolicy::muscod_reset(const Vector &initial_obs, Vector &initial_qc)
 {
+  //-------------------- Stop NMPC threads --------------------- //
+  stop_thread(*nmpc_, &thread_, verbose_);
+
+  //-------------------- Start NMPC threads -------------------- //
+
+  nmpc_->m_quit = false;
+  initialize_thread(
+    thread_, muscod_run, nmpc_,
+    nmpc_->m_problem_path, nmpc_->m_model_name,
+    thread_id_,
+    cond_iv_ready_, mutex_,
+    verbose_, true
+  );
+
+  /*
   // wait for preparation phase
   if (true) { // TODO Add wait flag
     wait_for_iv_ready(nmpc_, verbose_);
@@ -224,6 +255,7 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, Vector &initial_qc)
         abort();
     }
   }
+  */
 
   sum_error_ = 0;
   sum_error_counter_ = 0;

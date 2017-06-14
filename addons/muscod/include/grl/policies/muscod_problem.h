@@ -284,10 +284,16 @@ struct MUSCODProblem {
   void create_MUSCOD (MUSCOD* muscod = NULL) {
     // reference or create new MUSCOD-II instance
     if (!muscod) {
+      // if (m_verbose) {
+        std::cout << "create new MUSCOD instance" << std::endl;
+      // }
       m_extern_muscod = false;
       m_muscod = new MUSCOD;
     } else {
       m_extern_muscod = true;
+      // if (m_verbose) {
+        std::cout << "assign MUSCOD instance" << std::endl;
+      // }
       m_muscod = muscod;
     }
 
@@ -295,9 +301,30 @@ struct MUSCODProblem {
     m_data = &(m_muscod->data); // is reference
     m_options = m_muscod->options; // is already a pointer
 
-    m_muscod->setModelPathAndName(m_problem_path.c_str(), m_model_name.c_str());
-    m_muscod->loadFromDatFile(NULL, NULL);
-    m_muscod->nmpcInitialize(0, NULL, NULL);
+    long ret = 0;
+    std::cout << "setModelPathAndName: ";
+    ret = m_muscod->setModelPathAndName(m_problem_path.c_str(), m_model_name.c_str());
+    std::cout << ret << std::endl;
+    if (ret != 0)
+    {
+      std::cout << "ERROR setModelPathAndName!" << std::endl;
+    }
+
+    std::cout << "loadFromDatFile: ";
+    ret = m_muscod->loadFromDatFile(NULL, NULL);
+    std::cout << ret << std::endl;
+    if (ret != 0)
+    {
+      std::cout << "ERROR loadFromDatFile!" << std::endl;
+    }
+
+    std::cout << "nmpcInitialize: ";
+    ret = m_muscod->nmpcInitialize(0, NULL, NULL);
+    std::cout << ret << std::endl;
+    if (ret != 0)
+    {
+      std::cout << "ERROR nmpcInitialize!" << std::endl;
+    }
 
     // get dimensions from MUSCOD instance
     get_NMOS();
@@ -315,12 +342,20 @@ struct MUSCODProblem {
 
     so_set_plot_counter = (void (*) (bool))
       load_symbol(m_problem_so_handle, "set_plot_counter");
+
+    std::cout << "created MUSCOD!" << std::endl;
   }
 
   void delete_MUSCOD () {
     if (m_extern_muscod) {
+      // if (m_verbose) {
+        std::cout << "unload MUSCOD instance" << std::endl;
+      // }
       m_muscod = NULL;
     } else {
+      // if (m_verbose) {
+        std::cout << "deleting MUSCOD instance" << std::endl;
+      // }
       delete m_muscod;
     }
 

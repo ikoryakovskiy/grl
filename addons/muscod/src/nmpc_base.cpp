@@ -241,6 +241,7 @@ void initialize_thread(
     }
     pthread_cond_wait(&cond_iv_ready, &mutex); // WAIT FOR SIGNAL FROM THREAD
     pthread_mutex_unlock(&mutex);  // UNLOCK
+    std::cout << "MUSCOD: Did it!" << std::endl;
 }
 
 // MUSCOD-II main thread setup and execution loop
@@ -276,13 +277,15 @@ void *muscod_run (void *indata)
     // initialize MUSCOD instance
     MUSCOD* muscod_;
     if (nmpc.m_muscod == 0) {
-        if (verbose) {
+        // if (verbose) {
             std::cout << "THREAD '" << thread_id << "': created MUSCOD instance!" << std::endl;
-        }
+        // }
         muscod_ = new MUSCOD();
+    } else {
+        std::cout << "THREAD '" << thread_id << "': MUSCOD is still there!" << std::endl;
     }
-    //muscod_->print_MCData_address();
-    //muscod_->print_data_address();
+    muscod_->print_MCData_address();
+    muscod_->print_data_address();
 
     // forward verbosity from grl
     if (verbose) {
