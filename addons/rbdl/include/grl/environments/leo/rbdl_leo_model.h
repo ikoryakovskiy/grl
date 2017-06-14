@@ -38,7 +38,7 @@ namespace grl
 class LeoSandboxModel: public Sandbox
 {
   public:
-    LeoSandboxModel() : target_dof_(4), target_env_(NULL), dynamics_(NULL), sub_true_action_(NULL), true_model_(NULL) { }
+    LeoSandboxModel() : target_dof_(4), target_env_(NULL), dynamics_(NULL), sub_true_action_(NULL), true_model_(NULL), sub_sma_state_(NULL) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -60,6 +60,8 @@ class LeoSandboxModel: public Sandbox
 
     VectorSignal *sub_true_action_;
     Model *true_model_;
+
+    VectorSignal *sub_sma_state_;
 };
 
 class LeoSquattingSandboxModel : public LeoSandboxModel
@@ -68,7 +70,7 @@ class LeoSquattingSandboxModel : public LeoSandboxModel
     TYPEINFO("sandbox_model/leo_squatting", "State transition model that integrates equations of motion and augments state vector with additional elements")
 
   public:
-    LeoSquattingSandboxModel() : lower_height_(0.28), upper_height_(0.35), mode_("vc"), sim_filtered_(0) { }
+    LeoSquattingSandboxModel() : lower_height_(0.28), upper_height_(0.35), mode_("vc"), sim_filtered_(0), main_time_(0.), timer_switch_(0) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -87,6 +89,10 @@ class LeoSquattingSandboxModel : public LeoSandboxModel
     int sim_filtered_;
     Vector state_raw_vel_;
     CButterworthFilter<2> speedFilter_[4];
+
+    double main_time_;
+    int timer_switch_;
+
 };
 
 }

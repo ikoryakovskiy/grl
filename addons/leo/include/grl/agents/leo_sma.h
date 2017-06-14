@@ -34,19 +34,18 @@
 namespace grl
 {
 
-enum SMAgentType {SMA_NONE, SMA_PREPARE, SMA_STANDUP, SMA_STARTER, SMA_MAIN};
+enum SMAState {SMA_NONE, SMA_PREPARE, SMA_STANDUP, SMA_STARTER, SMA_MAIN};
 
 /// State machine agent.
 class LeoStateMachineAgent : public LeoBaseAgent
 {
   struct SMAgent
   {
-    SMAgent(Agent *_agent, SMAgentType _type = SMA_NONE) : a(_agent), t(_type) {}
+    SMAgent(Agent *_agent, SMAState _type = SMA_NONE) : a(_agent), s(_type) {}
     bool operator==(const SMAgent &other) const { return (this->a == other.a); }
     bool operator!=(const SMAgent &other) const { return (this->a != other.a); }
-    //bool operator&&(const void *rhs) const { return this->a && rhs; }
     Agent *a;
-    SMAgentType t;
+    SMAState s;
   };
 
   public:
@@ -58,7 +57,7 @@ class LeoStateMachineAgent : public LeoBaseAgent
     Trigger *upright_trigger_, *feet_on_trigger_, *feet_off_trigger_, *starter_trigger_;
     double time_, agent_main_time_, agent_main_timeout_;
 
-    VectorSignal *pub_agent_type_;
+    VectorSignal *pub_sma_state_;
     
   public:
     LeoStateMachineAgent() :
@@ -74,7 +73,7 @@ class LeoStateMachineAgent : public LeoBaseAgent
       time_(0.),
       agent_main_time_(0.),
       agent_main_timeout_(0.),
-      pub_agent_type_(NULL)
+      pub_sma_state_(NULL)
     { }
   
     // From Configurable    

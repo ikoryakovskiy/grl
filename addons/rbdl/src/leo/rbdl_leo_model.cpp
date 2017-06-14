@@ -27,6 +27,7 @@
 
 #include <grl/environments/leo/rbdl_leo_model.h>
 #include <grl/environments/leo/rbdl_leo_task.h>
+#include <../../../../leo/include/grl/agents/leo_sma.h>
 #include <DynamixelSpecs.h>
 #include <iomanip>
 
@@ -105,6 +106,9 @@ void LeoSquattingSandboxModel::request(ConfigurationRequest *config)
   config->push_back(CRP("mode", "Control mode (torque/voltage )", mode_, CRP::Configuration, {"tc", "vc"}));
   config->push_back(CRP("sim_filtered", "Simulate filtering of velocity when rbdl is used", sim_filtered_, CRP::Configuration, 0, 1));
   config->push_back(CRP("sub_true_action", "signal/vector", "Subscriber to an external original action which is belived to be true", sub_true_action_, true));
+
+  config->push_back(CRP("sub_sma_state", "signal/vector", "Subscriber of the type of the agent currently used by state machine", sub_sma_state_, true));
+  config->push_back(CRP("timer_switch", "State-based direction switch (0) and time-based direction switch (1)", timer_switch_, CRP::Configuration, 0, 1));
 }
 
 void LeoSquattingSandboxModel::configure(Configuration &config)
@@ -123,6 +127,9 @@ void LeoSquattingSandboxModel::configure(Configuration &config)
   mode_ = config["mode"].str();
   sim_filtered_ = config["sim_filtered"];
   sub_true_action_ = (VectorSignal*)config["sub_true_action"].ptr();
+  timer_switch_ = config["timer_switch"];
+
+  sub_sma_state_ = (VectorSignal*)config["sub_sma_state"].ptr();
 
   if ((true_model_ && !sub_true_action_) || (!true_model_ && sub_true_action_))
     throw Exception("sandbox_model/leo_squatting: if true model is used, true action should be defined as well");
@@ -145,8 +152,9 @@ void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
   // Immediately try to stand up
   state_.resize(stsStateDim);
   state_ << *state, VectorConstructor(upper_height_), rbdl_addition_,
-      VectorConstructor(0), // zero mef error
-      VectorConstructor(0); // zero squats
+      VectorConstructor(0),         // zero mef error
+      VectorConstructor(SMA_NONE),  // none type of state machine
+      VectorConstructor(0);         // zero squats
   *state = state_;
 
   if (sim_filtered_)
@@ -173,7 +181,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   if (sim_filtered_)
     target_state_ << state_.head(target_dof_), state_raw_vel_, state_[rlsTime]; // provide a raw (correct) vector of velocities
   else
-    target_state_ << state_.head(2*target_dof_+1);  //target_state_ << state_.block(0, 0, 1, 2*target_dof_+1);
+    target_state_ << state_.head(2*target_dof_+1);
 
   // auto-actuate arm
   if (action.size() == target_dof_-1)
@@ -189,9 +197,6 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
       arma = 0.05*(-0.26 - state_[rlsArmAngle]);
       arma = fmin(DXL_MAX_TORQUE, fmax(arma, -DXL_MAX_TORQUE)); // ensure torque within limits
     }
-
-    //std::cout << "Arm: " << -0.26 - state_[rlsArmAngle] << " -> " << arma << std::endl;
-
     target_action_ << action, arma;
   }
   else
@@ -242,20 +247,47 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   (*next) << target_state_next_, VectorConstructor(state_[rlsRefRootZ]),
       rbdl_addition_, VectorConstructor(state_[rlsMEF], state_[stsSquats]);
 
-  // Switch setpoint if needed
-//  if (fabs((*next)[rlsComVelocityZ] - 0.0) < precision_[1])
+  if (sub_sma_state_)
+    (*next)[rlsSMAState] = sub_sma_state_->get()[0];
+
+  INFO("SMA: " << (*next)[rlsSMAState]);
+
+  if (((*next)[rlsSMAState] == SMA_MAIN && sub_sma_state_) || (!sub_sma_state_))
   {
-    if (fabs((*next)[rlsRootZ] - lower_height_) < precision_[0])
-    {
-      (*next)[rlsRefRootZ] = upper_height_;
-      //std::cout << "Lower setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
-    }
-    else if (fabs((*next)[rlsRootZ] - upper_height_) < precision_[0])
-    {
+    main_time_ += tau;
+    INFO("elapsed: " << main_time_);
+    if (main_time_ > 25.0)
       (*next)[rlsRefRootZ] = lower_height_;
-      //std::cout << "Upper setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
+    else
+    {
+      if (timer_switch_)
+      {
+        // time-based setpoint switch
+        double switch_every = 5.0; // [s]
+        double time_loc = std::fmod(main_time_, 2*switch_every);
+        (*next)[rlsRefRootZ] = (time_loc < switch_every) ? upper_height_ : lower_height_;
+      }
+      else
+      {
+        // State-based setpoint switch
+        if (fabs((*next)[rlsComVelocityZ] - 0.0) < precision_[1])
+        {
+          if (fabs((*next)[rlsRootZ] - lower_height_) < precision_[0])
+          {
+            (*next)[rlsRefRootZ] = upper_height_;
+            //std::cout << "Lower setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
+          }
+          else if (fabs((*next)[rlsRootZ] - upper_height_) < precision_[0])
+          {
+            (*next)[rlsRefRootZ] = lower_height_;
+            //std::cout << "Upper setpoint is reached at " << (*next)[rlsRootZ] << std::endl;
+          }
+        }
+      }
     }
   }
+  else
+    main_time_ = 0.;
 
   // Increase number of half-squats if setpoint changed
   if ((*next)[rlsRefRootZ] != state_[rlsRefRootZ])
