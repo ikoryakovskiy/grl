@@ -45,6 +45,9 @@ void LeoStateMachineAgent::request(ConfigurationRequest *config)
   config->push_back(CRP("feet_on_trigger", "trigger", "Trigger which checks for foot contact to ensure that robot is prepared to walk", feet_on_trigger_, true));
   config->push_back(CRP("feet_off_trigger", "trigger", "Trigger which checks for foot contact to detect lifts of the robot", feet_off_trigger_, true));
   config->push_back(CRP("starter_trigger", "trigger", "Trigger which initiates a preprogrammed walking at the beginning", starter_trigger_, true));
+
+  config->push_back(CRP("pub_agent_type", "signal/vector", "Publisher of the agent type", pub_agent_type_, true));
+
 }
 
 void LeoStateMachineAgent::configure(Configuration &config)
@@ -66,6 +69,8 @@ void LeoStateMachineAgent::configure(Configuration &config)
   feet_on_trigger_ = (Trigger*)config["feet_on_trigger"].ptr();
   feet_off_trigger_ = (Trigger*)config["feet_off_trigger"].ptr();
   starter_trigger_ = (Trigger*)config["starter_trigger"].ptr();
+
+  pub_agent_type_ = (VectorSignal*)config["pub_agent_type"].ptr();
 }
 
 void LeoStateMachineAgent::reconfigure(const Configuration &config)
@@ -86,6 +91,9 @@ void LeoStateMachineAgent::start(const Observation &obs, Action *action)
 
   for (int i = 0; i < action_max_.size(); i++)
     (*action)[i] = fmin(action_max_[i], fmax((*action)[i], action_min_[i]));
+
+  if (pub_agent_type_)
+    pub_agent_type_->set(VectorConstructor(agent_.t));
 }
 
 void LeoStateMachineAgent::step(double tau, const Observation &obs, double reward, Action *action)
@@ -94,10 +102,11 @@ void LeoStateMachineAgent::step(double tau, const Observation &obs, double rewar
 
   act(tau, obs, reward, action);
 
-  //INFO("Type: " << agent_.t);
-
   for (int i = 0; i < action_max_.size(); i++)
     (*action)[i] = fmin(action_max_[i], fmax((*action)[i], action_min_[i]));
+
+  if (pub_agent_type_)
+    pub_agent_type_->set(VectorConstructor(agent_.t));
 }
 
 void LeoStateMachineAgent::end(double tau, const Observation &obs, double reward)

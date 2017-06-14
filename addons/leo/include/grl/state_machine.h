@@ -80,12 +80,12 @@ class Trigger : public Configurable
     virtual int check(double time, const Vector &obs)
     {
       // mot specifying min and max sizes allows to implement delays
-      if (min_.size() && obs.size() != min_.size())
+      if (min_.size() && (obs.size() != min_.size()))
         throw bad_param("trigger:{obs,min,max}");
 
       // check if observation is within a box
       int inside = 1;
-      for (size_t ii=0; ii != obs.size(); ++ii)
+      for (size_t ii=0; ii != min_.size(); ++ii)
         if (obs[ii] < min_[ii] || obs[ii] > max_[ii])
           inside = 0;
 

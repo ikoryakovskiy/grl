@@ -57,6 +57,8 @@ class LeoStateMachineAgent : public LeoBaseAgent
     SMAgent agent_;
     Trigger *upright_trigger_, *feet_on_trigger_, *feet_off_trigger_, *starter_trigger_;
     double time_, agent_main_time_, agent_main_timeout_;
+
+    VectorSignal *pub_agent_type_;
     
   public:
     LeoStateMachineAgent() :
@@ -69,10 +71,10 @@ class LeoStateMachineAgent : public LeoBaseAgent
       feet_on_trigger_(NULL),
       feet_off_trigger_(NULL),
       starter_trigger_(NULL),
-      /*sub_ic_signal_(NULL),*/
       time_(0.),
       agent_main_time_(0.),
-      agent_main_timeout_(0.)
+      agent_main_timeout_(0.),
+      pub_agent_type_(NULL)
     { }
   
     // From Configurable    

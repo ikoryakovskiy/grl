@@ -282,8 +282,8 @@ void *muscod_run (void *indata)
         }
         muscod_ = new MUSCOD();
     }
-    muscod_->print_MCData_address();
-    muscod_->print_data_address();
+    //muscod_->print_MCData_address();
+    //muscod_->print_data_address();
 
     // forward verbosity from grl
     if (verbose) {
