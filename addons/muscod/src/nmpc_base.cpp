@@ -296,33 +296,34 @@ void *muscod_run (void *indata)
     nmpc.create_MUSCOD(muscod_);
     pthread_mutex_unlock(nmpc.mutex_);
 
-    // run single SQP iteration to be able to write a restart file
-    pthread_mutex_lock(nmpc.mutex_);
-    nmpc.feedback();
-    nmpc.transition();
-    nmpc.preparation();
-    pthread_mutex_unlock(nmpc.mutex_);
-
     // instantiate values of NMPC structure
     pthread_mutex_lock(nmpc.mutex_);
     //unsigned long NMSN = nmpc.NMSN();
-    unsigned long NXD = nmpc.NXD();
-    unsigned long NP = nmpc.NP();
-    unsigned long NU = nmpc.NU();
+    // unsigned long NXD = nmpc.NXD();
+    // unsigned long NP = nmpc.NP();
+    // unsigned long NU = nmpc.NU();
 
     // define initial value and placeholder for feedback
-    Vector sd = Vector::Zero (NXD);
-    Vector pf = Vector::Zero (NP);
-    Vector qc = Vector::Zero (NU);
-    Vector final_sd = Vector::Zero (NXD);
+    // NOTE copy values and dimension from NMPC problem
+    Vector sd = nmpc.m_sd;
+    Vector pf = nmpc.m_pf;
+    Vector qc = nmpc.m_qc;
 
     // same for exchange TODO: move this to backup_muscod_state
-    nmpc.m_sd = Vector::Zero (NXD);
-    nmpc.m_pf = Vector::Zero (NP);
-    nmpc.m_qc = Vector::Zero (NU);
-    nmpc.m_is_initialized = true;
+    // nmpc.m_sd = Vector::Zero (NXD);
+    // nmpc.m_pf = Vector::Zero (NP);
+    // nmpc.m_qc = Vector::Zero (NU);
+    pthread_mutex_unlock(nmpc.mutex_);
+
+    // run single SQP iteration to be able to write a restart file
+    pthread_mutex_lock(nmpc.mutex_);
+    // TODO run initialize controller
+    // initialize_controller (nmpc, 10, nmpc.m_sd, nmpc.m_pf);
+    pthread_mutex_unlock(nmpc.mutex_);
 
     // release setup of thread
+    pthread_mutex_lock(nmpc.mutex_);
+    nmpc.m_is_initialized = true;
     pthread_cond_signal(nmpc.cond_iv_ready_);
     pthread_mutex_unlock(nmpc.mutex_);
 

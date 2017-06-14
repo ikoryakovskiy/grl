@@ -181,17 +181,16 @@ bool LeoSquattingTask::actuate(const Vector &state, const Action &action, Vector
   // *** HACK TO MAKE REAL LEO SQUAT IN VOLTAGE CONTROL ***
   if (target_env_)
   {
-    // Gearbox effeciency is 75%
-    *actuation *= 0.75;
+  // Gearbox effeciency is 75%
+  *actuation *= 0.75;
 
-    // Coulomb friction
-    double f = 0.3*DXL_RESISTANCE/(DXL_TORQUE_CONST*DXL_GEARBOX_RATIO); // = 0.f * 3.420806273
-    if (fabs(state[rlsRefRootZ] - 0.28) < 0.00001)
-      *actuation += VectorConstructor(+1, -1, +1, 0)*f;
-    else
-      *actuation += VectorConstructor(-1, +1, -1, 0)*f;
+  // Coulomb friction
+  double f = 0.3*DXL_RESISTANCE/(DXL_TORQUE_CONST*DXL_GEARBOX_RATIO); // = 0.f * 3.420806273
+  if (fabs(state[rlsRefRootZ] - 0.28) < 0.00001)
+    *actuation += VectorConstructor(+1, -1, +1, 0)*f;
+  else
+    *actuation += VectorConstructor(-1, +1, -1, 0)*f;
   }
-
   return true;
 }
 

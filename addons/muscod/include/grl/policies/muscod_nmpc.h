@@ -246,6 +246,17 @@ struct NMPCProblem : public MUSCODProblem {
   //     abort();
   // }
 
+void create_MUSCOD (MUSCOD* muscod = NULL)
+{
+  // call create_MUSCOD from parent class
+  MUSCODProblem::create_MUSCOD(muscod);
+
+  // initialize vectors
+  m_sd = grl::Vector::Zero (NXD());
+  m_pf = grl::Vector::Zero (NP());
+  m_qc = grl::Vector::Zero (NU());
+}
+
 // -----------------------------------------------------------------------------
 
   ~NMPCProblem ()
