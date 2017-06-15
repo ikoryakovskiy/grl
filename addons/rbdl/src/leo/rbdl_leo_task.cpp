@@ -185,9 +185,9 @@ bool LeoSquattingTask::actuate(const Vector &state, const Action &action, Vector
   *actuation *= 0.75;
 
   // Coulomb friction
-  double f = 0.3*DXL_RESISTANCE/(DXL_TORQUE_CONST*DXL_GEARBOX_RATIO); // = 0.f * 3.420806273
+  double f = 0.25*DXL_RESISTANCE/(DXL_TORQUE_CONST*DXL_GEARBOX_RATIO); // = 0.f * 3.420806273
   if (fabs(state[rlsRefRootZ] - 0.28) < 0.00001)
-    *actuation += VectorConstructor(+1, -1, +1, 0)*f;
+    *actuation += VectorConstructor(+1, -1, +1, 0)*f*1.5;
   else
     *actuation += VectorConstructor(-1, +1, -1, 0)*f;
   }
@@ -274,7 +274,7 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   // NOTE: sum of lower body angles is equal to angle between ground slope
   //       and torso. Minimizing deviation from zero keeps torso upright
   //       during motion execution.
-  cost_nmpc_aux += pow(30.00 * fabs( next[rlsAnkleAngle] + next[rlsKneeAngle] + next[rlsHipAngle] - (0.15) ), power_); // desired torso angle
+  cost_nmpc_aux += pow(50.00 * fabs( next[rlsAnkleAngle] + next[rlsKneeAngle] + next[rlsHipAngle] - (0.3) ), power_); // desired torso angle
 
   // regularize torso
   // is this a good way for torso? Results in a very high penalty, and very weird behaviour
@@ -282,7 +282,7 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
 
   // regularize: || qdot ||_2^2
   // res[res_cnt++] = 6.00 * sd[QDOTS["arm"]]; // arm
-  double rateW = 5.0; // 6.0
+  double rateW = 3.0; // 6.0
   if (!fixed_arm_)
     cost_nmpc_qd += pow(rateW * fabs(next[rlsArmAngleRate]), power_); // arm, added to cost only if nmpc adds it
   cost_nmpc_qd += pow(rateW * fabs(next[rlsHipAngleRate]), power_); // hip_left
