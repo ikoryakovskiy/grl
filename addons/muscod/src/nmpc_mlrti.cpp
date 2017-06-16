@@ -6,7 +6,6 @@
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include <iomanip>
-#include <fstream>
 
 // GRL
 #include <grl/policies/nmpc_mlrti.h>
@@ -15,7 +14,6 @@
 #include <wrapper.hpp>
 
 using namespace grl;
-
 
 REGISTER_CONFIGURABLE(NMPCPolicyMLRTI);
 
@@ -83,7 +81,6 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
       std::cerr << "MAIN: bailing out ..." << std::endl;
       abort();
   }
-
   //------------------- Initialize NMPC thread B ------------------- //
   // start NMPC controller in own thread running signal controlled event loop
   initialize_thread(
@@ -93,7 +90,6 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
     cond_iv_ready_B_, mutex_B_,
     verbose_, true
   );
-
   //------------------- Initialize Controller B -------------------- //
   // wait until iv_ready condition is fulfilled
   wait_for_iv_ready (nmpc_B_, verbose_);
@@ -230,7 +226,6 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
       std::cerr << "MAIN: bailing out ..." << std::endl;
       abort();
   }
-
   //------------------- Define state of MLRTI NMPC ------------------- //
 
   // use pointers to identify different controllers
@@ -341,13 +336,6 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
         std::cout << idle_->timing._timing << std::endl;
       }
 
-      // store entries for later analysis and write to file
-      timing_values_idle_.push_back(idle_->timing._timing);
-      timing_values_.push_back(idle_->timing._timing);
-
-      // copy idle_ timer states to ttimer
-      // ttimer_ = idle_->timing;
-
       // idle_ is successfully idled, feedback
       if (verbose_)
       {
@@ -416,14 +404,7 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
       std::cout << cntl_->timing._timing << std::endl;
     }
 
-    // store entries for later analysis and write to file
-    timing_values_cntl_.push_back(cntl_->timing._timing);
-    timing_values_.push_back(cntl_->timing._timing);
-
-    // copy idle_ timer states to ttimer
-    // ttimer_ = cntl_->timing;
-
-    if (idle_->get_iv_ready()) {
+     if (idle_->get_iv_ready()) {
           if (verbose_)
           {
                   std::cout << std::endl;

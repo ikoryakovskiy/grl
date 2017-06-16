@@ -240,11 +240,11 @@ void lsqfcn_height_tracking (
 	// NOTE: sum of lower body angles is equal to angle between ground slope
 	//       and torso. Minimizing deviation from zero keeps torso upright
 	//       during motion execution.
-	res[res_cnt++] = 30.00 * (
+  res[res_cnt++] = 50.00 * (
 		sd[QS["hip_left"]]
 		+ sd[QS["knee_left"]]
 		+ sd[QS["ankle_left"]]
-		- (0.15)  // desired torso angle
+    - (0.3)  // desired torso angle
 	);
 
 	// res[res_cnt++] = 60.00 * (
@@ -260,10 +260,10 @@ void lsqfcn_height_tracking (
 	// res[res_cnt++] = 0.01 * (sd[QS["ankle_left"]]  - (0.05)); // ankle_left
 
 	// regularize: || qdot ||_2^2
-  res[res_cnt++] = 5.00 * sd[QDOTS["arm"]]; // arm
-  res[res_cnt++] = 5.00 * sd[QDOTS["hip_left"]]; // hip_left
-  res[res_cnt++] = 5.00 * sd[QDOTS["knee_left"]]; // knee_left
-  res[res_cnt++] = 5.00 * sd[QDOTS["ankle_left"]]; // ankle_left
+  res[res_cnt++] = 3.00 * sd[QDOTS["arm"]]; // arm
+  res[res_cnt++] = 3.00 * sd[QDOTS["hip_left"]]; // hip_left
+  res[res_cnt++] = 3.00 * sd[QDOTS["knee_left"]]; // knee_left
+  res[res_cnt++] = 3.00 * sd[QDOTS["ankle_left"]]; // ankle_left
 
 	// regularize: || u ||_2^2
 	// res[res_cnt++] = 0.01 * u[TAUS["arm"]]; // arm

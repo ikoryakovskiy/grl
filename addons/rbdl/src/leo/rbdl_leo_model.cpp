@@ -263,7 +263,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
       if (timer_switch_)
       {
         // time-based setpoint switch
-        double switch_every = 5.0; // [s]
+        double switch_every = 1.5; // [s]
         double time_loc = std::fmod(main_time_, 2*switch_every);
         (*next)[rlsRefRootZ] = (time_loc < switch_every) ? upper_height_ : lower_height_;
       }

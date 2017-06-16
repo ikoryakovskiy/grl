@@ -102,6 +102,77 @@ void *NMPCBase::setup_model_path(const std::string path, const std::string model
   return so_handle;
 }
 
+//-------------------------------------- EXPORT -----------------------------------//
+
+std::string path = "/home/ivan/work/Project/Software/grl/qt-build/leo_squat/mlrti_timing/";
+
+void erase_file(const std::string& file_name)
+{
+  // erase contents if it exists
+  std::ofstream ofs;
+  ofs.open(file_name, std::ofstream::out | std::ofstream::trunc);
+  if (!ofs) {
+    std::cerr << "Error opening file " << file_name << std::endl;
+    abort();
+  }
+  ofs.close();
+
+  return;
+}
+
+void write_header_to_file(const std::string& data_file)
+{
+  std::ofstream data_stream;
+  data_stream.open (data_file, std::ios_base::trunc);
+  if (!data_stream) {
+    std::cerr << "Error opening file " << data_file << std::endl;
+    abort();
+  }
+
+  // configure data stream
+  data_stream << std::setprecision(18) << std::scientific;
+
+  // add header to file:
+  // # feedback, transition, shift, preparation, simulation
+  data_stream << "#" << " ";
+  //data_stream << "time" << ", ";
+  data_stream << "feedback" << ", ";
+  data_stream << "transition" << ", ";
+  data_stream << "shift" << ", ";
+  data_stream << "prepare" << ", ";
+  data_stream << "preparation" << ", ";
+  data_stream << "total";
+  data_stream << std::endl;
+
+  // finally close file
+  data_stream.close();
+}
+
+
+void append_timing_to_file(Vector d_values, const std::string& data_file)
+{
+  std::ofstream data_stream;
+  data_stream.open (data_file, std::ios_base::app);
+  if (!data_stream) {
+    std::cerr << "Error opening file " << data_file << std::endl;
+    abort();
+  }
+
+  // configure data stream
+  data_stream << std::setprecision(18) << std::scientific;
+  //data_stream << time << ", ";
+
+  for (unsigned int j = 0; j < d_values.size(); j++) {
+    data_stream << d_values[j];
+    if (j < d_values.size() -1 ) {
+      data_stream << ", ";
+    }
+  }
+  data_stream << std::endl;
+
+    // finally close file
+    data_stream.close();
+}
 //-------------------------------------- MUSCOD -----------------------------------//
 namespace grl
 {
@@ -241,7 +312,6 @@ void initialize_thread(
     }
     pthread_cond_wait(&cond_iv_ready, &mutex); // WAIT FOR SIGNAL FROM THREAD
     pthread_mutex_unlock(&mutex);  // UNLOCK
-    std::cout << "MUSCOD: Did it!" << std::endl;
 }
 
 // MUSCOD-II main thread setup and execution loop
@@ -265,6 +335,9 @@ void *muscod_run (void *indata)
 
     // retrieve thread identifier from NMPC instance
     std::string thread_id = nmpc.thread_id;
+    const std::string timing = path + "timing_" + thread_id + ".csv";
+    erase_file(timing);
+    write_header_to_file(timing);
 
     pthread_mutex_unlock(nmpc.mutex_);
 
@@ -277,9 +350,9 @@ void *muscod_run (void *indata)
     // initialize MUSCOD instance
     MUSCOD* muscod_;
     if (nmpc.m_muscod == 0) {
-        // if (verbose) {
+        if (verbose) {
             std::cout << "THREAD '" << thread_id << "': created MUSCOD instance!" << std::endl;
-        // }
+        }
         muscod_ = new MUSCOD();
     } else {
         std::cout << "THREAD '" << thread_id << "': MUSCOD is still there!" << std::endl;
@@ -334,7 +407,6 @@ void *muscod_run (void *indata)
     if (verbose) {
         std::cout << "THREAD '" << thread_id << "': MUSCOD thread is ready!" << std::endl;
     }
-
     // INITIALIZE CONTROLLER
     pthread_mutex_lock(nmpc.mutex_); // --> Lock the mutex
     // LOCK THE MUTEX
@@ -398,6 +470,9 @@ void *muscod_run (void *indata)
         tic = stop_watch(); // <- timing execution
         ptac = 0.0;
         ttac = 0.0;
+        pthread_mutex_lock(nmpc.mutex_); // --> Lock the mutex
+        nmpc.timing._timing[6] = nmpc.m_nmpc_mode;
+        pthread_mutex_unlock(nmpc.mutex_); // --> Unlock the mutex
 
         // 1) Feedback: Embed parameters and initial value from SIMULATION
         nmpc.feedback(sd, pf, &qc);
@@ -437,7 +512,8 @@ void *muscod_run (void *indata)
         pthread_mutex_unlock(nmpc.mutex_);
 
         // reset timing statistics
-        nmpc.timing.reset ();
+        append_timing_to_file(nmpc.timing._timing, timing);
+        nmpc.timing.reset ();         // reset timing statistics
 
         // when in NMPC mode then continue re-linearization
         // LMPC skips this code
@@ -479,11 +555,13 @@ void *muscod_run (void *indata)
             pthread_mutex_unlock(nmpc.mutex_); // --> Unlock the mutex
         } // END IF NMPC MODE
 
+/*
         // time total evaluation time of NMPC iteration
         pthread_mutex_lock(nmpc.mutex_); // --> Lock the mutex
         nmpc.timing.time_preparation(ptac);
         nmpc.timing.time_total(ttac);
         pthread_mutex_unlock(nmpc.mutex_); // --> Unlock the mutex
+*/
     } // END WHILE LOOP
 
     if (verbose) {

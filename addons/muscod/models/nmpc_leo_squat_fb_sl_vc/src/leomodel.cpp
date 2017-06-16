@@ -86,9 +86,8 @@ void LeoModel::updateState (
 		q[i] = sd[i];
 		qdot[i] = sd[i + nDof];
 	}
-
+/*
   double f = 0.1*DXL_RESISTANCE/(DXL_TORQUE_CONST*DXL_GEARBOX_RATIO);
-
 	if (fabs(p_in[0] - 0.28) < 0.01) {
 		swts << 1.0, -1.0, 1.0, 0.0;
 		// swts << 0.0, 0.0, 0.0;
@@ -99,8 +98,9 @@ void LeoModel::updateState (
     swts *= f;
 	} else {
 		std::cout << "woopsie!" << std::endl;
-		swts << 0.0, 0.0, 0.0;
+    swts << 0.0, 0.0, 0.0, 0.0;
 	}
+*/
 	assert (nDof == nActuatedDof);
 	for (unsigned int i = 0; i < nActuatedDof; i++) {
 		// tau[i] = u[i];// - 0.01*qdot[i];
