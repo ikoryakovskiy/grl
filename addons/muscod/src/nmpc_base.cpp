@@ -284,8 +284,9 @@ void *muscod_run (void *indata)
     } else {
         std::cout << "THREAD '" << thread_id << "': MUSCOD is still there!" << std::endl;
     }
-    muscod_->print_MCData_address();
-    muscod_->print_data_address();
+    // NOTE check if address local data structure is equivalent with global one
+    // muscod_->print_MCData_address();
+    // muscod_->print_data_address();
 
     // forward verbosity from grl
     if (verbose) {
@@ -334,6 +335,37 @@ void *muscod_run (void *indata)
         std::cout << "THREAD '" << thread_id << "': MUSCOD thread is ready!" << std::endl;
     }
 
+    // INITIALIZE CONTROLLER
+    pthread_mutex_lock(nmpc.mutex_); // --> Lock the mutex
+    // LOCK THE MUTEX
+    // NOTE: wait for cond_iv_ready_ signal and then lock the mutex again
+    nmpc.iv_ready_ = true;
+    nmpc.in_preparation_ = false;
+    pthread_cond_wait(nmpc.cond_iv_ready_, nmpc.mutex_);
+
+    // TODO provide nnmpc_init by NMPCProblem
+    if (!nmpc.iv_ready_) {
+        // GET INITIAL VALUES AND PARAMETERS FROM DATA
+        sd << nmpc.m_sd;
+        pf << nmpc.m_pf;
+
+        // if (verbose) {
+            std::cout << "THREAD '" << thread_id << "sd: " << sd << std::endl;
+            std::cout << "THREAD '" << thread_id << "pf: " << pf << std::endl;
+            std::cout << "THREAD '" << thread_id << "': initialize controller ... ";
+        // }
+
+        // initialize controller
+        initialize_controller (nmpc, 10, sd, pf);
+
+        // if (verbose) {
+            std::cout << "finished!" << std::endl;
+        // }
+    }
+
+    // UNLOCK THE MUTEX
+    pthread_mutex_unlock(nmpc.mutex_);
+
     // EXECUTION LOOP
     while (true) {
         pthread_mutex_lock(nmpc.mutex_); // --> Lock the mutex
@@ -342,9 +374,6 @@ void *muscod_run (void *indata)
         nmpc.iv_ready_ = true;
         nmpc.in_preparation_ = false;
         pthread_cond_wait(nmpc.cond_iv_ready_, nmpc.mutex_);
-
-        // reset timing statistics
-        nmpc.timing.reset ();
 
         // LEAVE THREAD IF QUIT FLAG IS SET IN DATA
         if (nmpc.m_quit) {
@@ -406,6 +435,9 @@ void *muscod_run (void *indata)
 
         // UNLOCK THE MUTEX
         pthread_mutex_unlock(nmpc.mutex_);
+
+        // reset timing statistics
+        nmpc.timing.reset ();
 
         // when in NMPC mode then continue re-linearization
         // LMPC skips this code

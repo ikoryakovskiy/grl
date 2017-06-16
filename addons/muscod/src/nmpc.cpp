@@ -72,6 +72,22 @@ void NMPCPolicy::configure(Configuration &config)
     verbose_, true
   );
 
+  //------------------ Initialize Controller ------------------ //
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_, verbose_);
+
+  // NOTE we skip setting up controller here, because muscod_reset is called afterwards
+  nmpc_->set_iv_ready(true);
+  pthread_cond_signal(nmpc_->cond_iv_ready_); // Seems like the problem is here!
+
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_, verbose_);
+  if (nmpc_->get_iv_ready() == true) {
+  } else {
+      std::cerr << "MAIN: bailing out ..." << std::endl;
+      abort();
+  }
+
   // Allocate memory
   initial_sd_ = ConstantVector(nmpc_->NXD(), 0);
   initial_pf_ = ConstantVector(nmpc_->NP(), 0);
@@ -121,6 +137,29 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, const Vector &initial_p
     cond_iv_ready_, mutex_,
     verbose_, true
   );
+
+  //------------------ Initialize Controller ------------------ //
+
+  // provide initial value and wait again
+  // wait until iv_ready condition is fulfilled
+  // nmpc_->set_iv_ready(false);
+  iv_provided_ = true;
+  provide_iv (
+      nmpc_,
+      initial_obs,
+      initial_pf,
+      &iv_provided_,
+      true, // wait
+      true
+  );
+
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_, verbose_);
+  if (nmpc_->get_iv_ready() == true) {
+  } else {
+      std::cerr << "MAIN: bailing out ..." << std::endl;
+      abort();
+  }
 
   /*
   // wait for preparation phase
@@ -185,13 +224,15 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, const Vector &initial_p
     std::cout << "MUSCOD is reseted!" << std::endl;
 }
 
+/*
 void NMPCPolicy::muscod_reset(const Vector &initial_obs, Vector &initial_qc)
 {
+  // TODO distinguish between threaded and non-threaded version
+
   //-------------------- Stop NMPC threads --------------------- //
   stop_thread(*nmpc_, &thread_, verbose_);
 
   //-------------------- Start NMPC threads -------------------- //
-
   nmpc_->m_quit = false;
   initialize_thread(
     thread_, muscod_run, nmpc_,
@@ -201,7 +242,30 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, Vector &initial_qc)
     verbose_, true
   );
 
-  /*
+  //------------------ Initialize Controller ------------------ //
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_, verbose_);
+
+  // provide initial value and wait again
+  provide_iv (
+      nmpc_,
+      initial_obs,
+      initial_pf,
+      &iv_provided_,
+      false, // wait
+      verbose_
+  );
+
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_, verbose_);
+  if (nmpc_->get_iv_ready() == true) {
+  } else {
+      std::cerr << "MAIN: bailing out ..." << std::endl;
+      abort();
+  }
+
+  //-------------------- Start NMPC threads -------------------- //
+
   // wait for preparation phase
   if (true) { // TODO Add wait flag
     wait_for_iv_ready(nmpc_, verbose_);
@@ -255,7 +319,6 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, Vector &initial_qc)
         abort();
     }
   }
-  */
 
   sum_error_ = 0;
   sum_error_counter_ = 0;
@@ -263,13 +326,14 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, Vector &initial_qc)
   if (verbose_)
     std::cout << "MUSCOD is reseted!" << std::endl;
 }
+*/
 
 void NMPCPolicy::act(double time, const Observation &in, Action *out)
 {
   grl_assert((in.v.size() == nmpc_->NXD() + nmpc_->NP()) || (in.v.size() == nmpc_->NXD()));
 
-  int np = nmpc_->NP();
-  int nxd = nmpc_->NXD();
+  // int np = nmpc_->NP();
+  // int nxd = nmpc_->NXD();
 
   // subdivide 'in' into state and setpoint
   if (in.v.size() == nmpc_->NXD() + nmpc_->NP())

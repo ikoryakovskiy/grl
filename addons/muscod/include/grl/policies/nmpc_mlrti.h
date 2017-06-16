@@ -103,14 +103,14 @@ class NMPCPolicyMLRTI: public NMPCBase
   public:
     NMPCPolicyMLRTI():
         nmpc_ninit_(10),
+        sum_error_(0),
+        sum_error_counter_(0),
         nmpc_A_(NULL),
         nmpc_B_(NULL),
         idle_iv_provided_ (true),
         idle_qc_retrieved_ (true),
         cntl_iv_provided_ (true),
-        cntl_qc_retrieved_ (true),
-        sum_error_(0),
-        sum_error_counter_(0)
+        cntl_qc_retrieved_ (true)
     {}
 
     ~NMPCPolicyMLRTI();

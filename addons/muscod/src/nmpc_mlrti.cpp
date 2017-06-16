@@ -6,6 +6,7 @@
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include <iomanip>
+#include <fstream>
 
 // GRL
 #include <grl/policies/nmpc_mlrti.h>
@@ -14,6 +15,7 @@
 #include <wrapper.hpp>
 
 using namespace grl;
+
 
 REGISTER_CONFIGURABLE(NMPCPolicyMLRTI);
 
@@ -66,6 +68,22 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
     verbose_, true
   );
 
+  //------------------- Initialize Controller A -------------------- //
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_A_, verbose_);
+
+  // NOTE we skip setting up controller here, because muscod_reset is called afterwards
+  nmpc_A_->set_iv_ready(true);
+  pthread_cond_signal(nmpc_A_->cond_iv_ready_); // Seems like the problem is here!
+
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_A_, verbose_);
+  if (nmpc_A_->get_iv_ready() == true) {
+  } else {
+      std::cerr << "MAIN: bailing out ..." << std::endl;
+      abort();
+  }
+
   //------------------- Initialize NMPC thread B ------------------- //
   // start NMPC controller in own thread running signal controlled event loop
   initialize_thread(
@@ -75,6 +93,22 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
     cond_iv_ready_B_, mutex_B_,
     verbose_, true
   );
+
+  //------------------- Initialize Controller B -------------------- //
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_B_, verbose_);
+
+  // NOTE we skip setting up controller here, because muscod_reset is called afterwards
+  nmpc_B_->set_iv_ready(true);
+  pthread_cond_signal(nmpc_B_->cond_iv_ready_); // Seems like the problem is here!
+
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_B_, verbose_);
+  if (nmpc_B_->get_iv_ready() == true) {
+  } else {
+      std::cerr << "MAIN: bailing out ..." << std::endl;
+      abort();
+  }
 
   //------------------- Define state of MLRTI NMPC ------------------- //
 
@@ -128,7 +162,7 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
   stop_thread(*nmpc_A_, &thread_A_, verbose_);
   stop_thread(*nmpc_B_, &thread_B_, verbose_);
 
-  //-------------------- Start MLRTI NMPC threads -------------------- //
+  //-------------------- Start MLRTI NMPC thread A ------------------- //
 
   nmpc_A_->m_quit = false;
   initialize_thread(
@@ -139,6 +173,32 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
     verbose_, true
   );
 
+  //------------------- Initialize Controller A -------------------- //
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_A_, verbose_);
+
+  // provide initial value and wait again
+  // wait until iv_ready condition is fulfilled
+  // nmpc_A_->set_iv_ready(false);
+  idle_iv_provided_ = true;
+  provide_iv (
+      nmpc_A_,
+      initial_obs,
+      initial_pf_,
+      &idle_iv_provided_,
+      true, // wait
+      verbose_
+  );
+
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_A_, verbose_);
+  if (nmpc_A_->get_iv_ready() == true) {
+  } else {
+      std::cerr << "MAIN: bailing out ..." << std::endl;
+      abort();
+  }
+
+  //-------------------- Start MLRTI NMPC thread B ------------------- //
   nmpc_B_->m_quit = false;
   initialize_thread(
     thread_B_, muscod_run, nmpc_B_,
@@ -147,6 +207,29 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
     cond_iv_ready_B_, mutex_B_,
     verbose_, true
   );
+
+  //------------------- Initialize Controller B -------------------- //
+
+  // provide initial value and wait again
+  // wait until iv_ready condition is fulfilled
+  // nmpc_B_->set_iv_ready(false);
+  cntl_iv_provided_ = true;
+  provide_iv (
+      nmpc_B_,
+      initial_obs,
+      initial_pf_,
+      &cntl_iv_provided_,
+      true, // wait
+      verbose_
+  );
+
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_B_, verbose_);
+  if (nmpc_B_->get_iv_ready() == true) {
+  } else {
+      std::cerr << "MAIN: bailing out ..." << std::endl;
+      abort();
+  }
 
   //------------------- Define state of MLRTI NMPC ------------------- //
 
@@ -263,7 +346,7 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
       timing_values_.push_back(idle_->timing._timing);
 
       // copy idle_ timer states to ttimer
-      ttimer_ = idle_->timing;
+      // ttimer_ = idle_->timing;
 
       // idle_ is successfully idled, feedback
       if (verbose_)
@@ -338,7 +421,7 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
     timing_values_.push_back(cntl_->timing._timing);
 
     // copy idle_ timer states to ttimer
-    ttimer_ = cntl_->timing;
+    // ttimer_ = cntl_->timing;
 
     if (idle_->get_iv_ready()) {
           if (verbose_)

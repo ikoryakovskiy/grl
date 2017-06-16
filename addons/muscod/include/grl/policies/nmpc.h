@@ -80,7 +80,7 @@ class NMPCPolicy : public NMPCBase
     virtual void configure(Configuration &config);
     virtual void reconfigure(const Configuration &config);
     virtual void muscod_reset(const Vector &initial_obs, const Vector &initial_pf, Vector &initial_qc);
-    virtual void muscod_reset(const Vector &initial_obs, Vector &initial_qc);
+    // virtual void muscod_reset(const Vector &initial_obs, Vector &initial_qc);
 
     // From Policy
     virtual void act(double time, const Observation &in, Action *out);
