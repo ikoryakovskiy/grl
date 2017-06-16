@@ -103,7 +103,7 @@ void *NMPCBase::setup_model_path(const std::string path, const std::string model
 }
 
 //-------------------------------------- EXPORT -----------------------------------//
-
+/*
 std::string path = "/home/ivan/work/Project/Software/grl/qt-build/leo_squat/mlrti_timing/";
 
 void erase_file(const std::string& file_name)
@@ -173,6 +173,13 @@ void append_timing_to_file(Vector d_values, const std::string& data_file)
     // finally close file
     data_stream.close();
 }
+*/
+
+std::string path = "";
+void erase_file(const std::string& file_name){}
+void write_header_to_file(const std::string& data_file) {}
+void append_timing_to_file(Vector d_values, const std::string& data_file) {}
+
 //-------------------------------------- MUSCOD -----------------------------------//
 namespace grl
 {

@@ -109,6 +109,8 @@ void LeoSquattingSandboxModel::request(ConfigurationRequest *config)
 
   config->push_back(CRP("sub_sma_state", "signal/vector", "Subscriber of the type of the agent currently used by state machine", sub_sma_state_, true));
   config->push_back(CRP("timer_switch", "State-based direction switch (0) and time-based direction switch (1)", timer_switch_, CRP::Configuration, 0, 1));
+
+  config->push_back(CRP("idle_time", "double", "Time after which geo is forced to go to a lower setpoint", idle_time_, CRP::Configuration, 0.0, DBL_MAX));
 }
 
 void LeoSquattingSandboxModel::configure(Configuration &config)
@@ -256,7 +258,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   {
     main_time_ += tau;
     INFO("elapsed: " << main_time_);
-    if (main_time_ > 25.0)
+    if (idle_time_ && main_time_ > idle_time_)
       (*next)[rlsRefRootZ] = lower_height_;
     else
     {

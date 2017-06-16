@@ -5345,6 +5345,14 @@ sandbox_model/leo_squatting:
     optional: 1
     min: 0
     max: 1
+  idle_time:
+    type: double
+    description: Time after which geo is forced to go to a lower setpoint
+    mutability: configuration
+    default: 0
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
 signal/matrix:
   description: Matrix-based signal (trajectory, etc.)
 signal/vector:
