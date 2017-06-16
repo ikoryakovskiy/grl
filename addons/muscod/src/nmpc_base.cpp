@@ -321,6 +321,10 @@ void initialize_thread(
     pthread_mutex_unlock(&mutex);  // UNLOCK
 }
 
+static MUSCOD* muscod_muscod_ = NULL;
+static MUSCOD* muscod_A_ = NULL;
+static MUSCOD* muscod_B_ = NULL;
+
 // MUSCOD-II main thread setup and execution loop
 void *muscod_run (void *indata)
 {
@@ -354,19 +358,92 @@ void *muscod_run (void *indata)
             std::cout << "THREAD '" << thread_id << "': got thread id! " << std::endl;
         }
     }
+
+    verbose = true;
     // initialize MUSCOD instance
-    MUSCOD* muscod_;
-    if (nmpc.m_muscod == 0) {
-        if (verbose) {
-            std::cout << "THREAD '" << thread_id << "': created MUSCOD instance!" << std::endl;
-        }
-        muscod_ = new MUSCOD();
+    MUSCOD* muscod_ = NULL;
+
+    std::cout << "THREAD '" << thread_id << "': muscod_muscod_ = " << (void*) muscod_muscod_ << std::endl;
+    std::cout << "THREAD '" << thread_id << "': muscod_A_      = " << (void*) muscod_A_ << std::endl;
+    std::cout << "THREAD '" << thread_id << "': muscod_B_      = " << (void*) muscod_B_ << std::endl;
+    std::cout << "THREAD '" << thread_id << "': muscod_        = " << (void*) muscod_ << std::endl;
+
+    if (thread_id.compare("") == 0) {
+      std::cout << "THREAD '" << thread_id << "': " << (void*) muscod_muscod_ << std::endl;
+      if (muscod_muscod_ == 0) {
+          if (verbose) {
+              std::cout << "THREAD '" << thread_id << "': created MUSCOD instance!" << std::endl;
+          }
+          muscod_muscod_ = new MUSCOD(false);
+          muscod_muscod_->setModelPathAndName(nmpc.m_problem_path.c_str(), nmpc.m_model_name.c_str());
+          muscod_muscod_->loadFromDatFile(NULL, NULL);
+          muscod_muscod_->nmpcInitialize(0, NULL, NULL);
+      } else {
+          std::cout << "THREAD '" << thread_id << "': MUSCOD is still there!" << std::endl;
+      }
+      muscod_ = muscod_muscod_;
+    } else if (thread_id.compare("A") == 0) {
+      std::cout << "THREAD '" << thread_id << "': " << (void*) muscod_A_ << std::endl;
+      if (muscod_A_ == 0) {
+          if (verbose) {
+              std::cout << "THREAD '" << thread_id << "': created MUSCOD instance!" << std::endl;
+          }
+          muscod_A_ = new MUSCOD(false);
+          muscod_A_->setModelPathAndName(nmpc.m_problem_path.c_str(), nmpc.m_model_name.c_str());
+          muscod_A_->loadFromDatFile(NULL, NULL);
+          muscod_A_->nmpcInitialize(0, NULL, NULL);
+      } else {
+          std::cout << "THREAD '" << thread_id << "': MUSCOD is still there!" << std::endl;
+      }
+      muscod_ = muscod_A_;
+    } else if (thread_id.compare("B") == 0) {
+      std::cout << "THREAD '" << thread_id << "': " << (void*) muscod_B_ << std::endl;
+      if (muscod_B_ == 0) {
+          if (verbose) {
+              std::cout << "THREAD '" << thread_id << "': created MUSCOD instance!" << std::endl;
+          }
+          muscod_B_ = new MUSCOD(false);
+          muscod_B_->setModelPathAndName(nmpc.m_problem_path.c_str(), nmpc.m_model_name.c_str());
+          muscod_B_->loadFromDatFile(NULL, NULL);
+          muscod_B_->nmpcInitialize(0, NULL, NULL);
+      } else {
+          std::cout << "THREAD '" << thread_id << "': MUSCOD is still there!" << std::endl;
+      }
+      muscod_ = muscod_B_;
     } else {
-        std::cout << "THREAD '" << thread_id << "': MUSCOD is still there!" << std::endl;
+      std::cout << "THREAD '" << thread_id << "': you are fucked! " << std::endl;
+      abort();
     }
+    verbose = false;
+
+    std::cout << "THREAD '" << thread_id << "': muscod_muscod_ = " << (void*) muscod_muscod_ << std::endl;
+    std::cout << "THREAD '" << thread_id << "': muscod_A_      = " << (void*) muscod_A_ << std::endl;
+    std::cout << "THREAD '" << thread_id << "': muscod_B_      = " << (void*) muscod_B_ << std::endl;
+    std::cout << "THREAD '" << thread_id << "': muscod_        = " << (void*) muscod_ << std::endl;
+
+    // define MCData pointer
+    MCData = &(muscod_->data);
+    // if (muscod_ == 0) {
+    //     if (verbose) {
+    //         std::cout << "THREAD '" << thread_id << "': created MUSCOD instance!" << std::endl;
+    //     }
+    //     // muscod_ = new MUSCOD();
+    // } else {
+    //     std::cout << "THREAD '" << thread_id << "': MUSCOD is still there!" << std::endl;
+    //     abort();
+    // }
+
+    // if (nmpc.m_muscod == 0) {
+    //     if (verbose) {
+    //         std::cout << "THREAD '" << thread_id << "': created MUSCOD instance!" << std::endl;
+    //     }
+    //     muscod_ = new MUSCOD();
+    // } else {
+    //     std::cout << "THREAD '" << thread_id << "': MUSCOD is still there!" << std::endl;
+    // }
     // NOTE check if address local data structure is equivalent with global one
-    // muscod_->print_MCData_address();
-    // muscod_->print_data_address();
+    muscod_->print_MCData_address();
+    muscod_->print_data_address();
 
     // forward verbosity from grl
     if (verbose) {
@@ -428,11 +505,11 @@ void *muscod_run (void *indata)
         sd << nmpc.m_sd;
         pf << nmpc.m_pf;
 
-        // if (verbose) {
-            std::cout << "THREAD '" << thread_id << "sd: " << sd << std::endl;
-            std::cout << "THREAD '" << thread_id << "pf: " << pf << std::endl;
+        if (verbose) {
+            std::cout << "THREAD '" << thread_id << "': sd: " << sd << std::endl;
+            std::cout << "THREAD '" << thread_id << "': pf: " << pf << std::endl;
             std::cout << "THREAD '" << thread_id << "': initialize controller ... ";
-        // }
+        }
 
         // initialize controller
         initialize_controller (nmpc, 10, sd, pf);
@@ -576,7 +653,7 @@ void *muscod_run (void *indata)
     }
     pthread_mutex_lock(nmpc.mutex_);
     nmpc.delete_MUSCOD ();
-    delete muscod_;
+    // delete muscod_;
     pthread_mutex_unlock(nmpc.mutex_);
     pthread_exit(NULL);
 } // END OF muscod_run
@@ -712,6 +789,9 @@ void retrieve_qc (
 ) {
     //double total_time = 0.0;
     //unsigned long cnt;
+    if (!qc_retrieved) {
+      abort();
+    }
 
     // want to retrieve feedback?
     if ( !(*qc_retrieved) ) {

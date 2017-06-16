@@ -301,30 +301,24 @@ struct MUSCODProblem {
     m_data = &(m_muscod->data); // is reference
     m_options = m_muscod->options; // is already a pointer
 
-    long ret = 0;
-    std::cout << "setModelPathAndName: ";
-    ret = m_muscod->setModelPathAndName(m_problem_path.c_str(), m_model_name.c_str());
-    std::cout << ret << std::endl;
-    if (ret != 0)
-    {
-      std::cout << "ERROR setModelPathAndName!" << std::endl;
-    }
+    // long ret = 0;
+    // ret = m_muscod->setModelPathAndName(m_problem_path.c_str(), m_model_name.c_str());
+    // if (ret != 0)
+    // {
+    //   std::cout << "ERROR setModelPathAndName!" << std::endl;
+    // }
 
-    std::cout << "loadFromDatFile: ";
-    ret = m_muscod->loadFromDatFile(NULL, NULL);
-    std::cout << ret << std::endl;
-    if (ret != 0)
-    {
-      std::cout << "ERROR loadFromDatFile!" << std::endl;
-    }
+    // ret = m_muscod->loadFromDatFile(NULL, NULL);
+    // if (ret != 0)
+    // {
+    //   std::cout << "ERROR loadFromDatFile!" << std::endl;
+    // }
 
-    std::cout << "nmpcInitialize: ";
-    ret = m_muscod->nmpcInitialize(0, NULL, NULL);
-    std::cout << ret << std::endl;
-    if (ret != 0)
-    {
-      std::cout << "ERROR nmpcInitialize!" << std::endl;
-    }
+    // ret = m_muscod->nmpcInitialize(0, NULL, NULL);
+    // if (ret != 0)
+    // {
+    //   std::cout << "ERROR nmpcInitialize!" << std::endl;
+    // }
 
     // get dimensions from MUSCOD instance
     get_NMOS();

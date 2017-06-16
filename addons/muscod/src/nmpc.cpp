@@ -373,6 +373,7 @@ void NMPCPolicy::act(double time, const Observation &in, Action *out)
   }
 
   out->v.resize( nmpc_->NU() );
+  std::cout << "feedback = " << feedback_ << std::endl;
   if (feedback_ == "non-threaded")
   {
     for (int inmpc = 0; inmpc < n_iter_; ++inmpc) {

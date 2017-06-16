@@ -32,26 +32,26 @@ using namespace RigidBodyDynamics::Math;
 
 // -----------------------------------------------------------------------------
 
-string path_to_lua_file = "leo_fb_sl.lua";
+static const string path_to_lua_file = "leo_fb_sl.lua";
 
-LeoModel leo;
+static thread_local LeoModel leo;
 
-bool model_loaded = false;
-bool has_shown_configuration = false;
-bool is_problem_name_initialized = false;
-bool add_counter = false;
-char problem_name[255];
-long real_nmos, real_nmsn;
+static thread_local bool model_loaded = false;
+static thread_local bool has_shown_configuration = false;
+static thread_local bool is_problem_name_initialized = false;
+static thread_local bool add_counter = false;
+static thread_local char problem_name[255];
+static thread_local long real_nmos, real_nmsn;
 
-string rel_data_path = "";
+static thread_local string rel_data_path = "";
 
 // placeholder for plotting
-vector<double> _plotting_t_values;
-vector<double> _plotting_p_values;
-vector<vector<double> > _plotting_lsq_values;
-vector<vector<double> > _plotting_rdf_values;
-vector<vector<double> > _plotting_sd_values;
-vector<vector<double> > _plotting_u_values;
+static thread_local vector<double> _plotting_t_values;
+static thread_local vector<double> _plotting_p_values;
+static thread_local vector<vector<double> > _plotting_lsq_values;
+static thread_local vector<vector<double> > _plotting_rdf_values;
+static thread_local vector<vector<double> > _plotting_sd_values;
+static thread_local vector<vector<double> > _plotting_u_values;
 
 // -----------------------------------------------------------------------------
 // Variables
@@ -240,11 +240,11 @@ void lsqfcn_height_tracking (
 	// NOTE: sum of lower body angles is equal to angle between ground slope
 	//       and torso. Minimizing deviation from zero keeps torso upright
 	//       during motion execution.
-  res[res_cnt++] = 50.00 * (
+	res[res_cnt++] = 30.00 * (
 		sd[QS["hip_left"]]
 		+ sd[QS["knee_left"]]
 		+ sd[QS["ankle_left"]]
-    - (0.3)  // desired torso angle
+		- (0.15)  // desired torso angle
 	);
 
 	// res[res_cnt++] = 60.00 * (
@@ -260,10 +260,10 @@ void lsqfcn_height_tracking (
 	// res[res_cnt++] = 0.01 * (sd[QS["ankle_left"]]  - (0.05)); // ankle_left
 
 	// regularize: || qdot ||_2^2
-  res[res_cnt++] = 3.00 * sd[QDOTS["arm"]]; // arm
-  res[res_cnt++] = 3.00 * sd[QDOTS["hip_left"]]; // hip_left
-  res[res_cnt++] = 3.00 * sd[QDOTS["knee_left"]]; // knee_left
-  res[res_cnt++] = 3.00 * sd[QDOTS["ankle_left"]]; // ankle_left
+  res[res_cnt++] = 5.00 * sd[QDOTS["arm"]]; // arm
+  res[res_cnt++] = 5.00 * sd[QDOTS["hip_left"]]; // hip_left
+  res[res_cnt++] = 5.00 * sd[QDOTS["knee_left"]]; // knee_left
+  res[res_cnt++] = 5.00 * sd[QDOTS["ankle_left"]]; // ankle_left
 
 	// regularize: || u ||_2^2
 	// res[res_cnt++] = 0.01 * u[TAUS["arm"]]; // arm
