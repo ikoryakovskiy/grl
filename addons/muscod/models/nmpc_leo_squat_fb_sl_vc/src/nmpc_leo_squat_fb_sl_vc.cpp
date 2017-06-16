@@ -34,24 +34,24 @@ using namespace RigidBodyDynamics::Math;
 
 static const string path_to_lua_file = "leo_fb_sl.lua";
 
-static thread_local LeoModel leo;
+LeoModel leo;
 
-static thread_local bool model_loaded = false;
-static thread_local bool has_shown_configuration = false;
-static thread_local bool is_problem_name_initialized = false;
-static thread_local bool add_counter = false;
-static thread_local char problem_name[255];
-static thread_local long real_nmos, real_nmsn;
+bool model_loaded = false;
+bool has_shown_configuration = false;
+bool is_problem_name_initialized = false;
+bool add_counter = false;
+char problem_name[255];
+long real_nmos, real_nmsn;
 
-static thread_local string rel_data_path = "";
+string rel_data_path = ".";
 
 // placeholder for plotting
-static thread_local vector<double> _plotting_t_values;
-static thread_local vector<double> _plotting_p_values;
-static thread_local vector<vector<double> > _plotting_lsq_values;
-static thread_local vector<vector<double> > _plotting_rdf_values;
-static thread_local vector<vector<double> > _plotting_sd_values;
-static thread_local vector<vector<double> > _plotting_u_values;
+vector<double> _plotting_t_values;
+vector<double> _plotting_p_values;
+vector<vector<double> > _plotting_lsq_values;
+vector<vector<double> > _plotting_rdf_values;
+vector<vector<double> > _plotting_sd_values;
+vector<vector<double> > _plotting_u_values;
 
 // -----------------------------------------------------------------------------
 // Variables
