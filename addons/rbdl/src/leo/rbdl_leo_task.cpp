@@ -191,6 +191,7 @@ bool LeoSquattingTask::actuate(const Vector &state, const Action &action, Vector
   else
     *actuation += VectorConstructor(-1, +1, -1, 0)*f;
   }
+
   return true;
 }
 

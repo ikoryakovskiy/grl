@@ -64,7 +64,7 @@ struct MUSCODTiming {
     MUSCODTiming ()
     {
         // initialize vectors
-        _timing = grl::Vector::Zero(6);
+        _timing = grl::Vector::Zero(7);
     };
 
     void reset() {

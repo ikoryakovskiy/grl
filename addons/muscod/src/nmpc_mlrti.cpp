@@ -258,13 +258,6 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
         std::cout << idle_->timing._timing << std::endl;
       }
 
-      // store entries for later analysis and write to file
-      timing_values_idle_.push_back(idle_->timing._timing);
-      timing_values_.push_back(idle_->timing._timing);
-
-      // copy idle_ timer states to ttimer
-      ttimer_ = idle_->timing;
-
       // idle_ is successfully idled, feedback
       if (verbose_)
       {
@@ -332,13 +325,6 @@ void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
       std::cout << "MAIN: timing statistics:" << std::endl;
       std::cout << cntl_->timing._timing << std::endl;
     }
-
-    // store entries for later analysis and write to file
-    timing_values_cntl_.push_back(cntl_->timing._timing);
-    timing_values_.push_back(cntl_->timing._timing);
-
-    // copy idle_ timer states to ttimer
-    ttimer_ = cntl_->timing;
 
     if (idle_->get_iv_ready()) {
           if (verbose_)
