@@ -359,14 +359,15 @@ void *muscod_run (void *indata)
         }
     }
 
-    verbose = true;
     // initialize MUSCOD instance
     MUSCOD* muscod_ = NULL;
 
-    std::cout << "THREAD '" << thread_id << "': muscod_muscod_ = " << (void*) muscod_muscod_ << std::endl;
-    std::cout << "THREAD '" << thread_id << "': muscod_A_      = " << (void*) muscod_A_ << std::endl;
-    std::cout << "THREAD '" << thread_id << "': muscod_B_      = " << (void*) muscod_B_ << std::endl;
-    std::cout << "THREAD '" << thread_id << "': muscod_        = " << (void*) muscod_ << std::endl;
+    if (verbose) {
+      std::cout << "THREAD '" << thread_id << "': muscod_muscod_ = " << (void*) muscod_muscod_ << std::endl;
+      std::cout << "THREAD '" << thread_id << "': muscod_A_      = " << (void*) muscod_A_ << std::endl;
+      std::cout << "THREAD '" << thread_id << "': muscod_B_      = " << (void*) muscod_B_ << std::endl;
+      std::cout << "THREAD '" << thread_id << "': muscod_        = " << (void*) muscod_ << std::endl;
+    }
 
     if (thread_id.compare("") == 0) {
       std::cout << "THREAD '" << thread_id << "': " << (void*) muscod_muscod_ << std::endl;
@@ -414,12 +415,13 @@ void *muscod_run (void *indata)
       std::cout << "THREAD '" << thread_id << "': you are fucked! " << std::endl;
       abort();
     }
-    verbose = false;
 
-    std::cout << "THREAD '" << thread_id << "': muscod_muscod_ = " << (void*) muscod_muscod_ << std::endl;
-    std::cout << "THREAD '" << thread_id << "': muscod_A_      = " << (void*) muscod_A_ << std::endl;
-    std::cout << "THREAD '" << thread_id << "': muscod_B_      = " << (void*) muscod_B_ << std::endl;
-    std::cout << "THREAD '" << thread_id << "': muscod_        = " << (void*) muscod_ << std::endl;
+    if (verbose) {
+      std::cout << "THREAD '" << thread_id << "': muscod_muscod_ = " << (void*) muscod_muscod_ << std::endl;
+      std::cout << "THREAD '" << thread_id << "': muscod_A_      = " << (void*) muscod_A_ << std::endl;
+      std::cout << "THREAD '" << thread_id << "': muscod_B_      = " << (void*) muscod_B_ << std::endl;
+      std::cout << "THREAD '" << thread_id << "': muscod_        = " << (void*) muscod_ << std::endl;
+    }
 
     // define MCData pointer
     MCData = &(muscod_->data);
@@ -442,8 +444,8 @@ void *muscod_run (void *indata)
     //     std::cout << "THREAD '" << thread_id << "': MUSCOD is still there!" << std::endl;
     // }
     // NOTE check if address local data structure is equivalent with global one
-    muscod_->print_MCData_address();
-    muscod_->print_data_address();
+    // muscod_->print_MCData_address();
+    // muscod_->print_data_address();
 
     // forward verbosity from grl
     if (verbose) {
@@ -479,7 +481,7 @@ void *muscod_run (void *indata)
     // run single SQP iteration to be able to write a restart file
     pthread_mutex_lock(nmpc.mutex_);
     // TODO run initialize controller
-    // initialize_controller (nmpc, 10, nmpc.m_sd, nmpc.m_pf);
+    initialize_controller (nmpc, 10, nmpc.m_sd, nmpc.m_pf);
     pthread_mutex_unlock(nmpc.mutex_);
 
     // release setup of thread

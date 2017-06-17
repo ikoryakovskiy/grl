@@ -36,6 +36,7 @@ void NMPCPolicy::request(ConfigurationRequest *config)
   config->push_back(CRP("pub_error_signal", "signal/vector", "Publsher of the model-plant mismatch error signal", pub_error_signal_, true));
 }
 
+static MUSCOD* muscod_muscod_ = NULL;
 void NMPCPolicy::configure(Configuration &config)
 {
   NMPCBase::configure(config);
@@ -62,30 +63,93 @@ void NMPCPolicy::configure(Configuration &config)
   //----------------- Set path in the problem description library ----------------- //
   setup_model_path(problem_path, nmpc_model_name_, lua_model_);
 
-  //------------------- Initialize NMPC ------------------- //
-  // start NMPC controller in own thread running signal controlled event loop
-  initialize_thread(
-    thread_, muscod_run, nmpc_,
-    problem_path, nmpc_model_name_,
-    "",
-    cond_iv_ready_, mutex_,
-    verbose_, true
-  );
+  if (feedback_ == "threaded")
+  {
+    //------------------- Initialize NMPC ------------------- //
+    // start NMPC controller in own thread running signal controlled event loop
+    initialize_thread(
+      thread_, muscod_run, nmpc_,
+      problem_path, nmpc_model_name_,
+      "",
+      cond_iv_ready_, mutex_,
+      verbose_, true
+    );
 
-  //------------------ Initialize Controller ------------------ //
-  // wait until iv_ready condition is fulfilled
-  wait_for_iv_ready (nmpc_, verbose_);
+    //------------------ Initialize Controller ------------------ //
+    // wait until iv_ready condition is fulfilled
+    wait_for_iv_ready (nmpc_, verbose_);
 
-  // NOTE we skip setting up controller here, because muscod_reset is called afterwards
-  nmpc_->set_iv_ready(true);
-  pthread_cond_signal(nmpc_->cond_iv_ready_); // Seems like the problem is here!
+    // NOTE we skip setting up controller here, because muscod_reset is called afterwards
+    nmpc_->set_iv_ready(true);
+    pthread_cond_signal(nmpc_->cond_iv_ready_); // Seems like the problem is here!
 
-  // wait until iv_ready condition is fulfilled
-  wait_for_iv_ready (nmpc_, verbose_);
-  if (nmpc_->get_iv_ready() == true) {
-  } else {
-      std::cerr << "MAIN: bailing out ..." << std::endl;
+    // wait until iv_ready condition is fulfilled
+    wait_for_iv_ready (nmpc_, verbose_);
+    if (nmpc_->get_iv_ready() == true) {
+    } else {
+        std::cerr << "MAIN: bailing out ..." << std::endl;
+        abort();
+    }
+  } else if (feedback_ == "non-threaded")
+  {
+    // initialize NMPCProblem instance
+    if (nmpc_ == 0) {
+        nmpc_ = new NMPCProblem(
+            problem_path, nmpc_model_name_,
+            // forward verbosity from grl
+            verbose_
+        );
+    }
+
+    if (nmpc_->m_muscod != 0) {
+      if (verbose_) {
+        std::cout << "MAIN: MUSCOD is already there!" << std::endl;
+      }
+      nmpc_->delete_MUSCOD ();
+    }
+
+    // initialize MUSCOD instance
+    MUSCOD* muscod_ = NULL;
+
+    if (nmpc_->thread_id.compare("") == 0) {
+      std::cout << "MAIN: " << (void*) muscod_muscod_ << std::endl;
+      if (muscod_muscod_ == 0) {
+          if (verbose_) {
+              std::cout << "MAIN: created MUSCOD instance!" << std::endl;
+          }
+          muscod_muscod_ = new MUSCOD(false);
+          muscod_muscod_->setModelPathAndName(
+            nmpc_->m_problem_path.c_str(),
+            nmpc_->m_model_name.c_str()
+          );
+          muscod_muscod_->loadFromDatFile(NULL, NULL);
+          muscod_muscod_->nmpcInitialize(0, NULL, NULL);
+      } else {
+          std::cout << "MAIN: MUSCOD is still there!" << std::endl;
+      }
+      muscod_ = muscod_muscod_;
+    } else {
+      std::cout << "MAIN: you are fucked! " << std::endl;
       abort();
+    }
+
+    // define MCData pointer
+    MCData = &(muscod_->data);
+
+    // forward verbosity from grl
+    if (verbose_) {
+        muscod_->setLogLevelAndFile(-1, NULL, NULL);
+    } else {
+        muscod_->setLogLevelTotal(-1);
+    }
+
+    // assign MUSCOD instance
+    nmpc_->create_MUSCOD(muscod_);
+  } else {
+    ERROR (
+      "I don't recognize feedback_ =" + feedback_ + ".\n"
+      + "Possible modes are: non-threaded and threaded."
+    );
   }
 
   // Allocate memory
@@ -124,200 +188,103 @@ void NMPCPolicy::reconfigure(const Configuration &config)
 
 void NMPCPolicy::muscod_reset(const Vector &initial_obs, const Vector &initial_pf, Vector &initial_qc)
 {
-  //-------------------- Stop NMPC threads --------------------- //
-  stop_thread(*nmpc_, &thread_, verbose_);
-
-  //-------------------- Start NMPC threads -------------------- //
-
-  nmpc_->m_quit = false;
-  initialize_thread(
-    thread_, muscod_run, nmpc_,
-    nmpc_->m_problem_path, nmpc_->m_model_name,
-    thread_id_,
-    cond_iv_ready_, mutex_,
-    verbose_, true
-  );
-
-  //------------------ Initialize Controller ------------------ //
-
-  // provide initial value and wait again
-  // wait until iv_ready condition is fulfilled
-  // nmpc_->set_iv_ready(false);
-  iv_provided_ = true;
-  provide_iv (
-      nmpc_,
-      initial_obs,
-      initial_pf,
-      &iv_provided_,
-      true, // wait
-      true
-  );
-
-  // wait until iv_ready condition is fulfilled
-  wait_for_iv_ready (nmpc_, verbose_);
-  if (nmpc_->get_iv_ready() == true) {
-  } else {
-      std::cerr << "MAIN: bailing out ..." << std::endl;
-      abort();
-  }
-
-  /*
-  // wait for preparation phase
-  if (true) { // TODO Add wait flag
-    wait_for_iv_ready(nmpc_, verbose_);
-    if (nmpc_->get_iv_ready() == true) {
-    } else {
-        std::cerr << "MAIN: bailing out ..." << std::endl;
-        abort();
-    }
-  }
-
-  // restore muscod state
-  // if (verbose_) {
-  //   std::cout << "restoring MUSCOD-II state to" << std::endl;
-  //   std::cout << "  " << nmpc_->m_options->modelDirectory << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
-  // }
-
-  // nmpc_->m_muscod->readRestartFile(restart_path_.c_str(), restart_name_.c_str());
-  // nmpc_->m_muscod->nmpcInitialize (
-  //     4,  // 4 for restart
-  //     restart_path_.c_str(), restart_name_.c_str()
-  // );
-
-  // initialize NMPC
-  for (int inmpc = 0; inmpc < 10; ++inmpc)
+  if (feedback_ == "threaded")
   {
-    // 1) Feedback: Embed parameters and initial value from MHE
-    if (initFeedback_) {
-      nmpc_->feedback(initial_obs, initial_pf, &initial_qc);
-    } else {
-      nmpc_->feedback();
-    }
-    // 2) Transition
-    nmpc_->transition();
-    // 3) Preparation
-    nmpc_->preparation();
-  }
+    //-------------------- Stop NMPC threads --------------------- //
+    stop_thread(*nmpc_, &thread_, verbose_);
 
-  // NOTE: both flags are set to true then iv is provided and
-  //       qc is is computed
-  // NOTE: due to waiting flag, main thread is on hold until
-  //       computations are finished (<=2ms!)
-  iv_provided_ = true;
-  qc_retrieved_ = true;
+    //-------------------- Start NMPC threads -------------------- //
 
-  // wait for preparation phase
-  if (true) { // TODO Add wait flag
-    wait_for_iv_ready(nmpc_, verbose_);
+    nmpc_->m_quit = false;
+    initialize_thread(
+      thread_, muscod_run, nmpc_,
+      nmpc_->m_problem_path, nmpc_->m_model_name,
+      thread_id_,
+      cond_iv_ready_, mutex_,
+      verbose_, true
+    );
+
+    //------------------ Initialize Controller ------------------ //
+
+    // provide initial value and wait again
+    // wait until iv_ready condition is fulfilled
+    // nmpc_->set_iv_ready(false);
+    iv_provided_ = true;
+    provide_iv (
+        nmpc_,
+        initial_obs,
+        initial_pf,
+        &iv_provided_,
+        true, // wait
+        true
+    );
+
+    // wait until iv_ready condition is fulfilled
+    wait_for_iv_ready (nmpc_, verbose_);
     if (nmpc_->get_iv_ready() == true) {
     } else {
         std::cerr << "MAIN: bailing out ..." << std::endl;
         abort();
     }
-  }
-  */
-
-  sum_error_ = 0;
-  sum_error_counter_ = 0;
-
-  if (verbose_)
-    std::cout << "MUSCOD is reseted!" << std::endl;
-}
-
-/*
-void NMPCPolicy::muscod_reset(const Vector &initial_obs, Vector &initial_qc)
-{
-  // TODO distinguish between threaded and non-threaded version
-
-  //-------------------- Stop NMPC threads --------------------- //
-  stop_thread(*nmpc_, &thread_, verbose_);
-
-  //-------------------- Start NMPC threads -------------------- //
-  nmpc_->m_quit = false;
-  initialize_thread(
-    thread_, muscod_run, nmpc_,
-    nmpc_->m_problem_path, nmpc_->m_model_name,
-    thread_id_,
-    cond_iv_ready_, mutex_,
-    verbose_, true
-  );
-
-  //------------------ Initialize Controller ------------------ //
-  // wait until iv_ready condition is fulfilled
-  wait_for_iv_ready (nmpc_, verbose_);
-
-  // provide initial value and wait again
-  provide_iv (
-      nmpc_,
-      initial_obs,
-      initial_pf,
-      &iv_provided_,
-      false, // wait
-      verbose_
-  );
-
-  // wait until iv_ready condition is fulfilled
-  wait_for_iv_ready (nmpc_, verbose_);
-  if (nmpc_->get_iv_ready() == true) {
-  } else {
-      std::cerr << "MAIN: bailing out ..." << std::endl;
-      abort();
-  }
-
-  //-------------------- Start NMPC threads -------------------- //
-
-  // wait for preparation phase
-  if (true) { // TODO Add wait flag
-    wait_for_iv_ready(nmpc_, verbose_);
-    if (nmpc_->get_iv_ready() == true) {
-    } else {
-        std::cerr << "MAIN: bailing out ..." << std::endl;
-        abort();
-    }
-  }
-
-  // restore muscod state
-  if (verbose_) {
-    std::cout << "restoring MUSCOD-II state to" << std::endl;
-    std::cout << "  " << nmpc_->m_options->modelDirectory << restart_path_ << "/" << restart_name_ << ".bin" << std::endl;
-  }
-
-  nmpc_->m_muscod->readRestartFile(restart_path_.c_str(), restart_name_.c_str());
-  nmpc_->m_muscod->nmpcInitialize (
-      4,  // 4 for restart
-      restart_path_.c_str(), restart_name_.c_str()
-  );
-
-  // initialize NMPC
-  for (int inmpc = 0; inmpc < 20; ++inmpc)
+  } else if (feedback_ == "non-threaded")
   {
-    // 1) Feedback: Embed parameters and initial value from MHE
-    if (initFeedback_) {
-      nmpc_->feedback(initial_obs, &initial_qc);
-    } else {
-      nmpc_->feedback();
+    if (nmpc_->m_muscod != 0) {
+      if (verbose_) {
+        std::cout << "MAIN: MUSCOD is already there!" << std::endl;
+      }
+      nmpc_->delete_MUSCOD ();
     }
-    // 2) Transition
-    nmpc_->transition();
-    // 3) Preparation
-    nmpc_->preparation();
-  }
 
-  // NOTE: both flags are set to true then iv is provided and
-  //       qc is is computed
-  // NOTE: due to waiting flag, main thread is on hold until
-  //       computations are finished (<=2ms!)
-  iv_provided_ = true;
-  qc_retrieved_ = true;
+    // initialize MUSCOD instance
+    MUSCOD* muscod_ = NULL;
 
-  // wait for preparation phase
-  if (true) { // TODO Add wait flag
-    wait_for_iv_ready(nmpc_, verbose_);
-    if (nmpc_->get_iv_ready() == true) {
+    if (nmpc_->thread_id.compare("") == 0) {
+      std::cout << "MAIN: " << (void*) muscod_muscod_ << std::endl;
+      if (muscod_muscod_ == 0) {
+          if (verbose_) {
+              std::cout << "MAIN: created MUSCOD instance!" << std::endl;
+          }
+          muscod_muscod_ = new MUSCOD(false);
+          muscod_muscod_->setModelPathAndName(
+            nmpc_->m_problem_path.c_str(),
+            nmpc_->m_model_name.c_str()
+          );
+          muscod_muscod_->loadFromDatFile(NULL, NULL);
+          muscod_muscod_->nmpcInitialize(0, NULL, NULL);
+      } else {
+          std::cout << "MAIN: MUSCOD is still there!" << std::endl;
+      }
+      muscod_ = muscod_muscod_;
     } else {
-        std::cerr << "MAIN: bailing out ..." << std::endl;
-        abort();
+      std::cout << "MAIN: you are fucked! " << std::endl;
+      abort();
     }
+
+    // define MCData pointer
+    MCData = &(muscod_->data);
+
+    // forward verbosity from grl
+    if (verbose_) {
+        muscod_->setLogLevelAndFile(-1, NULL, NULL);
+    } else {
+        muscod_->setLogLevelTotal(-1);
+    }
+
+    // assign MUSCOD instance
+    nmpc_->create_MUSCOD(muscod_);
+
+    // initialize controller by performing some dry runs
+    Vector sd = initial_obs;
+    Vector pf = initial_pf;
+    Vector qc = initial_qc;
+    initialize_controller (*nmpc_, 10, sd, pf, &qc);
+    initial_qc << qc;
+
+  } else {
+    ERROR (
+      "I don't recognize feedback_ =" + feedback_ + ".\n"
+      + "Possible modes are: non-threaded and threaded."
+    );
   }
 
   sum_error_ = 0;
@@ -326,7 +293,6 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, Vector &initial_qc)
   if (verbose_)
     std::cout << "MUSCOD is reseted!" << std::endl;
 }
-*/
 
 void NMPCPolicy::act(double time, const Observation &in, Action *out)
 {
@@ -354,7 +320,7 @@ void NMPCPolicy::act(double time, const Observation &in, Action *out)
     muscod_reset(initial_sd_, initial_pf_, initial_qc_);
 
   // simulate model over specified time interval using NMPC internal model
-  if (pub_error_signal_ && time != 0)
+  if ((pub_error_signal_) && (time != 0) && (feedback_ == "non-threaded"))
   {
     double time_interval = 0.03; //nmpc_->getSamplingRate();
     nmpc_->simulate(
@@ -395,9 +361,7 @@ void NMPCPolicy::act(double time, const Observation &in, Action *out)
       nmpc_->preparation();
     }
     // } // END FOR NMPC ITERATIONS
-  }
-
-  if (feedback_ == "threaded")
+  } else if (feedback_ == "threaded")
   {
     for (int inmpc = 0; inmpc < n_iter_; ++inmpc) {
         // std::cout << "THREADED VERSION!" << std::endl;
@@ -431,6 +395,11 @@ void NMPCPolicy::act(double time, const Observation &in, Action *out)
           }
         }
     } // END FOR NMPC ITERATIONS
+  } else {
+    ERROR (
+      "I don't recognize feedback_ =" + feedback_ + ".\n"
+      + "Possible modes are: non-threaded and threaded."
+    );
   }
 
   // NOTE feedback control is cut of at action limits 'action_min/max'
