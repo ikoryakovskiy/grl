@@ -514,7 +514,7 @@ void *muscod_run (void *indata)
         }
 
         // initialize controller
-        initialize_controller (nmpc, 10, sd, pf);
+        initialize_controller (nmpc, 50, sd, pf);
 
         // if (verbose) {
             std::cout << "finished!" << std::endl;

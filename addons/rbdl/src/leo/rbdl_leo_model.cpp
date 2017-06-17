@@ -27,7 +27,7 @@
 
 #include <grl/environments/leo/rbdl_leo_model.h>
 #include <grl/environments/leo/rbdl_leo_task.h>
-#include <../../../../leo/include/grl/agents/leo_sma.h>
+#include <../../agents/leo_sma.h>
 #include <DynamixelSpecs.h>
 #include <iomanip>
 
