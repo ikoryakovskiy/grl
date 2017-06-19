@@ -275,7 +275,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
   {
     sub_state_drl = sub_state_drl_->get();
     target_state_ << sub_state_drl, state_[rlsTime];
-//    dynamics_->updateKinematics(target_state_);
+    dynamics_->updateKinematics(target_state_);
     dynamics_->finalize(target_state_,rbdl_addition_mid);
     state_ << target_state_, rbdl_addition_mid;
 
@@ -283,10 +283,10 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
     acting_num_contacts_ = getNumActingConstraintPoints();
     getConstraintSet(acting_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
     dynamics_->updateActingConstraintSet(acting_constraint_set_);
-    checkContactForces();
-    acting_num_contacts_ = getNumActingConstraintPoints();
-    getConstraintSet(acting_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
-    dynamics_->updateActingConstraintSet(acting_constraint_set_);
+//    checkContactForces();
+//    acting_num_contacts_ = getNumActingConstraintPoints();
+//    getConstraintSet(acting_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
+//    dynamics_->updateActingConstraintSet(acting_constraint_set_);
   }
 
   else
