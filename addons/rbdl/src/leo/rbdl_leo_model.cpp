@@ -275,7 +275,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
   {
     sub_state_drl = sub_state_drl_->get();
     target_state_ << sub_state_drl, state_[rlsTime];
-    dynamics_->updateKinematics(target_state_);
+//    dynamics_->updateKinematics(target_state_);
     dynamics_->finalize(target_state_,rbdl_addition_mid);
     state_ << target_state_, rbdl_addition_mid;
 
