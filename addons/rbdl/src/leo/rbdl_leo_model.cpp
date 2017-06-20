@@ -493,22 +493,22 @@ void LeoWalkingSandboxModel::getActingConstraintPoints(const Vector &state)
 {
   grl_assert(state.size() == rlsStateDim);
 
-  if ((state[rlsLeftTipZ] < root_to_feet_height_))// && (state[rlsLeftTipVelZ] < 0))
+  if ((state[rlsLeftTipZ] < root_to_feet_height_) && (state[rlsLeftTipVelZ] < 0))
     acting_left_tip_contact_ = 1;
   else
     acting_left_tip_contact_ = 0;
 
-  if ((state[rlsRightTipZ] < root_to_feet_height_))// && (state[rlsRightTipVelZ] < 0))
+  if ((state[rlsRightTipZ] < root_to_feet_height_) && (state[rlsRightTipVelZ] < 0))
     acting_right_tip_contact_ = 1;
   else
     acting_right_tip_contact_ = 0;
 
-  if ((state[rlsLeftHeelZ] < root_to_feet_height_))// && (state[rlsLeftHeelVelZ] < 0))
+  if ((state[rlsLeftHeelZ] < root_to_feet_height_) && (state[rlsLeftHeelVelZ] < 0))
     acting_left_heel_contact_ = 1;
   else
     acting_left_heel_contact_ = 0;
 
-  if ((state[rlsRightHeelZ] < root_to_feet_height_))// && (state[rlsRightHeelVelZ] < 0))
+  if ((state[rlsRightHeelZ] < root_to_feet_height_) && (state[rlsRightHeelVelZ] < 0))
     acting_right_heel_contact_ = 1;
   else
     acting_right_heel_contact_ = 0;
