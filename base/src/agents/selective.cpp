@@ -86,14 +86,14 @@ void SelectiveMasterAgent::report(std::ostream &os)
 
 void SelectiveMasterAgent::start(const Observation &obs, Action *action)
 {
-  current_idx_ = selectSubAgent(0, obs, action);
-
-  current_agent_ = agents_[current_idx_];
-  current_agent_->start(obs, action);
-
   time_ = 0;
   subtask_reward_ = 0;
   subtasks_rewards_.clear();
+
+  int idx = selectSubAgent(time_, obs, action);
+
+  current_agent_ = agents_[idx];
+  current_agent_->start(obs, action);
 }
 
 void SelectiveMasterAgent::step(double tau, const Observation &obs, double reward, Action *action)
@@ -131,6 +131,8 @@ size_t SelectiveMasterAgent::selectSubAgent(double time, const Observation &obs,
 
 void SelectiveMasterAgent::stepSubAgent(int idx, double tau, const Observation &obs, double reward, Action *action)
 {
+  subtask_reward_ += reward;
+
   SubAgent *agent = agents_[idx];
   if (current_agent_ != agent)
   {
@@ -138,17 +140,11 @@ void SelectiveMasterAgent::stepSubAgent(int idx, double tau, const Observation &
     current_agent_ = agent;                         // switch to the new agent
     current_agent_->start(obs, action);             // start it to obtain action
     TRACE("Changing subAgents");
+
+    // record subtask reward
+    subtasks_rewards_.push_back(subtask_reward_);
+    subtask_reward_ = 0;
   }
   else
     current_agent_->step(tau, obs, reward, action); // or simply continue
-
-  // record rewards based on changes of the index
-  // therefore, also allow to use the same agent, but record it's performance at each stage
-  subtask_reward_ += reward;
-  if (current_idx_ != idx)
-  {
-    subtasks_rewards_.push_back(subtask_reward_);
-    subtask_reward_ = 0;
-    current_idx_ = idx;
-  }
 }

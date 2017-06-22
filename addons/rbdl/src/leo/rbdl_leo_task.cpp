@@ -118,9 +118,19 @@ void LeoSquattingTask::configure(Configuration &config)
   std::cout << "action_max: " << config["action_max"].v() << std::endl;
 }
 
+void LeoSquattingTask::reconfigure(const Configuration &config)
+{
+  if (config.has("action") && config["action"].str() == "statclr")
+  {
+    task_reward_ = 0;
+    subtask_reward_ = 0;
+    subtasks_rewards_.clear();
+  }
+}
+
 void LeoSquattingTask::start(int test, Vector *state) const
 {
-  *state = ConstantVector(2*(4)+1, 0); // Same size for both tasts with FA and without
+  *state = ConstantVector(rlsTime+1, 0); // Same size for both tasts with FA and without
 
   if (target_env_)
   {
@@ -177,8 +187,8 @@ void LeoSquattingTask::start(int test, Vector *state) const
 bool LeoSquattingTask::actuate(const Vector &state, const Action &action, Vector *actuation) const
 {
   *actuation = action;
-
-  // *** HACK TO MAKE REAL LEO SQUAT IN VOLTAGE CONTROL ***
+/*
+  // *** HACK TO MAKE REAL LEO SQUAT IN VOLTAGE CONTROL USING NMPC/MLRTI ***
   if (target_env_)
   {
   // Gearbox effeciency is 75%
@@ -191,7 +201,7 @@ bool LeoSquattingTask::actuate(const Vector &state, const Action &action, Vector
   else
     *actuation += VectorConstructor(-1, +1, -1, 0)*f;
   }
-
+*/
   return true;
 }
 
@@ -408,10 +418,13 @@ void LeoSquattingTask::report(std::ostream &os, const Vector &state) const
 
   // append cumulative reward in case of timeout termination
   if (subtask_reward_ != 0)
-    subtasks_rewards_.push_back(subtask_reward_);
+    subtasks_rewards_.push_back(subtask_reward_);   
 
   int max_size = 6;
   int size = std::min(max_size, static_cast<int>(subtasks_rewards_.size()));
+
+  if (size && fabs(subtasks_rewards_[0]) < 0.01)
+    ERROR("Wrong calculations!");
 
   for (int i = 0; i < size; i++)
     progressString << std::setw(pw) << subtasks_rewards_[i];

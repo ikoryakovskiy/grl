@@ -32,14 +32,66 @@ using namespace grl;
 
 REGISTER_CONFIGURABLE(LeoStateMachineAgent)
 
+struct th_data
+{
+  th_data() : agent(NULL), tt(0), output(""), completed(true), quit(false) {}
+  Agent *agent;
+  int tt;
+  std::string output;
+  bool completed;
+  bool quit;
+};
+
+th_data save_data;
+pthread_cond_t save_cond;
+pthread_mutex_t save_mtx;
+
+void *save_thread(void*)
+{
+  while (1)
+  {
+    pthread_mutex_lock(&save_mtx); // lock the mutex
+    if (save_data.quit)
+    {
+        pthread_mutex_unlock(&save_mtx);
+        break;
+    }
+    save_data.completed = true;
+    pthread_cond_wait(&save_cond, &save_mtx); // wait for save signal
+    if (save_data.quit)
+    {
+        pthread_mutex_unlock(&save_mtx);
+        break;
+    }
+    th_data data = save_data;
+    pthread_mutex_unlock(&save_mtx); // unlock the mutex
+
+    // saving, working only with data
+    std::ostringstream oss;
+    oss << data.output << "-" << data.tt << "-";
+    Configuration saveconfig;
+    saveconfig.set("action", "save");
+    saveconfig.set("file", oss.str().c_str());
+    data.agent->walk(saveconfig);
+  }
+  return NULL;
+}
+
 void LeoStateMachineAgent::request(ConfigurationRequest *config)
 {
+  config->push_back(CRP("environment", "environment", "Environment in which the agent acts", environment_, true));
+
+  config->push_back(CRP("main_steps", "Number of time steps for the main agent to operate", (int)steps_, CRP::Configuration, 0, INT_MAX));
+  config->push_back(CRP("main_timeout", "Number of trials to take (switched to agent_prepare after the timout or fail)", (double)timeout_, CRP::Configuration, 0.0, DBL_MAX));
+  config->push_back(CRP("test_interval", "Number of episodes after which testing happens of the main controller happens", (int)test_interval_, CRP::Configuration, -1, INT_MAX));
+  config->push_back(CRP("output", "Output base filename", output_));
+
   LeoBaseAgent::request(config);
   config->push_back(CRP("agent_prepare", "agent", "Prepare agent", agent_prepare_.a, false));
   config->push_back(CRP("agent_standup", "agent", "Safe standup agent", agent_standup_.a, false));
   config->push_back(CRP("agent_starter", "agent", "Starting agent", agent_starter_.a, true));
-  config->push_back(CRP("agent_main", "agent", "Main agent", agent_main_.a, false));
-  config->push_back(CRP("main_timeout", "Timeout for the main agent to work, switched to agent_standup afterwards", (double)agent_main_timeout_, CRP::Configuration, 0.0, DBL_MAX));
+  config->push_back(CRP("agent_main", "agent", "Main learning agent", agent_main_.a, false));
+  config->push_back(CRP("agent_test", "agent", "Main testing agent", agent_test_.a, true));
 
   config->push_back(CRP("upright_trigger", "trigger", "Trigger which finishes stand-up phase and triggers preparation agent", upright_trigger_, false));
   config->push_back(CRP("feet_on_trigger", "trigger", "Trigger which checks for foot contact to ensure that robot is prepared to walk", feet_on_trigger_, true));
@@ -47,11 +99,17 @@ void LeoStateMachineAgent::request(ConfigurationRequest *config)
   config->push_back(CRP("starter_trigger", "trigger", "Trigger which initiates a preprogrammed walking at the beginning", starter_trigger_, true));
 
   config->push_back(CRP("pub_sma_state", "signal/vector", "Publisher of the type of the agent currently used by state machine", pub_sma_state_, true));
-
 }
 
 void LeoStateMachineAgent::configure(Configuration &config)
-{
+{ 
+  environment_ = (Environment*)config["environment"].ptr();
+
+  steps_ = config["main_steps"];
+  timeout_ = config["main_timeout"];
+  test_interval_ = config["test_interval"];
+  output_ = config["output"].str();
+
   LeoBaseAgent::configure(config);
 
   agent_prepare_.a = (Agent*)config["agent_prepare"].ptr();
@@ -62,8 +120,11 @@ void LeoStateMachineAgent::configure(Configuration &config)
   agent_starter_.s = SMA_STARTER;
   agent_main_.a = (Agent*)config["agent_main"].ptr();
   agent_main_.s = SMA_MAIN;
+  agent_test_.a = (Agent*)config["agent_test"].ptr();
+  agent_test_.s = SMA_TEST;
 
-  agent_main_timeout_ = config["main_timeout"];
+  if (test_interval_ >= 0 && !agent_test_.a)
+    throw bad_param("agent/leo/sma:agent_test");
 
   upright_trigger_ = (Trigger*)config["upright_trigger"].ptr();
   feet_on_trigger_ = (Trigger*)config["feet_on_trigger"].ptr();
@@ -71,10 +132,37 @@ void LeoStateMachineAgent::configure(Configuration &config)
   starter_trigger_ = (Trigger*)config["starter_trigger"].ptr();
 
   pub_sma_state_ = (VectorSignal*)config["pub_sma_state"].ptr();
+
+  if (!output_.empty())
+  {
+    if (pthread_cond_init(&save_cond, NULL))
+      throw Exception("agent/leo/sma: cannot initialize condition");
+    thread_ = new pthread_t();
+    if (pthread_create(thread_, NULL, save_thread, NULL))
+      throw Exception("agent/leo/sma cannot create thread");
+  }
 }
 
 void LeoStateMachineAgent::reconfigure(const Configuration &config)
 {
+}
+
+LeoStateMachineAgent::~LeoStateMachineAgent()
+{
+  if (ofs_.is_open())
+    ofs_.close();
+
+  if (thread_)
+  {
+    pthread_mutex_lock(&save_mtx); // lock the mutex
+    save_data.quit = true;
+    if (save_data.completed)
+      pthread_cond_signal(&save_cond); // request quit
+    pthread_mutex_unlock(&save_mtx); // unlock the mutex
+    pthread_join(*thread_, NULL);
+    pthread_cond_destroy(&save_cond);
+    grl::safe_delete(&thread_);
+  }
 }
 
 void LeoStateMachineAgent::start(const Observation &obs, Action *action)
@@ -82,11 +170,21 @@ void LeoStateMachineAgent::start(const Observation &obs, Action *action)
   time_ = 0.;
   int touchDown, groundContact, stanceLegLeft;
   unpack_ic(&touchDown, &groundContact, &stanceLegLeft);
-  if (failed(obs, stanceLegLeft))
+  if (failed(obs))
     agent_ = agent_standup_; // standing up from lying position
   else
     agent_ = agent_prepare_; // prepare from hanging position
 
+  // clear sandbox evnironment history
+  if (environment_)
+  {
+    Configuration config;
+    config.set("action", "statclr");
+    config.set("sma_state", agent_.s);
+    environment_->reconfigure(config);
+  }
+
+  // start agent
   agent_.a->start(obs, action);
 
   for (int i = 0; i < action_max_.size(); i++)
@@ -94,11 +192,19 @@ void LeoStateMachineAgent::start(const Observation &obs, Action *action)
 
   if (pub_sma_state_)
     pub_sma_state_->set(VectorConstructor(agent_.s));
+
+  if (!output_.empty())
+  {
+    std::ostringstream oss;
+    oss << output_ << ".txt";
+    ofs_.open(oss.str().c_str());
+  }
 }
 
 void LeoStateMachineAgent::step(double tau, const Observation &obs, double reward, Action *action)
 {
   time_ += tau;
+  main_total_reward_ += reward;
 
   act(tau, obs, reward, action);
 
@@ -128,7 +234,7 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
   // if Leo looses ground contact
   if (feet_off_trigger_ && feet_off_trigger_->check(time_, gc))
   {
-    if (failed(obs, stanceLegLeft))
+    if (failed(obs))
       // lost contact due to fall => try to standup
       set_agent(agent_standup_, tau, obs, reward, action, "Lost ground contact, need to stand up!");
     else
@@ -140,19 +246,26 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
   }
 
   // if Leo fell down and we are not trying to stand up already, then try!
-  if (failed(obs, stanceLegLeft) || (agent_main_timeout_ && agent_ == agent_main_ && time_ - agent_main_time_ > agent_main_timeout_))
-    return set_agent(agent_standup_, tau, obs, reward, action, "Main terminated (fall or timeout). Idle controller is applied.");
+  if (failed(obs))
+    return set_agent(agent_standup_, tau, obs, reward, action, "Main terminated due to fall. Leo needs to standup.");
+
+  // if timeout
+  if ((agent_ == agent_main_ || agent_ == agent_test_) && (time_ - main_time_ > timeout_))
+    return set_agent(agent_prepare_, tau, obs, reward, action, "Main terminated due to timeout. Prepare for the new episode.");
 
   if (agent_ == agent_prepare_)
   {
     // if Leo is in the upright position wait for the contact before we start the starter
     // or the main agent
-    if (feet_on_trigger_->check(time_, gc))
+    if (feet_on_trigger_->check(time_, gc) && save_completed())
     {
       if (agent_starter_.a && starter_trigger_ && !starter_trigger_->check(time_, Vector()))
         return set_agent(agent_starter_, tau, obs, reward, action, "Starter!");
       else
-        set_agent_main(tau, obs, reward, action, "Main directly!");
+      {
+        if (set_agent_main(tau, obs, reward, action, "Main directly!"))
+          return;
+      }
     }
   }
 
@@ -160,7 +273,10 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
   {
     // run starter agent for some time, it helps the main agent to start
     if (starter_trigger_->check(time_, Vector()))
-      set_agent_main(tau, obs, reward, action, "Main!");
+    {
+      if (set_agent_main(tau, obs, reward, action, "Main!"))
+        return;
+    }
   }
 
   if (agent_ == agent_standup_)
@@ -171,27 +287,107 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
   }
 
   agent_.a->step(tau, obs, reward, action);
+
+  if (agent_ == agent_main_)
+    ss_++;
 }
 
 void LeoStateMachineAgent::set_agent(SMAgent &agent, double tau, const Observation &obs, double reward, Action *action, const char* msg)
 {
   if (agent_ != agent)
   {
-    agent_.a->end(tau, obs, reward);  // finish previous agent
-    agent_ = agent;                   // switch to the new agent
-    agent_.a->start(obs, action);     // start it to obtain action
+    // finish previous agent
+    agent_.a->end(tau, obs, reward);
+
+    // save every test episode or every failure or at the end of learning
+    if (!output_.empty())
+    {
+      int save_after = (test_interval_+1)*5 - 1; // 5th test episode
+      if ((tt_%(save_after+1) == save_after) || (agent_ == agent_main_ && (failed(obs) || (steps_ && ss_ >= steps_)) ))
+        save(agent_);
+    }
+
+    // end of agent_test or agent_main => report and increment trials
+    if ((agent_ == agent_test_) || (agent_ == agent_main_))
+    {
+      report(agent_);
+      tt_++;
+    }
+    main_total_reward_ = 0;
+
+    // clear sandbox evnironment history
+    if (environment_)
+    {
+      Configuration config;
+      config.set("action", "statclr");
+      config.set("sma_state", agent.s);
+      environment_->reconfigure(config);
+    }
+
+    // start new agent and obtain action
+    agent_ = agent;
+    agent_.a->start(obs, action);
     INFO(msg);
   }
 }
 
-void LeoStateMachineAgent::set_agent_main(double tau, const Observation &obs, double reward, Action *action, const char* msg)
+bool LeoStateMachineAgent::set_agent_main(double tau, const Observation &obs, double reward, Action *action, const char* msg)
 {
-  struct timespec start_time, now;
-  clock_gettime(CLOCK_MONOTONIC, &start_time);
-  set_agent(agent_main_, tau, obs, reward, action, msg);
-  clock_gettime(CLOCK_MONOTONIC, &now);
+  if (!steps_ || ss_ < steps_)
+  {
+    // New experiment with the main agent
+    int test = (test_interval_ >= 0 && tt_%(test_interval_+1) == test_interval_);
 
-  // add start-up time (critical for NMPC because it is long, 1-2s)
-  agent_main_time_ = time_ + now.tv_sec - start_time.tv_sec + (now.tv_nsec - start_time.tv_nsec) / 1000000000.0;;
-  return;
+    if (test)
+      INFO("Test interval, episode " << tt_);
+
+    SMAgent agent = test ? agent_test_ : agent_main_;
+
+    timer init_t; // add start-up time (critical for NMPC because it is long, 1-2s) => account for it
+    set_agent(agent, tau, obs, reward, action, msg);  
+    main_time_ = time_;// + init_t.elapsed();
+    return true;
+  }
+  return false;
+}
+
+void LeoStateMachineAgent::save(SMAgent &agent)
+{
+  if (thread_)
+  {
+    INFO("Saving at episode " << tt_);
+    pthread_mutex_lock(&save_mtx); // lock the mutex
+    save_data.agent = agent.a;
+    save_data.tt = tt_;
+    save_data.output = output_;
+    save_data.completed = false;
+    pthread_cond_signal(&save_cond); // request saving
+    pthread_mutex_unlock(&save_mtx); // unlock the mutex
+  }
+}
+
+bool LeoStateMachineAgent::save_completed()
+{
+  if (thread_)
+  {
+    pthread_mutex_lock(&save_mtx);
+    bool completed = save_data.completed;
+    pthread_mutex_unlock(&save_mtx);
+    return completed;
+  }
+  return true;
+}
+
+void LeoStateMachineAgent::report(SMAgent &agent)
+{
+  std::ostringstream oss;
+  oss << std::setprecision(3) << std::fixed << std::setw(15) << tt_ << std::setw(15) << ss_ << std::setw(15) << main_total_reward_;
+  agent.a->report(oss);
+
+  if (environment_)
+    environment_->report(oss);
+
+  INFO(oss.str());
+  if (ofs_.is_open())
+    ofs_ << oss.str() << std::endl;
 }

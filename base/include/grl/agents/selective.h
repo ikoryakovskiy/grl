@@ -45,13 +45,12 @@ class SelectiveMasterAgent : public Agent
     std::vector<SubAgent*> agents_;
     std::vector<double> subtasks_rewards_;
     SubAgent *current_agent_;
-    int current_idx_;
     double subtask_reward_;
     double time_;
     VectorSignal *sub_sigma_signal_;
     
   public:
-    SelectiveMasterAgent() : agents_(2), subtasks_rewards_(0), current_agent_(NULL), current_idx_(0), subtask_reward_(0), time_(0), sub_sigma_signal_(NULL)
+    SelectiveMasterAgent() : agents_(2), subtasks_rewards_(0), current_agent_(NULL), subtask_reward_(0), time_(0), sub_sigma_signal_(NULL)
     {
       agents_[0] = agents_[1] = NULL;
     }

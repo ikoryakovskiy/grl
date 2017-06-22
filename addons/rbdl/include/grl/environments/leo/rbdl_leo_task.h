@@ -101,6 +101,7 @@ class LeoSquattingTask : public Task
     // From Configurable
     virtual void request(ConfigurationRequest *config);
     virtual void configure(Configuration &config);
+    virtual void reconfigure(const Configuration &config);
 
     // From Task
     virtual void start(int test, Vector *state) const;

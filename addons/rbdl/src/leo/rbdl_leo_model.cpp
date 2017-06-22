@@ -27,7 +27,6 @@
 
 #include <grl/environments/leo/rbdl_leo_model.h>
 #include <grl/environments/leo/rbdl_leo_task.h>
-#include <../../agents/leo_sma.h>
 #include <DynamixelSpecs.h>
 #include <iomanip>
 
@@ -120,6 +119,11 @@ void LeoSquattingSandboxModel::configure(Configuration &config)
   if (target_dof_ != 4)
     throw Exception("sandbox_model/leo_squatting: target dof is not correct for this task");
 
+  target_state_.resize(2*target_dof_+1);
+  target_state_next_.resize(2*target_dof_+1);
+  true_state_next_.resize(2*target_dof_+1);
+  target_action_.resize(target_dof_);
+
   if (target_env_ && sim_filtered_)
     throw Exception("sandbox_model/leo_squatting: filtering of real Leo velocities is done on-board");
 
@@ -144,20 +148,29 @@ void LeoSquattingSandboxModel::configure(Configuration &config)
   }
 }
 
+void LeoSquattingSandboxModel::reconfigure(const Configuration &config)
+{
+  if (config.has("action") && config["action"].str() == "statclr")
+  {
+    if (config.has("sma_state"))
+      sma_state_ = static_cast<SMAState>(config["sma_state"].i());
+  }
+}
+
 void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
 {
+  Vector rbdl_state = state->head(rlsTime+1);
   // Fill parts of a state such as Center of Mass, Angular Momentum
-  dynamics_->updateKinematics(*state);
-  dynamics_->finalize(*state, rbdl_addition_);
+  dynamics_->updateKinematics(rbdl_state);
+  dynamics_->finalize(rbdl_state, rbdl_addition_);
 
   // Compose a complete state <state, time, height, com, ..., squats>
   // Immediately try to stand up
-  state_.resize(stsStateDim);
-  state_ << *state, VectorConstructor(upper_height_), rbdl_addition_,
-      VectorConstructor(0),         // zero mef error
-      VectorConstructor(SMA_NONE),  // none type of state machine
-      VectorConstructor(0);         // zero squats
-  *state = state_;
+  state->resize(stsStateDim);
+  *state << rbdl_state, VectorConstructor(upper_height_), rbdl_addition_,
+      VectorConstructor(0),           // zero mef error
+      VectorConstructor(sma_state_),  // none type of state machine
+      VectorConstructor(0);           // zero squats
 
   if (sim_filtered_)
   {
@@ -166,24 +179,20 @@ void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
       speedFilter_[i].clear();
   }
 
-  export_meshup_animation(state_, ConstantVector(target_dof_, 0));
+  export_meshup_animation(*state, ConstantVector(target_dof_, 0));
 
-  TRACE("Initial state: " << state_);
+  TRACE("Initial state: " << *state);
 }
 
 double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
 {
-  target_state_.resize(2*target_dof_+1);
-  target_state_next_.resize(2*target_dof_+1);
-  true_state_next_.resize(2*target_dof_+1);
-  target_action_.resize(target_dof_);
-  next->resize(state_.size());
+  Vector state = *next;
 
   // strip state
   if (sim_filtered_)
-    target_state_ << state_.head(target_dof_), state_raw_vel_, state_[rlsTime]; // provide a raw (correct) vector of velocities
+    target_state_ << state.head(target_dof_), state_raw_vel_, state[rlsTime]; // provide a raw (correct) vector of velocities
   else
-    target_state_ << state_.head(2*target_dof_+1);
+    target_state_ << state.head(2*target_dof_+1);
 
   // auto-actuate arm
   if (action.size() == target_dof_-1)
@@ -191,12 +200,12 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
     double arma;
     if (mode_ == "vc")
     {
-      arma = XM430_VS_RX28_COEFF*(14.0/3.3) * 5.0*(-0.26 - state_[rlsArmAngle]);
+      arma = XM430_VS_RX28_COEFF*(14.0/3.3) * 5.0*(-0.26 - state[rlsArmAngle]);
       arma = fmin(LEO_MAX_DXL_VOLTAGE, fmax(arma, -LEO_MAX_DXL_VOLTAGE)); // ensure voltage within limits
     }
     else
     {
-      arma = 0.05*(-0.26 - state_[rlsArmAngle]);
+      arma = 0.05*(-0.26 - state[rlsArmAngle]);
       arma = fmin(DXL_MAX_TORQUE, fmax(arma, -DXL_MAX_TORQUE)); // ensure torque within limits
     }
     target_action_ << action, arma;
@@ -246,18 +255,17 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   dynamics_->finalize(target_state_next_, rbdl_addition_);
 
   // Compose the next state
-  (*next) << target_state_next_, VectorConstructor(state_[rlsRefRootZ]),
-      rbdl_addition_, VectorConstructor(state_[rlsMEF], state_[rlsSMAState], state_[stsSquats]);
+  (*next) << target_state_next_, VectorConstructor(state[rlsRefRootZ]),
+      rbdl_addition_, VectorConstructor(state[rlsMEF], state[rlsSMAState], state[stsSquats]);
 
   if (sub_sma_state_)
     (*next)[rlsSMAState] = sub_sma_state_->get()[0];
 
-  INFO("SMA: " << (*next)[rlsSMAState]);
-
-  if (((*next)[rlsSMAState] == SMA_MAIN && sub_sma_state_) || (!sub_sma_state_))
+  int sma_ok = ((*next)[rlsSMAState] == SMA_MAIN) || ((*next)[rlsSMAState] == SMA_TEST);
+  if ((!sub_sma_state_) || ( sub_sma_state_ && sma_ok))
   {
     main_time_ += tau;
-    INFO("elapsed: " << main_time_);
+    //INFO("elapsed: " << main_time_);
     if (idle_time_ && main_time_ > idle_time_)
       (*next)[rlsRefRootZ] = lower_height_;
     else
@@ -292,29 +300,33 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
     main_time_ = 0.;
 
   // Increase number of half-squats if setpoint changed
-  if ((*next)[rlsRefRootZ] != state_[rlsRefRootZ])
-    (*next)[stsSquats] = state_[stsSquats] + 1;
+  if ((*next)[rlsRefRootZ] != state[rlsRefRootZ])
+    (*next)[stsSquats] = state[stsSquats] + 1;
 
   // Simulate true dynamics for Model Error Feedback algorithm
   if (true_model_ && sub_true_action_)
   {
     Vector true_action = sub_true_action_->get();
-    for (int i = 0; i < true_action.size(); i++)
-      target_action_[i] = true_action[i]; // if arm is auto actuated, it is not touched here
-    true_model_->step(target_state_, target_action_, &true_state_next_);
-    Vector x = true_state_next_.head(target_dof_) - target_state_next_.head(target_dof_);
-    (*next)[rlsMEF] = - sqrt(x.cwiseProduct(x).sum());
-    TRACE((*next)[rlsMEF]);
+    if (true_action.size())
+    {
+      for (int i = 0; i < true_action.size(); i++)
+        target_action_[i] = true_action[i]; // if arm is auto actuated, it is not touched here
+      true_model_->step(target_state_, target_action_, &true_state_next_);
+      Vector x = true_state_next_.head(target_dof_) - target_state_next_.head(target_dof_);
+      (*next)[rlsMEF] = - sqrt(x.cwiseProduct(x).sum());
+      TRACE("MEF: " << (*next)[rlsMEF]);
+    }
+    else
+      (*next)[rlsMEF] = 0;
   }
   else
     (*next)[rlsMEF] = 0;
-
+/*
   std::cout << "  > Height: " << std::fixed << std::setprecision(3) << std::right
             << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
             << std::setw(10) << (*next)[rlsRefRootZ] << std::endl;
-
+*/
   export_meshup_animation(*next, target_action_);
 
-  state_ = *next;
   return tau;
 }

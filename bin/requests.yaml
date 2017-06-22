@@ -192,6 +192,42 @@ agent/leo/fixed:
     optional: 1
 agent/leo/sma:
   description: State-machine agent for Leo
+  environment:
+    type: environment
+    description: Environment in which the agent acts
+    mutability: configuration
+    default: 0
+    optional: 1
+  main_steps:
+    type: int
+    description: Number of time steps for the main agent to operate
+    mutability: configuration
+    default: 0
+    optional: 1
+    min: 0
+    max: 2147483647
+  main_timeout:
+    type: double
+    description: Number of trials to take (switched to agent_prepare after the timout or fail)
+    mutability: configuration
+    default: 0
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  test_interval:
+    type: int
+    description: Number of episodes after which testing happens of the main controller happens
+    mutability: configuration
+    default: -1
+    optional: 1
+    min: -1
+    max: 2147483647
+  output:
+    type: string
+    description: Output base filename
+    mutability: configuration
+    default: ""
+    optional: 1
   sub_ic_signal:
     type: signal/vector
     description: Subscriber to the contact signal
@@ -230,18 +266,16 @@ agent/leo/sma:
     optional: 1
   agent_main:
     type: agent
-    description: Main agent
+    description: Main learning agent
     mutability: configuration
     default: 0
     optional: 0
-  main_timeout:
-    type: double
-    description: Timeout for the main agent to work, switched to agent_standup afterwards
+  agent_test:
+    type: agent
+    description: Main testing agent
     mutability: configuration
     default: 0
     optional: 1
-    min: 0
-    max: 1.797693134862316e+308
   upright_trigger:
     type: trigger
     description: Trigger which finishes stand-up phase and triggers preparation agent

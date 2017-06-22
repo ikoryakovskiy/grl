@@ -413,7 +413,7 @@ class Sandbox : public Configurable
     virtual void report(std::ostream &os) const { }
 
   protected:
-    Vector state_, target_state_, target_state_next_, target_action_;
+    Vector state_;
 };
 
 /// Sequential-access transition environment.

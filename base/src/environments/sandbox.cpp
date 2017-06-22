@@ -59,8 +59,16 @@ void SandboxEnvironment::configure(Configuration &config)
 
 void SandboxEnvironment::reconfigure(const Configuration &config)
 {
+  sandbox_->reconfigure(config);
+  task_->reconfigure(config);
+
   if (config.has("action") && config["action"].str() == "reset")
     time_learn_ = time_test_ = 0.;
+  if (config.has("action") && config["action"].str() == "statclr")
+  {
+    sandbox_->start(ConstantVector(1, test_), &state_);
+    state_obj_->set(state_);
+  }
 }
 
 SandboxEnvironment &SandboxEnvironment::copy(const Configurable &obj)

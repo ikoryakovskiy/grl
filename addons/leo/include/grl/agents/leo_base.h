@@ -54,7 +54,7 @@ class LeoBaseAgent : public Agent
 
   protected:
     virtual bool unpack_ic(int *touchDown, int *groundContact, int *stanceLegLeft) const;
-    virtual bool failed(const Observation &obs, bool stanceLegLeft) const;
+    virtual bool failed(const Observation &obs) const;
 };
 
 }

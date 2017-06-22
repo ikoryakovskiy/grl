@@ -31,6 +31,7 @@
 #include <grl/environment.h>
 #include <grl/environments/rbdl.h>
 #include <grl/butterworth.h>
+#include <../../agents/leo_sma.h>
 
 namespace grl
 {
@@ -62,6 +63,8 @@ class LeoSandboxModel: public Sandbox
     Model *true_model_;
 
     VectorSignal *sub_sma_state_;
+
+    Vector target_state_, target_state_next_, target_action_;
 };
 
 class LeoSquattingSandboxModel : public LeoSandboxModel
@@ -70,11 +73,12 @@ class LeoSquattingSandboxModel : public LeoSandboxModel
     TYPEINFO("sandbox_model/leo_squatting", "State transition model that integrates equations of motion and augments state vector with additional elements")
 
   public:
-    LeoSquattingSandboxModel() : lower_height_(0.28), upper_height_(0.35), mode_("vc"), sim_filtered_(0), main_time_(0.), idle_time_(0.), timer_switch_(0) { }
+    LeoSquattingSandboxModel() : lower_height_(0.28), upper_height_(0.35), mode_("vc"), sim_filtered_(0), main_time_(0.), idle_time_(0.), timer_switch_(0), sma_state_(SMA_NONE) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
     virtual void configure(Configuration &config);
+    virtual void reconfigure(const Configuration &config);
 
     // From Model
     virtual void start(const Vector &hint, Vector *state);
@@ -92,7 +96,7 @@ class LeoSquattingSandboxModel : public LeoSandboxModel
 
     double main_time_, idle_time_;
     int timer_switch_;
-
+    SMAState sma_state_;
 };
 
 }
