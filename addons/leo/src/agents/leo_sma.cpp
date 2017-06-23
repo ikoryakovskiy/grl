@@ -302,7 +302,7 @@ void LeoStateMachineAgent::set_agent(SMAgent &agent, double tau, const Observati
     // save every test episode or every failure or at the end of learning
     if (!output_.empty())
     {
-      int save_after = (test_interval_+1)*5 - 1; // 5th test episode
+      int save_after = (test_interval_+1)*3 - 1; // 5th test episode
       if ((tt_%(save_after+1) == save_after) || (agent_ == agent_main_ && (failed(obs) || (steps_ && ss_ >= steps_)) ))
         save(agent_);
     }
@@ -345,7 +345,7 @@ bool LeoStateMachineAgent::set_agent_main(double tau, const Observation &obs, do
 
     timer init_t; // add start-up time (critical for NMPC because it is long, 1-2s) => account for it
     set_agent(agent, tau, obs, reward, action, msg);  
-    main_time_ = time_;// + init_t.elapsed();
+    main_time_ = time_ + init_t.elapsed();
     return true;
   }
   return false;

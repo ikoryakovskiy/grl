@@ -481,7 +481,7 @@ void *muscod_run (void *indata)
     // run single SQP iteration to be able to write a restart file
     pthread_mutex_lock(nmpc.mutex_);
     // TODO run initialize controller
-    initialize_controller (nmpc, 50, nmpc.m_sd, nmpc.m_pf);
+    initialize_controller (nmpc, 10, nmpc.m_sd, nmpc.m_pf);
     pthread_mutex_unlock(nmpc.mutex_);
 
     // release setup of thread
@@ -514,7 +514,7 @@ void *muscod_run (void *indata)
         }
 
         // initialize controller
-        initialize_controller (nmpc, 50, sd, pf);
+        initialize_controller (nmpc, 10, sd, pf);
 
         // if (verbose) {
             std::cout << "finished!" << std::endl;
