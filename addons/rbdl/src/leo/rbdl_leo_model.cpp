@@ -299,7 +299,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 
   double tau = 0;
 
-  for (int ii=0; ii < 100; ++ii)
+  for (int ii=0; ii < 200; ++ii)
   {
 
     if (target_env_)
