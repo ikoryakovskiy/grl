@@ -174,7 +174,7 @@ function control(state, action)
 --      print(action[ii])
       action[ii] = Kt*G*(action[ii] - Kt*G*state[dof + ii])/R;
 --      print(action[ii])
-      action[ii] = action[ii] - 0.03*state[dof + ii]; -- Friction
+--      action[ii] = action[ii] - 0.03*state[dof + ii]; -- Friction
     end
     return {0.0, 0.0, 0.0, action[3], action[4], action[5], action[6], action[7], action[8]}
 end
