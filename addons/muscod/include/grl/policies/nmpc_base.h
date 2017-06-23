@@ -40,12 +40,12 @@ namespace grl
 class NMPCBase : public Policy
 {
   public:
-    NMPCBase() : initFeedback_(0), verbose_(0) {}
+    NMPCBase() : initFeedback_(0), verbose_(0), ninit_(50) {}
 
   //-------------------------------------- GRL -----------------------------------//
   protected:
     int initFeedback_;
-    int verbose_;
+    int verbose_, ninit_;
     std::string model_name_, lua_model_, nmpc_model_name_, model_path_;
     Vector action_min_, action_max_;
 
@@ -85,7 +85,7 @@ void initialize_thread(pthread_t& muscod_thread,
     pthread_mutex_t& mutex,
     bool grl_verbose,
     bool verbose
-);
+, int ninit);
 
 // MUSCOD-II main thread setup and execution loop
 void *muscod_run (void *indata);

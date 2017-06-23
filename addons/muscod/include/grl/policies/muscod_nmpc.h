@@ -60,6 +60,11 @@ struct NMPCProblem : public MUSCODProblem {
   //  4: also shift evaluated Hessian blocks
   int m_shift_mode;
 
+  // Number of iterations for initialization
+  // 10 - for MLRTI
+  // 50 - for NMPC
+  int m_ninit;
+
   // work space for NMPC
   grl::Vector m_sd; // only first shooting node contains initial values
   grl::Vector m_pf; // global parameters
@@ -263,7 +268,7 @@ void create_MUSCOD (MUSCOD* muscod = NULL)
   {}
 
   NMPCProblem(
-    std::string problem_path, std::string model_name, bool verbose=false
+    std::string problem_path, std::string model_name, bool verbose=false, int ninit = 50
   ) : MUSCODProblem(problem_path, model_name, verbose),
     m_quit (false),
     m_is_initialized (false),
@@ -271,7 +276,8 @@ void create_MUSCOD (MUSCOD* muscod = NULL)
     qc_ready_ (false),
     in_preparation_ (false),
     m_nmpc_mode (0),
-    m_shift_mode (1)
+    m_shift_mode (1),
+    m_ninit (ninit)
  {}
 
 }; // END NMPCProblem

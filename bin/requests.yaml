@@ -2041,6 +2041,14 @@ mapping/policy/mhe_nmpc:
     mutability: configuration
     default: ""
     optional: 1
+  ninit:
+    type: int
+    description: Number of initialization iterations
+    mutability: system
+    default: 50
+    optional: 1
+    min: 0
+    max: 2147483647
   mhe_model_name:
     type: string
     description: Name of MUSCOD MHE model library
@@ -2112,6 +2120,14 @@ mapping/policy/nmpc:
     mutability: configuration
     default: ""
     optional: 1
+  ninit:
+    type: int
+    description: Number of initialization iterations
+    mutability: system
+    default: 50
+    optional: 1
+    min: 0
+    max: 2147483647
   feedback:
     type: string
     description: Choose between a non-treaded and a threaded feedback of NMPC
@@ -2183,6 +2199,14 @@ mapping/policy/nmpc_mlrti:
     mutability: configuration
     default: ""
     optional: 1
+  ninit:
+    type: int
+    description: Number of initialization iterations
+    mutability: system
+    default: 50
+    optional: 1
+    min: 0
+    max: 2147483647
 mapping/policy/nmpc_th:
   description: Nonlinear multistep (thread-based) model predictive control policy using the MUSCOD library
   model_name:
@@ -3061,6 +3085,14 @@ policy/nmpc_stages:
     mutability: configuration
     default: ""
     optional: 1
+  ninit:
+    type: int
+    description: Number of initialization iterations
+    mutability: system
+    default: 50
+    optional: 1
+    min: 0
+    max: 2147483647
   feedback:
     type: string
     description: Choose between a non-treaded and a threaded feedback of NMPC

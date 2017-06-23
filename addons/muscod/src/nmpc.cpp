@@ -72,7 +72,7 @@ void NMPCPolicy::configure(Configuration &config)
       problem_path, nmpc_model_name_,
       "",
       cond_iv_ready_, mutex_,
-      verbose_, true
+      verbose_, true, ninit_
     );
 
     //------------------ Initialize Controller ------------------ //
@@ -201,7 +201,7 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, const Vector &initial_p
       nmpc_->m_problem_path, nmpc_->m_model_name,
       thread_id_,
       cond_iv_ready_, mutex_,
-      verbose_, true
+      verbose_, true, ninit_
     );
 
     //------------------ Initialize Controller ------------------ //
@@ -339,7 +339,7 @@ void NMPCPolicy::act(double time, const Observation &in, Action *out)
   }
 
   out->v.resize( nmpc_->NU() );
-  std::cout << "feedback = " << feedback_ << std::endl;
+  //std::cout << "feedback = " << feedback_ << std::endl;
   if (feedback_ == "non-threaded")
   {
     for (int inmpc = 0; inmpc < n_iter_; ++inmpc) {

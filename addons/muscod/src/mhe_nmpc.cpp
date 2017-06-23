@@ -84,7 +84,7 @@ void MHE_NMPCPolicy::configure(Configuration &config)
     problem_path, nmpc_model_name_,
     "",
     cond_iv_ready_, mutex_,
-    verbose_, true
+    verbose_, true, ninit_
   );
 
   // Allocate memory

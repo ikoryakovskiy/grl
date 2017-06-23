@@ -52,6 +52,7 @@ void NMPCBase::request(ConfigurationRequest *config)
   config->push_back(CRP("lua_model", "Lua model used by MUSCOD", lua_model_));
   config->push_back(CRP("model_name", "Name of the model in grl", model_name_));
   config->push_back(CRP("nmpc_model_name", "Name of MUSCOD NMPC model library", nmpc_model_name_));
+  config->push_back(CRP("ninit", "Number of initialization iterations", (int)ninit_, CRP::System, 0, INT_MAX));
 }
 
 void NMPCBase::configure(Configuration &config)
@@ -62,6 +63,7 @@ void NMPCBase::configure(Configuration &config)
   verbose_          = config["verbose"];
   action_min_       = config["action_min"].v();
   action_max_       = config["action_max"].v();
+  ninit_            = config["ninit"];
 
   if (action_min_.size() != action_max_.size())
     throw bad_param("policy/nmpc:{action_min, action_max}");
@@ -274,14 +276,16 @@ void initialize_thread(
     pthread_cond_t& cond_iv_ready,
     pthread_mutex_t& mutex,
     bool grl_verbose,
-    bool verbose
+    bool verbose,
+    int ninit
 ) {
     // initialize NMPCProblem instance
     if (nmpc == 0) {
         nmpc = new NMPCProblem(
             problem_path, nmpc_model_name,
             // forward verbosity from grl
-            grl_verbose
+            grl_verbose,
+            ninit
         );
     }
     // assign ID to thread
@@ -481,7 +485,7 @@ void *muscod_run (void *indata)
     // run single SQP iteration to be able to write a restart file
     pthread_mutex_lock(nmpc.mutex_);
     // TODO run initialize controller
-    initialize_controller (nmpc, 10, nmpc.m_sd, nmpc.m_pf);
+    initialize_controller (nmpc, nmpc.m_ninit, nmpc.m_sd, nmpc.m_pf);
     pthread_mutex_unlock(nmpc.mutex_);
 
     // release setup of thread
@@ -514,7 +518,7 @@ void *muscod_run (void *indata)
         }
 
         // initialize controller
-        initialize_controller (nmpc, 10, sd, pf);
+        initialize_controller (nmpc, nmpc.m_ninit, sd, pf);
 
         // if (verbose) {
             std::cout << "finished!" << std::endl;

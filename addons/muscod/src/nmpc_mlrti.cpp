@@ -63,7 +63,7 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
     problem_path, nmpc_model_name_,
     thread_id_A,
     cond_iv_ready_A_, mutex_A_,
-    verbose_, true
+    verbose_, true, ninit_
   );
 
   //------------------- Initialize Controller A -------------------- //
@@ -88,7 +88,7 @@ void NMPCPolicyMLRTI::configure(Configuration &config)
     problem_path, nmpc_model_name_,
     thread_id_B,
     cond_iv_ready_B_, mutex_B_,
-    verbose_, true
+    verbose_, true, ninit_
   );
   //------------------- Initialize Controller B -------------------- //
   // wait until iv_ready condition is fulfilled
@@ -166,7 +166,7 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
     nmpc_A_->m_problem_path, nmpc_A_->m_model_name,
     thread_id_A,
     cond_iv_ready_A_, mutex_A_,
-    verbose_, true
+    verbose_, true, ninit_
   );
 
   //------------------- Initialize Controller A -------------------- //
@@ -201,7 +201,7 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
     nmpc_B_->m_problem_path, nmpc_B_->m_model_name,
     thread_id_B,
     cond_iv_ready_B_, mutex_B_,
-    verbose_, true
+    verbose_, true, ninit_
   );
 
   //------------------- Initialize Controller B -------------------- //
