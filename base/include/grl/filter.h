@@ -10,8 +10,17 @@
 
 #include <string.h>
 
+class CFilterBase
+{
+  public:
+    virtual ~CFilterBase() {}
+    virtual void init(double samplingFrequency, double cutoffFrequency) = 0;
+    virtual double filter(double newSample) = 0;
+    virtual void clear() = 0;
+};
+
 template<class FILTERTYPE, int FILTERLENGTH>
-class CFilter
+class CFilter : public CFilterBase
 {
 	protected:
 		FILTERTYPE			mSampleBuffer[FILTERLENGTH];

@@ -485,6 +485,7 @@ void *muscod_run (void *indata)
     // run single SQP iteration to be able to write a restart file
     pthread_mutex_lock(nmpc.mutex_);
     // TODO run initialize controller
+    std::cout << "THREAD '" << thread_id << "': ninit: " << nmpc.m_ninit << std::endl;
     initialize_controller (nmpc, nmpc.m_ninit, nmpc.m_sd, nmpc.m_pf);
     pthread_mutex_unlock(nmpc.mutex_);
 
@@ -512,12 +513,14 @@ void *muscod_run (void *indata)
         pf << nmpc.m_pf;
 
         if (verbose) {
+            //std::cout << "THREAD '" << thread_id << "': ninit: " << nmpc.m_ninit << std::endl;
             std::cout << "THREAD '" << thread_id << "': sd: " << sd << std::endl;
             std::cout << "THREAD '" << thread_id << "': pf: " << pf << std::endl;
             std::cout << "THREAD '" << thread_id << "': initialize controller ... ";
         }
 
         // initialize controller
+        std::cout << "THREAD '" << thread_id << "': ninit: " << nmpc.m_ninit << std::endl;
         initialize_controller (nmpc, nmpc.m_ninit, sd, pf);
 
         // if (verbose) {
