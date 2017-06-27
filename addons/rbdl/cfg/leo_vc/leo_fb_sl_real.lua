@@ -26,7 +26,7 @@ armICangle = -0.26 -- = -15*degtorad
 torsoheight = (0.24155)
 torsoHipDistX = (0.00273)
 torsoHipDistZ = (-torsoheight/2)
-torsoMass = 1.083599 --0.94226
+torsoMass = 1.41339 --0.94226
 boomMass = 0.860
 boomCMY = 0.835
 boomLength = 1.70
