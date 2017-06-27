@@ -139,7 +139,7 @@ void SelectiveMasterAgent::stepSubAgent(int idx, double tau, const Observation &
     current_agent_->end(tau, obs, reward);          // finish previous agent
     current_agent_ = agent;                         // switch to the new agent
     current_agent_->start(obs, action);             // start it to obtain action
-    TRACE("Changing subAgents");
+    NOTICE("Changing subAgents");
 
     // record subtask reward
     subtasks_rewards_.push_back(subtask_reward_);

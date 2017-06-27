@@ -205,6 +205,8 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
   );
 
   //------------------- Initialize Controller B -------------------- //
+  // wait until iv_ready condition is fulfilled
+  wait_for_iv_ready (nmpc_B_, verbose_);
 
   // provide initial value and wait again
   // wait until iv_ready condition is fulfilled

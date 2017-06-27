@@ -481,14 +481,14 @@ void *muscod_run (void *indata)
     // nmpc.m_pf = Vector::Zero (NP);
     // nmpc.m_qc = Vector::Zero (NU);
     pthread_mutex_unlock(nmpc.mutex_);
-
+/*
     // run single SQP iteration to be able to write a restart file
     pthread_mutex_lock(nmpc.mutex_);
     // TODO run initialize controller
     std::cout << "THREAD '" << thread_id << "': ninit: " << nmpc.m_ninit << std::endl;
     initialize_controller (nmpc, nmpc.m_ninit, nmpc.m_sd, nmpc.m_pf);
     pthread_mutex_unlock(nmpc.mutex_);
-
+*/
     // release setup of thread
     pthread_mutex_lock(nmpc.mutex_);
     nmpc.m_is_initialized = true;
