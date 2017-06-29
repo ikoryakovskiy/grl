@@ -316,7 +316,8 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
       for (int i = 0; i < true_action.size(); i++)
         target_action_[i] = true_action[i]; // if arm is auto actuated, it is not touched here
       true_model_->step(target_state_, target_action_, &true_state_next_);
-      Vector x = true_state_next_.head(target_dof_) - target_state_next_.head(target_dof_);
+      int dof = true_action.size(); // if arm is auto actuated, do not account for it
+      Vector x = true_state_next_.head(dof) - target_state_next_.head(dof);
       (*next)[rlsMEF] = - sqrt(x.cwiseProduct(x).sum());
       TRACE("MEF: " << (*next)[rlsMEF]);
     }
