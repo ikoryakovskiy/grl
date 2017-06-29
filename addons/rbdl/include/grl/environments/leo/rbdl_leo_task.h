@@ -47,7 +47,9 @@ enum RbdlLeoState
   rlsHipAngleRate,
   rlsArmAngleRate,
 
-  rlsTime,
+  rlsTime,  // end of rbdl state
+
+  rlsTemperature,
   rlsRefRootZ,
 
   rlsLeftTipX,

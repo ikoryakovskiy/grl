@@ -254,13 +254,18 @@ void NMPCPolicyMLRTI::muscod_reset(const Vector &initial_obs, double time)
 
 void NMPCPolicyMLRTI::act(double time, const Observation &in, Action *out)
 {
-  grl_assert(in.v.size() == nmpc_A_->NXD() + 1); // setpoint indicator
+  grl_assert(in.v.size() == nmpc_A_->NXD() + 1 || in.v.size() == nmpc_A_->NXD() + 2); // setpoint indicator or temperature + setpoint indicator
 
-  // reference height
-  initial_pf_ << in.v[in.v.size()-1];
-
-  // remove indicator
-  Vector initial_sd_ = in.v.block(0, 0, 1, in.v.size()-1);
+  if (in.v.size() == nmpc_A_->NXD() + 1)
+  {
+    initial_pf_ << in.v[in.v.size()-1]; // reference height
+    initial_sd_ = in.v.block(0, 0, 1, in.v.size()-1); // remove indicator
+  }
+  else if (in.v.size() == nmpc_A_->NXD() + 2)
+  {
+    initial_pf_ << in.v[in.v.size()-1]; // reference height
+    initial_sd_ = in.v.block(0, 0, 1, in.v.size()-2); // remove indicator
+  }
 
   if (time == 0.0)
     muscod_reset(initial_sd_, time);

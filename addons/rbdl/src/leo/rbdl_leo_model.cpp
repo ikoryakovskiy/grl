@@ -159,15 +159,17 @@ void LeoSquattingSandboxModel::reconfigure(const Configuration &config)
 
 void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
 {
-  Vector rbdl_state = state->head(rlsTime+1);
+  Vector rbdl_state = state->head(2*target_dof_+1);
   // Fill parts of a state such as Center of Mass, Angular Momentum
   dynamics_->updateKinematics(rbdl_state);
   dynamics_->finalize(rbdl_state, rbdl_addition_);
 
+  double temperature = (*state)[rlsTemperature];
+
   // Compose a complete state <state, time, height, com, ..., squats>
   // Immediately try to stand up
   state->resize(stsStateDim);
-  *state << rbdl_state, VectorConstructor(upper_height_), rbdl_addition_,
+  *state << rbdl_state, VectorConstructor(temperature, upper_height_), rbdl_addition_,
       VectorConstructor(0),           // zero mef error
       VectorConstructor(sma_state_),  // none type of state machine
       VectorConstructor(0);           // zero squats
@@ -219,12 +221,14 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
 //  std::cout << "  > Action: " << action_step_ << std::endl;
 
   // call dynamics of the reduced state
+  double temperature = state[rlsTemperature];
   double tau;
   if (target_env_)
   {
     Observation obs;
     tau = target_env_->step(target_action_, &obs, NULL, NULL);
-    target_state_next_ <<  obs.v, VectorConstructor(target_state_[rlsTime] + tau);
+    target_state_next_ <<  obs.v.head(2*target_dof_), VectorConstructor(target_state_[rlsTime] + tau);
+    temperature = obs.v.tail(1)[0]; // last element of observation, which is temperature
     dynamics_->updateKinematics(target_state_next_); // update internal state of RBDL
   }
   else
@@ -255,7 +259,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   dynamics_->finalize(target_state_next_, rbdl_addition_);
 
   // Compose the next state
-  (*next) << target_state_next_, VectorConstructor(state[rlsRefRootZ]),
+  (*next) << target_state_next_, VectorConstructor(temperature, state[rlsRefRootZ]),
       rbdl_addition_, VectorConstructor(state[rlsMEF], state[rlsSMAState], state[stsSquats]);
 
   if (sub_sma_state_)

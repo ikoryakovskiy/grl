@@ -28,7 +28,7 @@ class NMPCPolicyMLRTI: public NMPCBase
 
   protected:
     int nmpc_ninit_; // number of MUSCOD SQP iterations for initialization
-    Vector initial_pf_, initial_qc_, final_sd_;
+    Vector initial_sd_, initial_pf_, initial_qc_, final_sd_;
     Vector initial_sd_prev_, initial_pf_prev_, initial_qc_prev_;
     double sum_error_;
     int sum_error_counter_;

@@ -76,31 +76,35 @@ void LeoSquattingTask::configure(Configuration &config)
   fixed_arm_ = config["fixed_arm"];
 
   // Target observations: 2*target_dof + time
-  std::vector<double> obs_min = {-M_PI, -M_PI, -M_PI, -M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
-  std::vector<double> obs_max = { M_PI,  M_PI,  M_PI,  M_PI,  10*M_PI,  10*M_PI,  10*M_PI,  10*M_PI, 1};
+  std::vector<double> obs_min = {-M_PI, -M_PI, -M_PI, -M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0, 10};
+  std::vector<double> obs_max = { M_PI,  M_PI,  M_PI,  M_PI,  10*M_PI,  10*M_PI,  10*M_PI,  10*M_PI, 1, 80};
   toVector(obs_min, target_obs_min_);
   toVector(obs_max, target_obs_max_);
 
   dof_ = fixed_arm_ ? 3 : 4;
 
   // Observations and actions exposed to an agent
-  config.set("observation_dims", 2*dof_+1);
+  config.set("observation_dims", 2*dof_+2);
   Vector observation_min, observation_max;
-  observation_min.resize(2*dof_+1);
-  observation_max.resize(2*dof_+1);
+  observation_min.resize(2*dof_+2);
+  observation_max.resize(2*dof_+2);
   if (fixed_arm_)
   {
     observation_min << target_obs_min_[rlsAnkleAngle], target_obs_min_[rlsKneeAngle], target_obs_min_[rlsHipAngle],
-        target_obs_min_[rlsAnkleAngleRate], target_obs_min_[rlsKneeAngleRate], target_obs_min_[rlsHipAngleRate], target_obs_min_[rlsTime];
+        target_obs_min_[rlsAnkleAngleRate], target_obs_min_[rlsKneeAngleRate], target_obs_min_[rlsHipAngleRate],
+        target_obs_min_[rlsTime], target_obs_min_[rlsTemperature];
     observation_max << target_obs_max_[rlsAnkleAngle], target_obs_max_[rlsKneeAngle], target_obs_max_[rlsHipAngle],
-        target_obs_max_[rlsAnkleAngleRate], target_obs_max_[rlsKneeAngleRate], target_obs_max_[rlsHipAngleRate], target_obs_max_[rlsTime];
+        target_obs_max_[rlsAnkleAngleRate], target_obs_max_[rlsKneeAngleRate], target_obs_max_[rlsHipAngleRate],
+        target_obs_max_[rlsTime], target_obs_max_[rlsTemperature];
   }
   else
   {
     observation_min << target_obs_min_[rlsAnkleAngle], target_obs_min_[rlsKneeAngle], target_obs_min_[rlsHipAngle], target_obs_min_[rlsArmAngle],
-        target_obs_min_[rlsAnkleAngleRate], target_obs_min_[rlsKneeAngleRate], target_obs_min_[rlsHipAngleRate], target_obs_min_[rlsArmAngleRate], target_obs_min_[rlsTime];
+        target_obs_min_[rlsAnkleAngleRate], target_obs_min_[rlsKneeAngleRate], target_obs_min_[rlsHipAngleRate], target_obs_min_[rlsArmAngleRate],
+        target_obs_min_[rlsTime], target_obs_min_[rlsTemperature];
     observation_max << target_obs_max_[rlsAnkleAngle], target_obs_max_[rlsKneeAngle], target_obs_max_[rlsHipAngle],  target_obs_max_[rlsArmAngle],
-        target_obs_max_[rlsAnkleAngleRate], target_obs_max_[rlsKneeAngleRate], target_obs_max_[rlsHipAngleRate], target_obs_max_[rlsArmAngleRate], target_obs_max_[rlsTime];
+        target_obs_max_[rlsAnkleAngleRate], target_obs_max_[rlsKneeAngleRate], target_obs_max_[rlsHipAngleRate], target_obs_max_[rlsArmAngleRate],
+        target_obs_max_[rlsTime], target_obs_max_[rlsTemperature];
   }
 
   config.set("observation_min", observation_min);
@@ -130,14 +134,14 @@ void LeoSquattingTask::reconfigure(const Configuration &config)
 
 void LeoSquattingTask::start(int test, Vector *state) const
 {
-  *state = ConstantVector(rlsTime+1, 0); // Same size for both tasts with FA and without
+  *state = ConstantVector(4*2+2, 0); // Same size for both tasts with FA and without
 
   if (target_env_)
   {
     // Obtain initial state from real Leo
     Observation obs;
-    target_env_->start(0, &obs);
-    *state << obs.v, VectorConstructor(0.0);
+    target_env_->start(0, &obs); // 4 angles, 4 velocities, 1 rlsTemperature
+    *state << obs.v.head(4*2), VectorConstructor(0.0), obs.v.tail(1); // 4 angles, 4 velocities, 1 rlsTime, 1 rlsTemperature
   }
   else
   {
@@ -151,7 +155,9 @@ void LeoSquattingTask::start(int test, Vector *state) const
           -0.0,
           -0.0,
           -0.0,  // end of rlsDofDim
-           0.0;  // rlsTime
+           0.0,  // rlsTime
+          25.0;  // rlsTemperature
+
 
     if (randomize_)
     {
@@ -209,16 +215,18 @@ void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *termi
 {
   grl_assert(state.size() == stsStateDim);
 
-  obs->v.resize(2*dof_+1);
+  obs->v.resize(2*dof_+2);
   if (fixed_arm_)
   {
     obs->v << state[rlsAnkleAngle], state[rlsKneeAngle], state[rlsHipAngle],
-              state[rlsAnkleAngleRate], state[rlsKneeAngleRate], state[rlsHipAngleRate], state[rlsRefRootZ];
+              state[rlsAnkleAngleRate], state[rlsKneeAngleRate], state[rlsHipAngleRate],
+              state[rlsTemperature], state[rlsRefRootZ];
   }
   else
   {
     obs->v << state[rlsAnkleAngle], state[rlsKneeAngle], state[rlsHipAngle], state[rlsArmAngle],
-              state[rlsAnkleAngleRate], state[rlsKneeAngleRate], state[rlsHipAngleRate], state[rlsArmAngleRate], state[rlsRefRootZ];
+              state[rlsAnkleAngleRate], state[rlsKneeAngleRate], state[rlsHipAngleRate], state[rlsArmAngleRate],
+              state[rlsTemperature], state[rlsRefRootZ];
   }
 
   if ((timeout_> 0) && (state[rlsTime] >= timeout_))
