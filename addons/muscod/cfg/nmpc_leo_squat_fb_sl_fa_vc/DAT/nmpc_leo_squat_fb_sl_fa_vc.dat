@@ -173,9 +173,9 @@ ALL: 0.01
 ; 2: -3.0
  ; VOLTAGE CONTROL
 u_min(*,*)
- 0: -10.7
- 1: -10.7
- 2: -10.7
+ 0: -10
+ 1: -10
+ 2: -10
 
  ; TORQUE CONTROL
 ;u_max(*,*)
@@ -184,9 +184,9 @@ u_min(*,*)
 ; 2:  3.0
  ; VOLTAGE CONTROL
 u_max(*,*)
- 0:  10.7
- 1:  10.7
- 2:  10.7
+ 0:  10
+ 1:  10
+ 2:  10
 
 u_name
  0: tau_ankle_left

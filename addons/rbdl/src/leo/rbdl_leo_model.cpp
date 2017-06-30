@@ -262,11 +262,18 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   (*next) << target_state_next_, VectorConstructor(temperature, state[rlsRefRootZ]),
       rbdl_addition_, VectorConstructor(state[rlsMEF], state[rlsSMAState], state[stsSquats]);
 
+  int changing_direction_ok = 1;
   if (sub_sma_state_)
-    (*next)[rlsSMAState] = sub_sma_state_->get()[0];
+  {
+    Vector tmp = sub_sma_state_->get();
+    if (tmp.size() == 1)
+    {
+      (*next)[rlsSMAState] = tmp[0];
+      changing_direction_ok = ((*next)[rlsSMAState] == SMA_MAIN) || ((*next)[rlsSMAState] == SMA_TEST);
+    }
+  }
 
-  int sma_ok = ((*next)[rlsSMAState] == SMA_MAIN) || ((*next)[rlsSMAState] == SMA_TEST);
-  if ((!sub_sma_state_) || ( sub_sma_state_ && sma_ok))
+  if (changing_direction_ok)
   {
     main_time_ += tau;
     //INFO("elapsed: " << main_time_);
@@ -327,7 +334,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   else
     (*next)[rlsMEF] = 0;
 /*
-  std::cout << "  > " << std::setw(10) << (*next)[rlsSMAState]
+  std::cout << "  > " << (int)(*next)[rlsSMAState]
             << " Height: " << std::fixed << std::setprecision(3) << std::right
             << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
             << std::setw(10) << (*next)[rlsRefRootZ] << std::endl;
