@@ -551,7 +551,7 @@ double LeoWalkingTask::calculateReward(const Vector &state, const Vector &next) 
 
 bool LeoWalkingTask::isDoomedToFall(const Vector &state) const
 {
-  double torsoConstraint = 1; // 1
+  double torsoConstraint = 1.1; // 1
   double stanceConstraint = 0.36*M_PI; // 0.36*M_PI
   double torsoHeightConstraint = -0.15;
 
