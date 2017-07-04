@@ -355,20 +355,16 @@ class MEFEnvironment : public Environment
     TYPEINFO("environment/post/mef", "Substitutes reward with model-error reward")
 
   public:
+    VectorSignal *sub_nominal_action_;
     Environment *environment_;
+    VectorSignal *state_obj_;
     Task *task_;
+    Model *model_;
 
-    Vector prev_state_;
     double total_reward_, mef_total_reward_;
 
-    VectorSignal *sub_nominal_action_;
-    Model *nominal_model_;
-    VectorSignal *state_obj_;
-
-    int test_;
-
   public:
-    MEFEnvironment() : environment_(NULL), task_(NULL), total_reward_(0.), mef_total_reward_(0.), sub_nominal_action_(NULL), nominal_model_(NULL), state_obj_(NULL), test_(0)
+    MEFEnvironment() : sub_nominal_action_(NULL), environment_(NULL), state_obj_(NULL), task_(NULL), model_(NULL), total_reward_(0.), mef_total_reward_(0.)
     {
     }
 
@@ -385,16 +381,13 @@ class MEFEnvironment : public Environment
 };
 
 /// Environment that benchmarks external action on a different (ideal) model.
-class BenchmarkingEnvironment : public MEFEnvironment
+class MEFBenchmarkingEnvironment : public MEFEnvironment
 {
   public:
-    TYPEINFO("environment/post/benchmarking", "Benchmark external action on an ideal model")
+    TYPEINFO("environment/post/mef/benchmarking", "Benchmark external action on an ideal model (MEF is not used as a reward)")
 
   public:
-    BenchmarkingEnvironment()
-    //: environment_(NULL), task_(NULL), nominal_total_reward_(0.), mef_total_reward_(0.), sub_nominal_action_(NULL), nominal_model_(NULL), state_obj_(NULL)
-    {
-    }
+    MEFBenchmarkingEnvironment() {}
 
     // From Environment
     virtual double step(const Action &action, Observation *obs, double *reward, int *terminal);

@@ -288,6 +288,5 @@ void ZeromqMessenger::safe_clean()
   safe_delete(&primary_);
   if (context_)
     context_->close();
-  safe_delete(&context_);
   safe_delete(&g_args);
 }

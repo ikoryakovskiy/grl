@@ -56,7 +56,7 @@ void SequentialMasterAgent::configure(Configuration &config)
   if (exporter_)
   {
     exporter_->init({"time", "action0", "action1"});
-    exporter_->open("all", 0);
+    exporter_->open("", 0);
   }
 }
 

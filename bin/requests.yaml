@@ -1290,43 +1290,23 @@ environment/ode:
     type: double.reward_max
     description: Upper limit on immediate reward
     mutability: provided
-environment/post/benchmarking:
-  description: Benchmark external action on an ideal model
-  environment:
-    type: environment
-    description: Environment to inject noise into
-    mutability: configuration
-    default: 0
-    optional: 0
-  task:
-    type: task
-    description: Task to perform in the environment (should match model)
-    mutability: configuration
-    default: 0
-    optional: 0
-  state:
-    type: signal/vector
-    description: Current state of the real model
-    mutability: configuration
-    default: 0
-    optional: 0
-  nominal_model:
-    type: model
-    description: True dynamical model
-    mutability: configuration
-    default: 0
-    optional: 0
-  sub_nominal_action:
-    type: signal/vector
-    description: Subscriber to an external action from a nominal controller
-    mutability: configuration
-    default: 0
-    optional: 0
 environment/post/mef:
   description: Substitutes reward with model-error reward
+  sub_nominal_action:
+    type: signal/vector
+    description: Subscriber to an external action from a nominal controller
+    mutability: configuration
+    default: 0
+    optional: 0
   environment:
     type: environment
-    description: Environment to inject noise into
+    description: Real environment
+    mutability: configuration
+    default: 0
+    optional: 0
+  state:
+    type: signal/vector
+    description: Current state of the environment
     mutability: configuration
     default: 0
     optional: 0
@@ -1336,21 +1316,41 @@ environment/post/mef:
     mutability: configuration
     default: 0
     optional: 0
-  state:
-    type: signal/vector
-    description: Current state of the real model
-    mutability: configuration
-    default: 0
-    optional: 0
-  nominal_model:
+  model:
     type: model
-    description: True dynamical model
+    description: Approximated model of the system
     mutability: configuration
     default: 0
     optional: 0
+environment/post/mef/benchmarking:
+  description: Benchmark external action on an ideal model (MEF is not used as a reward)
   sub_nominal_action:
     type: signal/vector
     description: Subscriber to an external action from a nominal controller
+    mutability: configuration
+    default: 0
+    optional: 0
+  environment:
+    type: environment
+    description: Real environment
+    mutability: configuration
+    default: 0
+    optional: 0
+  state:
+    type: signal/vector
+    description: Current state of the environment
+    mutability: configuration
+    default: 0
+    optional: 0
+  task:
+    type: task
+    description: Task to perform in the environment (should match model)
+    mutability: configuration
+    default: 0
+    optional: 0
+  model:
+    type: model
+    description: Approximated model of the system
     mutability: configuration
     default: 0
     optional: 0
@@ -2772,6 +2772,32 @@ mapping/value:
     mutability: configuration
     default: 0
     optional: 0
+model/car:
+  description: Car model with (optional) static friction
+  control_step:
+    type: double.control_step
+    description: Control step time
+    mutability: configuration
+    default: 1
+    optional: 1
+    min: 0.001
+    max: 1.797693134862316e+308
+  mass:
+    type: double
+    description: Car mass
+    mutability: configuration
+    default: 1
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  friction:
+    type: double
+    description: Static friction coeffecient between car and ground
+    mutability: configuration
+    default: 0
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
 model/compass_walker:
   description: Simplest walker model from Garcia et al.
   control_step:
@@ -5734,6 +5760,96 @@ task/acrobot/regulator:
     optional: 1
     min: 0
     max: 1
+task/car/regulator:
+  description: Car regulator task
+  observation_dims:
+    type: int.observation_dims
+    description: Number of observation dimensions
+    mutability: provided
+  observation_min:
+    type: vector.observation_min
+    description: Lower limit on observations
+    mutability: provided
+  observation_max:
+    type: vector.observation_max
+    description: Upper limit on observations
+    mutability: provided
+  action_dims:
+    type: int.action_dims
+    description: Number of action dimensions
+    mutability: provided
+  action_min:
+    type: vector.action_min
+    description: Lower limit on actions
+    mutability: provided
+  action_max:
+    type: vector.action_max
+    description: Upper limit on actions
+    mutability: provided
+  reward_min:
+    type: double.reward_min
+    description: Lower limit on immediate reward
+    mutability: provided
+  reward_max:
+    type: double.reward_max
+    description: Upper limit on immediate reward
+    mutability: provided
+  start:
+    type: vector
+    description: Starting state
+    mutability: configuration
+    default: "[ 0, 0 ]"
+    optional: 1
+  goal:
+    type: vector
+    description: Goal state
+    mutability: configuration
+    default: "[ 5, 0 ]"
+    optional: 1
+  stddev:
+    type: vector
+    description: Starting state standard deviation
+    mutability: configuration
+    default: "[ 0, 0 ]"
+    optional: 1
+  q:
+    type: vector
+    description: Q (state cost) matrix diagonal
+    mutability: configuration
+    default: "[ 2, 0 ]"
+    optional: 1
+  r:
+    type: vector
+    description: R (action cost) matrix diagonal
+    mutability: configuration
+    default: "[ 0.02 ]"
+    optional: 1
+  function:
+    type: string
+    description: Cost function style
+    mutability: configuration
+    default: quadratic
+    optional: 1
+    options:
+      - quadratic
+      - absolute
+      - sqrt
+  smoothing:
+    type: double
+    description: Cost function smoothing parameter
+    mutability: configuration
+    default: 0.01
+    optional: 1
+    min: 0
+    max: 1
+  timeout:
+    type: double
+    description: Timeout until the task is restarted
+    mutability: configuration
+    default: 20
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
 task/cart_double_pole/balancing:
   description: Cart-double-pole balancing task
   observation_dims:

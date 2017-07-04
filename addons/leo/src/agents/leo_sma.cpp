@@ -66,6 +66,9 @@ void *save_thread(void*)
     th_data data = save_data;
     pthread_mutex_unlock(&save_mtx); // unlock the mutex
 
+    // give PID controller to stabalize Leo before we start saving
+    sleep(4);
+
     // saving, working only with data
     std::ostringstream oss;
     oss << data.output << "-" << data.tt << "-";

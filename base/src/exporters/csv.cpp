@@ -123,14 +123,17 @@ void CSVExporter::open(const std::string &variant, bool append)
   if (stream_.is_open())
     stream_.close();
 
+  // Use requested objective if none is specified
+  std::string v = variant;
+  if (v.empty())
+    v = variant_;
+
   // Check if our export objective matches exporter variant
-  if (variant_ != "all" && variant_ != variant)
+  if (variant_ != "all" && variant_ != v)
     return;
 
-  // Append variant if given
-  std::string file = file_;
-  if (!variant.empty())
-    file = file_ + "-" + variant;
+  // Append variant
+  std::string file = file_ + "-" + v;
 
   // Append run
   if (!append)
