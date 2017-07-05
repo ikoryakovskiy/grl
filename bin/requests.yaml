@@ -2772,16 +2772,8 @@ mapping/value:
     mutability: configuration
     default: 0
     optional: 0
-model/car:
+model/1dss/car:
   description: Car model with (optional) static friction
-  control_step:
-    type: double.control_step
-    description: Control step time
-    mutability: configuration
-    default: 1
-    optional: 1
-    min: 0.001
-    max: 1.797693134862316e+308
   mass:
     type: double
     description: Car mass
@@ -2790,14 +2782,52 @@ model/car:
     optional: 1
     min: 0
     max: 1.797693134862316e+308
-  friction:
+  coulomb:
     type: double
-    description: Static friction coeffecient between car and ground
+    description: Coulomb friction coeffecient between the car and a ground
     mutability: configuration
     default: 0
     optional: 1
     min: 0
     max: 1.797693134862316e+308
+  viscous:
+    type: double
+    description: Viscous friction coeffecient
+    mutability: configuration
+    default: 1
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+model/1dss/generic:
+  description: Generic 1-DOF model defined by matrixes A and B
+  control_step:
+    type: double.control_step
+    description: Control step time
+    mutability: configuration
+    default: 1
+    optional: 1
+    min: 0.001
+    max: 1.797693134862316e+308
+  coulomb:
+    type: double
+    description: Coulomb friction coeffecient in a joint
+    mutability: configuration
+    default: 0
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  A:
+    type: vector
+    description: Row-major matrix A, from x_ = Ax + Bu
+    mutability: configuration
+    default: "[ 1, 1, 0, 1 ]"
+    optional: 1
+  B:
+    type: vector
+    description: Vector B, from x_ = Ax + Bu
+    mutability: configuration
+    default: "[ 0, 1 ]"
+    optional: 1
 model/compass_walker:
   description: Simplest walker model from Garcia et al.
   control_step:
@@ -5644,6 +5674,96 @@ solver/vi:
     mutability: configuration
     default: 0
     optional: 0
+task/1dss/regulator:
+  description: Car regulator task
+  observation_dims:
+    type: int.observation_dims
+    description: Number of observation dimensions
+    mutability: provided
+  observation_min:
+    type: vector.observation_min
+    description: Lower limit on observations
+    mutability: provided
+  observation_max:
+    type: vector.observation_max
+    description: Upper limit on observations
+    mutability: provided
+  action_dims:
+    type: int.action_dims
+    description: Number of action dimensions
+    mutability: provided
+  action_min:
+    type: vector.action_min
+    description: Lower limit on actions
+    mutability: provided
+  action_max:
+    type: vector.action_max
+    description: Upper limit on actions
+    mutability: provided
+  reward_min:
+    type: double.reward_min
+    description: Lower limit on immediate reward
+    mutability: provided
+  reward_max:
+    type: double.reward_max
+    description: Upper limit on immediate reward
+    mutability: provided
+  start:
+    type: vector
+    description: Starting state
+    mutability: configuration
+    default: "[ 0, 0 ]"
+    optional: 1
+  goal:
+    type: vector
+    description: Goal state
+    mutability: configuration
+    default: "[ 5, 0 ]"
+    optional: 1
+  stddev:
+    type: vector
+    description: Starting state standard deviation
+    mutability: configuration
+    default: "[ 0, 0 ]"
+    optional: 1
+  q:
+    type: vector
+    description: Q (state cost) matrix diagonal
+    mutability: configuration
+    default: "[ 2, 0 ]"
+    optional: 1
+  r:
+    type: vector
+    description: R (action cost) matrix diagonal
+    mutability: configuration
+    default: "[ 0.02 ]"
+    optional: 1
+  function:
+    type: string
+    description: Cost function style
+    mutability: configuration
+    default: quadratic
+    optional: 1
+    options:
+      - quadratic
+      - absolute
+      - sqrt
+  smoothing:
+    type: double
+    description: Cost function smoothing parameter
+    mutability: configuration
+    default: 0.01
+    optional: 1
+    min: 0
+    max: 1
+  timeout:
+    type: double
+    description: Timeout until the task is restarted
+    mutability: configuration
+    default: 20
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
 task/acrobot/balancing:
   description: Acrobot balancing task
   observation_dims:
@@ -5760,96 +5880,6 @@ task/acrobot/regulator:
     optional: 1
     min: 0
     max: 1
-task/car/regulator:
-  description: Car regulator task
-  observation_dims:
-    type: int.observation_dims
-    description: Number of observation dimensions
-    mutability: provided
-  observation_min:
-    type: vector.observation_min
-    description: Lower limit on observations
-    mutability: provided
-  observation_max:
-    type: vector.observation_max
-    description: Upper limit on observations
-    mutability: provided
-  action_dims:
-    type: int.action_dims
-    description: Number of action dimensions
-    mutability: provided
-  action_min:
-    type: vector.action_min
-    description: Lower limit on actions
-    mutability: provided
-  action_max:
-    type: vector.action_max
-    description: Upper limit on actions
-    mutability: provided
-  reward_min:
-    type: double.reward_min
-    description: Lower limit on immediate reward
-    mutability: provided
-  reward_max:
-    type: double.reward_max
-    description: Upper limit on immediate reward
-    mutability: provided
-  start:
-    type: vector
-    description: Starting state
-    mutability: configuration
-    default: "[ 0, 0 ]"
-    optional: 1
-  goal:
-    type: vector
-    description: Goal state
-    mutability: configuration
-    default: "[ 5, 0 ]"
-    optional: 1
-  stddev:
-    type: vector
-    description: Starting state standard deviation
-    mutability: configuration
-    default: "[ 0, 0 ]"
-    optional: 1
-  q:
-    type: vector
-    description: Q (state cost) matrix diagonal
-    mutability: configuration
-    default: "[ 2, 0 ]"
-    optional: 1
-  r:
-    type: vector
-    description: R (action cost) matrix diagonal
-    mutability: configuration
-    default: "[ 0.02 ]"
-    optional: 1
-  function:
-    type: string
-    description: Cost function style
-    mutability: configuration
-    default: quadratic
-    optional: 1
-    options:
-      - quadratic
-      - absolute
-      - sqrt
-  smoothing:
-    type: double
-    description: Cost function smoothing parameter
-    mutability: configuration
-    default: 0.01
-    optional: 1
-    min: 0
-    max: 1
-  timeout:
-    type: double
-    description: Timeout until the task is restarted
-    mutability: configuration
-    default: 20
-    optional: 1
-    min: 0
-    max: 1.797693134862316e+308
 task/cart_double_pole/balancing:
   description: Cart-double-pole balancing task
   observation_dims:

@@ -33,39 +33,68 @@
 namespace grl
 {
 
-/// Car model
-class CarModel : public Model
+class StateSpaceModelBase : public Model
 {
-  public:
-    TYPEINFO("model/car", "Car model with (optional) static friction")
-
   protected:
     double tau_;
-    double m_, mu_;
-  
+    double coulomb_;
+    Eigen::Matrix2d A_;
+    Eigen::Vector2d B_;
+
   public:
-    CarModel() : tau_(1), m_(1), mu_(0) { }
-  
+    StateSpaceModelBase() : tau_(1), coulomb_(0) { }
+
     // From Configurable
     virtual void request(ConfigurationRequest *config);
     virtual void configure(Configuration &config);
 
     // From Model
     virtual double step(const Vector &state, const Vector &actuation, Vector *next) const;
+    virtual double coulomb_friction(double xd, double uc, double kc) const;
+};
 
-    virtual double friction(double xd, double uc, double kc) const;
+/// Generic state-space model
+class StateSpaceModel : public StateSpaceModelBase
+{
+  public:
+    TYPEINFO("model/1dss/generic", "Generic 1-DOF model defined by matrixes A and B")
+
+  public:
+    StateSpaceModel() { }
+
+    // From Configurable
+    virtual void request(ConfigurationRequest *config);
+    virtual void configure(Configuration &config);
+};
+
+/// Car model
+class CarStateSpaceModel : public StateSpaceModelBase
+{
+  public:
+    TYPEINFO("model/1dss/car", "Car model with (optional) static friction")
+
+  protected:
+
+    double m_, coulomb_, viscous_;
+  
+  public:
+    CarStateSpaceModel() : m_(1), coulomb_(0), viscous_(1.0) { }
+  
+    // From Configurable
+    virtual void request(ConfigurationRequest *config);
+    virtual void configure(Configuration &config);
 };
 
 /// Regulator task
-class CarRegulatorTask : public RegulatorTask
+class StateSpaceRegulatorTask : public RegulatorTask
 {
   public:
-    TYPEINFO("task/car/regulator", "Car regulator task")
+    TYPEINFO("task/1dss/regulator", "Car regulator task")
     
     double timeout_;
 
   public:
-    CarRegulatorTask() : timeout_(20.)
+    StateSpaceRegulatorTask() : timeout_(20.)
     {
       start_ = VectorConstructor(0., 0.);
       goal_ = VectorConstructor(5., 0.);

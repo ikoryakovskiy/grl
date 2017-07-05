@@ -76,6 +76,9 @@ void *save_thread(void*)
     saveconfig.set("action", "save");
     saveconfig.set("file", oss.str().c_str());
     data.agent->walk(saveconfig);
+
+    // give some time OS to finalize writing
+    sleep(1);
   }
   return NULL;
 }

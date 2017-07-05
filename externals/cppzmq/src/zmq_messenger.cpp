@@ -78,7 +78,7 @@ void ZeromqMessenger::start(int type, const char* primaryAddr, const char* secon
   {
     primary_ = new zmq::socket_t(*context_, ZMQ_REQ);
     primary_->connect(primaryAddr);
-    primary_->setsockopt(ZMQ_RCVTIMEO, 2000); // reply timeout
+//    primary_->setsockopt(ZMQ_RCVTIMEO, 2000); // reply timeout
   }
   else if (type_ == ZMQ_REP)
   {

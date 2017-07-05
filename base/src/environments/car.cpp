@@ -29,24 +29,23 @@
 
 using namespace grl;
 
-REGISTER_CONFIGURABLE(CarModel)
-REGISTER_CONFIGURABLE(CarRegulatorTask)
+REGISTER_CONFIGURABLE(StateSpaceModel)
+REGISTER_CONFIGURABLE(CarStateSpaceModel)
+REGISTER_CONFIGURABLE(StateSpaceRegulatorTask)
 
-void CarModel::request(ConfigurationRequest *config)
+void StateSpaceModelBase::request(ConfigurationRequest *config)
 {
   config->push_back(CRP("control_step", "double.control_step", "Control step time", tau_, CRP::Configuration, 0.001, DBL_MAX));
-  config->push_back(CRP("mass", "Car mass", m_, CRP::Configuration, 0., DBL_MAX));
-  config->push_back(CRP("friction", "Static friction coeffecient between car and ground", mu_, CRP::Configuration, 0., DBL_MAX));
+  config->push_back(CRP("coulomb", "Coulomb friction coeffecient in a joint", coulomb_, CRP::Configuration, 0., DBL_MAX));
 }
 
-void CarModel::configure(Configuration &config)
+void StateSpaceModelBase::configure(Configuration &config)
 {
   tau_ = config["control_step"];
-  m_ = config["mass"];
-  mu_ = config["friction"];
+  coulomb_ = config["coulomb"];
 }
 
-double CarModel::friction(double xd, double uc, double kc) const
+double StateSpaceModelBase::coulomb_friction(double xd, double uc, double kc) const
 {
   // adapted from
   // K. A. J. Verbert, R. Toth and R. Babuska, "Adaptive Friction Compensation: A Globally Stable Approach,"
@@ -65,48 +64,98 @@ double CarModel::friction(double xd, double uc, double kc) const
   throw Exception("Unexpected friction model condition");
 }
 
-double CarModel::step(const Vector &state, const Vector &actuation, Vector *next) const
+double StateSpaceModelBase::step(const Vector &state, const Vector &actuation, Vector *next) const
 {
   next->resize(3);
-
-  double a = actuation[0] - friction(state[1], actuation[0], mu_);
-
-  (*next)[0] = state[0] + tau_*state[1] + a*tau_*tau_/(2*m_);
-  (*next)[1] = state[1] + a*tau_/m_;
+  double a = actuation[0] - coulomb_friction(state[1], actuation[0], coulomb_);
+  (*next)[0] = A_(0,0) * state[0] + A_(0,1) * state[1] + B_[0] * a;
+  (*next)[1] = A_(1,0) * state[0] + A_(1,1) * state[1] + B_[1] * a;
   (*next)[2] = state[2] + tau_;
-
   return tau_;
 }
 
-void CarRegulatorTask::request(ConfigurationRequest *config)
+////////////////////////
+
+void StateSpaceModel::request(ConfigurationRequest *config)
+{
+  StateSpaceModelBase::request(config);
+  config->push_back(CRP("A", "Row-major matrix A, from x_ = Ax + Bu", VectorConstructor(1, 1, 0, 1), CRP::Configuration));
+  config->push_back(CRP("B", "Vector B, from x_ = Ax + Bu", VectorConstructor(0, 1), CRP::Configuration));
+}
+
+void StateSpaceModel::configure(Configuration &config)
+{
+  StateSpaceModelBase::configure(config);
+
+  Vector A = config["A"].v();
+  Vector B = config["B"].v();
+
+  if (A.size() != 4)
+    throw bad_param("model/1dss:A");
+  if (B.size() != 2)
+    throw bad_param("model/1dss:B");
+
+  A_ = Eigen::Map<Eigen::Matrix<double, 2, 2, Eigen::RowMajor>>(A.data());
+  B_ = Eigen::Map<Eigen::Vector2d>(B.data());
+}
+
+////////////////////////
+
+void CarStateSpaceModel::request(ConfigurationRequest *config)
+{
+  config->push_back(CRP("mass", "Car mass", m_, CRP::Configuration, 0., DBL_MAX));
+  config->push_back(CRP("coulomb", "Coulomb friction coeffecient between the car and a ground", coulomb_, CRP::Configuration, 0., DBL_MAX));
+  config->push_back(CRP("viscous", "Viscous friction coeffecient", viscous_, CRP::Configuration, 0., DBL_MAX));
+}
+
+void CarStateSpaceModel::configure(Configuration &config)
+{
+  m_ = config["mass"];
+  coulomb_ = config["coulomb"];
+  viscous_ = config["viscous"];
+
+  if (viscous_ == 0.0)
+  {
+    A_ << 1, tau_, 0, 1;
+    B_ << tau_*tau_/(2*m_), tau_/m_;
+  }
+  else
+  {
+    double e = exp(-viscous_*tau_/m_);
+    A_ << 1, m_*(1-e)/viscous_, 0, e;
+    B_ << tau_/viscous_ - m_*(1-e)/(viscous_*viscous_), (1-e)/viscous_;
+  }
+}
+
+void StateSpaceRegulatorTask::request(ConfigurationRequest *config)
 {
   RegulatorTask::request(config);
   config->push_back(CRP("timeout", "Timeout until the task is restarted", (double)timeout_, CRP::Configuration, 0.0, DBL_MAX));
 }
 
-void CarRegulatorTask::configure(Configuration &config)
+void StateSpaceRegulatorTask::configure(Configuration &config)
 {
   RegulatorTask::configure(config);
   
   if (q_.size() != 2)
-    throw bad_param("task/mountain/regulator:q");
+    throw bad_param("task/car/regulator:q");
   if (r_.size() != 1)
-    throw bad_param("task/mountain/regulator:r");
+    throw bad_param("task/car/regulator:r");
 
   config.set("observation_min", VectorConstructor(-10., -10.));
   config.set("observation_max", VectorConstructor(10., 10.));
-  config.set("action_min", VectorConstructor(-10));
-  config.set("action_max", VectorConstructor(10));
+  config.set("action_min", VectorConstructor(-1000));
+  config.set("action_max", VectorConstructor(1000));
 
   timeout_ = config["timeout"];
 }
 
-void CarRegulatorTask::observe(const Vector &state, Observation *obs, int *terminal) const
+void StateSpaceRegulatorTask::observe(const Vector &state, Observation *obs, int *terminal) const
 {
   if (state.size() != 3)
   {
     ERROR("Received state size " << state.size() << ", expected 3");
-    throw Exception("task/mountain/regulator requires dynamics/mountain");
+    throw Exception("task/car/regulator requires dynamics/mountain");
   }
     
   obs->v.resize(2);
@@ -117,7 +166,7 @@ void CarRegulatorTask::observe(const Vector &state, Observation *obs, int *termi
   *terminal = state[2] >= timeout_;
 }
 
-bool CarRegulatorTask::invert(const Observation &obs, Vector *state) const
+bool StateSpaceRegulatorTask::invert(const Observation &obs, Vector *state) const
 {
   *state = extend(obs, VectorConstructor(0.));
   

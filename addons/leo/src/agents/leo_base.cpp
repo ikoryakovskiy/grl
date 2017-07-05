@@ -49,11 +49,17 @@ void LeoBaseAgent::configure(Configuration &config)
 
 bool LeoBaseAgent::failed(const Observation &obs) const
 {
-  double torsoConstraint = 1;
-
-  if (fabs(obs[0]+obs[1]+obs[2]) > torsoConstraint)
+  if (fabs(obs[0]+obs[1]+obs[2]) > 1)
   {
-    //std::cout << "[TERMINATION] Torso angle too large" << std::endl;
+    std::cout << "[TERMINATION] Torso angle too large" << std::endl;
+    return true;
+  }
+
+  // for squatting experiment, ancle angles are in the range [0.43, 1.16]
+  // or 0.8 +/- 0.37 => should not exceed +/- 0.5
+  if (fabs(obs[0] - 0.8) > 0.5)
+  {
+    std::cout << "[TERMINATION] Ankle angle deviated too much" << std::endl;
     return true;
   }
 
