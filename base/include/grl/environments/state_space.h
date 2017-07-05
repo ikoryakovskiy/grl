@@ -1,5 +1,5 @@
-/** \file car.h
- * \brief  * \brief Car accelerating and decelerating on a flat surface with (optional) static friction,  environment header file.
+/** \file state_space.h
+ * \brief  * \brief State-space environment header file.
  *
  * \author    Ivan Koryakovskiy
  * \date      2017-07-02
@@ -25,8 +25,8 @@
  * \endverbatim
  */
  
-#ifndef GRL_CAR_ENVIRONMENT_H_
-#define GRL_CAR_ENVIRONMENT_H_
+#ifndef GRL_STATE_SPACE_ENVIRONMENT_H_
+#define GRL_STATE_SPACE_ENVIRONMENT_H_
 
 #include <grl/environment.h>
 
@@ -114,4 +114,4 @@ class StateSpaceRegulatorTask : public RegulatorTask
 
 }
 
-#endif /* GRL_CAR_ENVIRONMENT_H_ */
+#endif /* GRL_STATE_SPACE_ENVIRONMENT_H_ */

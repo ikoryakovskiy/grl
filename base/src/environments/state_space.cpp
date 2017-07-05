@@ -1,5 +1,5 @@
-/** \file car.cpp
- * \brief Car accelerating and decelerating on a flat surface with (optional) static friction, environment source file.
+/** \file state_space.cpp
+ * \brief State-space environment source file.
  *
  * \author    Ivan Koryakovskiy
  * \date      2017-07-02
@@ -25,7 +25,7 @@
  * \endverbatim
  */
 
-#include <grl/environments/car.h>
+#include <grl/environments/state_space.h>
 
 using namespace grl;
 

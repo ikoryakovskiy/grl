@@ -45,7 +45,7 @@ add_library(${TARGET} SHARED
             ${SRC}/environments/puddle.cpp
             ${SRC}/environments/mountain.cpp
             ${SRC}/environments/mef.cpp
-            ${SRC}/environments/car.cpp
+            ${SRC}/environments/state_space.cpp
             ${SRC}/environments/communicator.cpp
             ${SRC}/experiments/approx_test.cpp
             ${SRC}/experiments/online_learning.cpp
