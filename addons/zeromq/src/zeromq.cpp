@@ -99,16 +99,19 @@ void ZeromqRequestReplyCommunicator::request(ConfigurationRequest *config)
 {
   ZeromqCommunicator::request(config);
   config->push_back(CRP("addr", "Address", addr_));
+  config->push_back(CRP("recvtimeo", "int", "Zeromq ZMQ_RCVTIMEO, default (-1) means no delay.", (int)-1, CRP::System, -1, INT_MAX));
 }
 
 void ZeromqRequestReplyCommunicator::configure(Configuration &config)
 {
   ZeromqCommunicator::configure(config);
 
+  MapType zmq_config;
   addr_ = config["addr"].str();
+  zmq_config["ZMQ_RCVTIMEO"] = std::to_string(config["recvtimeo"].i());
 
   // initialize zmq
-  zmq_messenger_.start(role_, addr_.c_str(), NULL, sync_.c_str());
+  zmq_messenger_.start(role_, addr_.c_str(), NULL, sync_.c_str(), &zmq_config);
 }
 
 void ZeromqRequestReplyCommunicator::reconfigure(const Configuration &config)

@@ -64,7 +64,7 @@ void *worker_routine(void *param)
   return NULL;
 }
 
-void ZeromqMessenger::start(int type, const char* primaryAddr, const char* secondaryAddr, const char* syncAddress)
+void ZeromqMessenger::start(int type, const char* primaryAddr, const char* secondaryAddr, const char* syncAddress, MapType *config)
 {
   // Safe clean in case start is called multiple times, e.g. after connection was lost
   safe_clean();
@@ -78,7 +78,13 @@ void ZeromqMessenger::start(int type, const char* primaryAddr, const char* secon
   {
     primary_ = new zmq::socket_t(*context_, ZMQ_REQ);
     primary_->connect(primaryAddr);
-//    primary_->setsockopt(ZMQ_RCVTIMEO, 2000); // reply timeout
+    if (config)
+    {
+      std::string s = (*config)["ZMQ_RCVTIMEO"];
+      long wait = std::strtol(s.c_str(), NULL, 10);
+      if (wait != -1)
+        primary_->setsockopt(ZMQ_RCVTIMEO, wait); // reply timeout
+    }
   }
   else if (type_ == ZMQ_REP)
   {

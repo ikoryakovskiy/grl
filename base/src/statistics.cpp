@@ -13,15 +13,13 @@
 
 CSimpleStat::CSimpleStat()
 {
-  mSampleBuffer  = NULL;
-  mBufLength    = 0;
-  clear();
+  mSampleBuffer = NULL;
+  setBufferLength(100);
 }
 
 CSimpleStat::CSimpleStat(const int bufferlength)
 {
-  mSampleBuffer  = NULL;
-  mBufLength    = 0;
+  mSampleBuffer = NULL;
   setBufferLength(bufferlength);
 }
 

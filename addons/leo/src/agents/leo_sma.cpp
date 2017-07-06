@@ -25,6 +25,8 @@
  * \endverbatim
  */
 
+#include <sys/resource.h>
+#include <errno.h>
 #include <grl/agents/leo_sma.h>
 #include <leo.h>
 
@@ -48,6 +50,13 @@ pthread_mutex_t save_mtx;
 
 void *save_thread(void*)
 {
+  // use "sudo nice -n -20 ./grld ..." for best performance, takes 1.55s. Otherwice it takes 3.78s
+  if (setpriority(PRIO_PROCESS, 0, 19) == -1)
+  {
+    ERROR("agent/leo/sma: failed to lower priority of the saving thread");
+    throw Exception(std::strerror(errno));
+  }
+
   while (1)
   {
     pthread_mutex_lock(&save_mtx); // lock the mutex
@@ -69,7 +78,7 @@ void *save_thread(void*)
     // give PID controller to stabalize Leo before we start saving
     sleep(4);
 
-    // saving, working only with data
+    // saving policy
     std::ostringstream oss;
     oss << data.output << "-" << data.tt << "-";
     Configuration saveconfig;
@@ -296,6 +305,13 @@ void LeoStateMachineAgent::act(double tau, const Observation &obs, double reward
 
   if (agent_ == agent_main_)
     ss_++;
+
+  if (!save_completed())
+  {
+    tstat_.addValue(t_.elapsed());
+    t_.restart();
+    std::cout << "Saving delay " << tstat_.toStr("s") << std::endl;
+  }
 }
 
 void LeoStateMachineAgent::set_agent(SMAgent &agent, double tau, const Observation &obs, double reward, Action *action, const char* msg)
@@ -305,20 +321,24 @@ void LeoStateMachineAgent::set_agent(SMAgent &agent, double tau, const Observati
     // finish previous agent
     agent_.a->end(tau, obs, reward);
 
-    // save every test episode or every failure or at the end of learning
-    if (!output_.empty())
-    {
-      int save_after = (test_interval_+1)*3 - 1; // 5th test episode
-      if ((tt_%(save_after+1) == save_after) || (agent_ == agent_main_ && (failed(obs) || (steps_ && ss_ >= steps_)) ))
-        save(agent_);
-    }
-
     // end of agent_test or agent_main => report and increment trials
-    if ((agent_ == agent_test_) || (agent_ == agent_main_))
+    int agent_tm = (agent_ == agent_test_) || (agent_ == agent_main_);
+    if (agent_tm)
     {
       report(agent_);
       tt_++;
     }
+
+    // save policy after every N-th test episode or every failure or at the end of learning
+    if (!output_.empty())
+    {
+      int save_after = (test_interval_+1)*3; // 3rd test episode
+      if ((agent_ == agent_test_ && tt_%save_after == 0)
+          || (agent_tm && (failed(obs) || (steps_ && ss_ >= steps_)) ))
+        save(agent_);
+    }
+
+    // reset reward
     main_total_reward_ = 0;
 
     // clear sandbox evnironment history
@@ -369,6 +389,8 @@ void LeoStateMachineAgent::save(SMAgent &agent)
     save_data.completed = false;
     pthread_cond_signal(&save_cond); // request saving
     pthread_mutex_unlock(&save_mtx); // unlock the mutex
+
+    t_.restart();
   }
 }
 

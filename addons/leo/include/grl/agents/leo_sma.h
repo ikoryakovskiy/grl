@@ -28,6 +28,7 @@
 #ifndef GRL_LEO_STATE_MACHINE_AGENT_H_
 #define GRL_LEO_STATE_MACHINE_AGENT_H_
 
+#include <grl/statistics.h>
 #include <grl/environment.h>
 #include <grl/agents/leo_base.h>
 #include <grl/state_machine.h>
@@ -68,7 +69,9 @@ class LeoStateMachineAgent : public LeoBaseAgent
     pthread_t *thread_;
 
     std::ofstream ofs_;
-    
+    timer t_;
+    CSimpleStat tstat_;
+
   public:
     LeoStateMachineAgent() :
       environment_(NULL),

@@ -1,6 +1,7 @@
 #ifndef ZEROMQ_MESSENGER_H
 #define ZEROMQ_MESSENGER_H
 
+#include <map>
 #include <zmq.hpp>
 #include <iostream>
 
@@ -16,6 +17,7 @@ typedef std::mutex zmq_mutex;
 
 
 #define MSG_BUFFER_SIZE (60*sizeof(double))
+typedef std::map<std::string, std::string> MapType;
 
 class ZeromqMessenger
 {
@@ -38,7 +40,7 @@ public:
   ZeromqMessenger() : context_(NULL), primary_(NULL), syncService_(NULL), subscribers_(0), subscribers_expected_(1), mtx_(NULL), buffer_(NULL), buffer_size_(MSG_BUFFER_SIZE), recv_update_(NULL) {}
   ~ZeromqMessenger();
 
-  void start(int type, const char *primaryAddr, const char *secondaryAddr = NULL, const char *syncAddress = NULL);
+  void start(int type, const char *primaryAddr, const char *secondaryAddr = NULL, const char *syncAddress = NULL, MapType *config = NULL);
   bool send(const void *data, unsigned int size) const;
   bool recv(void* data, unsigned int size, int flags = 0) const;
   void sync_wait();
