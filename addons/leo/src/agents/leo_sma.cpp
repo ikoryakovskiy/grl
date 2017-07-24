@@ -50,7 +50,7 @@ pthread_mutex_t save_mtx;
 
 void *save_thread(void*)
 {
-  // use "sudo nice -n -20 ./grld ..." for best performance, takes 1.55s. Otherwice it takes 3.78s
+  // use "sudo nice -n -20 ./grld ..." for best performance, takes 1.55-1.80s. Otherwice it takes 3.78s
   if (setpriority(PRIO_PROCESS, 0, 19) == -1)
   {
     ERROR("agent/leo/sma: failed to lower priority of the saving thread");

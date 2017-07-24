@@ -67,7 +67,9 @@ double StateSpaceModelBase::coulomb_friction(double xd, double uc, double kc) co
 double StateSpaceModelBase::step(const Vector &state, const Vector &actuation, Vector *next) const
 {
   next->resize(3);
-  double a = actuation[0] - coulomb_friction(state[1], actuation[0], coulomb_);
+
+  double a = actuation[0] - coulomb_friction(state[1], actuation[0], coulomb_);// + coulomb_;
+
   (*next)[0] = A_(0,0) * state[0] + A_(0,1) * state[1] + B_[0] * a;
   (*next)[1] = A_(1,0) * state[0] + A_(1,1) * state[1] + B_[1] * a;
   (*next)[2] = state[2] + tau_;
@@ -103,6 +105,7 @@ void StateSpaceModel::configure(Configuration &config)
 
 void CarStateSpaceModel::request(ConfigurationRequest *config)
 {
+  StateSpaceModelBase::request(config);
   config->push_back(CRP("mass", "Car mass", m_, CRP::Configuration, 0., DBL_MAX));
   config->push_back(CRP("coulomb", "Coulomb friction coeffecient between the car and a ground", coulomb_, CRP::Configuration, 0., DBL_MAX));
   config->push_back(CRP("viscous", "Viscous friction coeffecient", viscous_, CRP::Configuration, 0., DBL_MAX));
@@ -110,8 +113,9 @@ void CarStateSpaceModel::request(ConfigurationRequest *config)
 
 void CarStateSpaceModel::configure(Configuration &config)
 {
+  StateSpaceModelBase::configure(config);
+
   m_ = config["mass"];
-  coulomb_ = config["coulomb"];
   viscous_ = config["viscous"];
 
   if (viscous_ == 0.0)
@@ -144,8 +148,8 @@ void StateSpaceRegulatorTask::configure(Configuration &config)
 
   config.set("observation_min", VectorConstructor(-10., -10.));
   config.set("observation_max", VectorConstructor(10., 10.));
-  config.set("action_min", VectorConstructor(-1000));
-  config.set("action_max", VectorConstructor(1000));
+  config.set("action_min", VectorConstructor(-10));
+  config.set("action_max", VectorConstructor(10));
 
   timeout_ = config["timeout"];
 }

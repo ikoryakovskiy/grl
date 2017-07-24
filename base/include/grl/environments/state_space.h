@@ -50,6 +50,8 @@ class StateSpaceModelBase : public Model
 
     // From Model
     virtual double step(const Vector &state, const Vector &actuation, Vector *next) const;
+
+  private:
     virtual double coulomb_friction(double xd, double uc, double kc) const;
 };
 
@@ -75,10 +77,10 @@ class CarStateSpaceModel : public StateSpaceModelBase
 
   protected:
 
-    double m_, coulomb_, viscous_;
+    double m_, viscous_;
   
   public:
-    CarStateSpaceModel() : m_(1), coulomb_(0), viscous_(1.0) { }
+    CarStateSpaceModel() : m_(1), viscous_(1.0) { }
   
     // From Configurable
     virtual void request(ConfigurationRequest *config);
