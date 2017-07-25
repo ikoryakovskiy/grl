@@ -98,7 +98,7 @@ class LeoSquattingTask : public Task
   public:
     LeoSquattingTask() : target_env_(NULL), timeout_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_nmpc_qd_(1.0), weight_shaping_(0.0),
       use_mef_(0), task_reward_(0.0), subtask_reward_(0.0), power_(2.0), randomize_(0), dof_(4), continue_after_fall_(0), setpoint_reward_(1), gamma_(0.97),
-      fixed_arm_(false) { }
+      fixed_arm_(false), friction_compensation_(false) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -131,6 +131,7 @@ class LeoSquattingTask : public Task
     int setpoint_reward_;
     double gamma_;
     bool fixed_arm_;
+    bool friction_compensation_;
 };
 
 }

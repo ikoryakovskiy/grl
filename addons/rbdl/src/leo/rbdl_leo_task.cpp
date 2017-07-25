@@ -57,6 +57,7 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("continue_after_fall", "int.continue_after_fall", "Continue exectution of the environemnt even after a fall of Leo", continue_after_fall_, CRP::System, 0, 1));
   config->push_back(CRP("gamma", "Discount rate (used in shaping)", gamma_));
   config->push_back(CRP("fixed_arm", "int.fixed_arm", "Require fixed arm, fa option", fixed_arm_, CRP::System, 0, 1));
+  config->push_back(CRP("friction_compensation", "int.fixed_arm", "Require friction compensation", friction_compensation_, CRP::System, 0, 1));
 }
 
 void LeoSquattingTask::configure(Configuration &config)
@@ -74,6 +75,7 @@ void LeoSquattingTask::configure(Configuration &config)
   continue_after_fall_ = config["continue_after_fall"];
   gamma_ = config["gamma"];
   fixed_arm_ = config["fixed_arm"];
+  friction_compensation_ = config["friction_compensation"];
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-M_PI, -M_PI, -M_PI, -M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0, 10};
@@ -193,21 +195,24 @@ void LeoSquattingTask::start(int test, Vector *state) const
 bool LeoSquattingTask::actuate(const Vector &state, const Action &action, Vector *actuation) const
 {
   *actuation = action;
-/*
-  // *** HACK TO MAKE REAL LEO SQUAT IN VOLTAGE CONTROL USING NMPC/MLRTI ***
-  if (target_env_)
-  {
-  // Gearbox effeciency is 75%
-  *actuation *= 0.75;
 
-  // Coulomb friction
-  double f = 0.25*DXL_RESISTANCE/(DXL_TORQUE_CONST*DXL_GEARBOX_RATIO); // = 0.f * 3.420806273
-  if (fabs(state[rlsRefRootZ] - 0.28) < 0.00001)
-    *actuation += VectorConstructor(+1, -1, +1, 0)*f*1.5;
-  else
-    *actuation += VectorConstructor(-1, +1, -1, 0)*f;
+  if (friction_compensation_)
+  {
+    // *** HACK TO MAKE REAL LEO SQUAT IN VOLTAGE CONTROL USING NMPC/MLRTI ***
+    if (target_env_)
+    {
+    // Gearbox effeciency is 75%
+    *actuation *= 0.75;
+
+    // Coulomb friction
+    double f = 0.25*DXL_RESISTANCE/(DXL_TORQUE_CONST*DXL_GEARBOX_RATIO); // = 0.f * 3.420806273
+    if (fabs(state[rlsRefRootZ] - 0.28) < 0.00001)
+      *actuation += VectorConstructor(+1, -1, +1, 0)*f*1.5;
+    else
+      *actuation += VectorConstructor(-1, +1, -1, 0)*f;
+    }
   }
-*/
+
   return true;
 }
 

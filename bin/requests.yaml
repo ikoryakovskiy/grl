@@ -2782,19 +2782,27 @@ mapping/value:
     optional: 0
 model/1dss/car:
   description: Car model with (optional) static friction
-  mass:
-    type: double
-    description: Car mass
+  control_step:
+    type: double.control_step
+    description: Control step time
     mutability: configuration
     default: 1
     optional: 1
-    min: 0
+    min: 0.001
     max: 1.797693134862316e+308
   coulomb:
     type: double
     description: Coulomb friction coeffecient between the car and a ground
     mutability: configuration
     default: 0
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  mass:
+    type: double
+    description: Car mass
+    mutability: configuration
+    default: 1
     optional: 1
     min: 0
     max: 1.797693134862316e+308
@@ -6769,6 +6777,14 @@ task/leo_squatting:
   fixed_arm:
     type: int.fixed_arm
     description: Require fixed arm, fa option
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
+  friction_compensation:
+    type: int.fixed_arm
+    description: Require friction compensation
     mutability: system
     default: 0
     optional: 1

@@ -296,18 +296,25 @@ void NMPCPolicy::muscod_reset(const Vector &initial_obs, const Vector &initial_p
 
 void NMPCPolicy::act(double time, const Observation &in, Action *out)
 {
-  grl_assert((in.v.size() == nmpc_->NXD() + nmpc_->NP()) || (in.v.size() == nmpc_->NXD()));
+  grl_assert(in.v.size() >= nmpc_->NXD());
 
-  // int np = nmpc_->NP();
-  // int nxd = nmpc_->NXD();
-
-  // subdivide 'in' into state and setpoint
-  if (in.v.size() == nmpc_->NXD() + nmpc_->NP())
+  // subdivide 'in' into state and setpoint, ignore temperature
+  if (in.v.size() == nmpc_->NXD())
   {
-    initial_sd_ << in.v.block(0, 0, 1, nmpc_->NXD());
-    initial_pf_ << in.v.block(0, nmpc_->NXD(), 1, nmpc_->NP());
-  } else {
     initial_sd_ << in.v;
+  }
+  else
+  {
+    if (in.v.size() == nmpc_->NXD() + 1)
+    {
+      initial_pf_ << in.v[in.v.size()-1]; // reference height
+      initial_sd_ = in.v.block(0, 0, 1, in.v.size()-1); // remove indicator
+    }
+    else if (in.v.size() == nmpc_->NXD() + 2)
+    {
+      initial_pf_ << in.v[in.v.size()-1]; // reference height
+      initial_sd_ = in.v.block(0, 0, 1, in.v.size()-2); // remove indicator
+    }
   }
 
   if (verbose_)
