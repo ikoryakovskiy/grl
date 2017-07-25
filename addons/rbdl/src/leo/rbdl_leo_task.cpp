@@ -57,6 +57,8 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("continue_after_fall", "int.continue_after_fall", "Continue exectution of the environemnt even after a fall of Leo", continue_after_fall_, CRP::System, 0, 1));
   config->push_back(CRP("gamma", "Discount rate (used in shaping)", gamma_));
   config->push_back(CRP("fixed_arm", "int.fixed_arm", "Require fixed arm, fa option", fixed_arm_, CRP::System, 0, 1));
+  config->push_back(CRP("lower_height", "double.lower_height", "Lower bound of root height to switch direction", lower_height_, CRP::Configuration, 0.0, DBL_MAX));
+  config->push_back(CRP("upper_height", "double.upper_height", "Upper bound of root height to switch direction", upper_height_, CRP::Configuration, 0.0, DBL_MAX));
   config->push_back(CRP("friction_compensation", "int.fixed_arm", "Require friction compensation", friction_compensation_, CRP::System, 0, 1));
 }
 
@@ -136,14 +138,14 @@ void LeoSquattingTask::reconfigure(const Configuration &config)
 
 void LeoSquattingTask::start(int test, Vector *state) const
 {
-  *state = ConstantVector(4*2+2, 0); // Same size for both tasts with FA and without
+  *state = ConstantVector(4*2+2, 0); // Same size for both tasks with FA and without
 
   if (target_env_)
   {
     // Obtain initial state from real Leo
     Observation obs;
     target_env_->start(0, &obs); // 4 angles, 4 velocities, 1 rlsTemperature
-    *state << obs.v.head(4*2), VectorConstructor(0.0), obs.v.tail(1); // 4 angles, 4 velocities, 1 rlsTime, 1 rlsTemperature
+    *state << obs.v.head(4*2), VectorConstructor(0.0), obs.v.tail(1), VectorConstructor(upper_height_); // 4 angles, 4 velocities, 1 rlsTime, 1 rlsTemperature
   }
   else
   {
@@ -156,9 +158,10 @@ void LeoSquattingTask::start(int test, Vector *state) const
           -0.0,
           -0.0,
           -0.0,
-          -0.0,  // end of rlsDofDim
-           0.0,  // rlsTime
-          25.0;  // rlsTemperature
+          -0.0,           // end of rlsDofDim
+           0.0,           // rlsTime
+          25.0,           // rlsTemperature
+          upper_height_;  // rlsRefRootZ
 
 
     if (randomize_)
