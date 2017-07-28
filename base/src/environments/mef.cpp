@@ -37,7 +37,7 @@ REGISTER_CONFIGURABLE(MEFBenchmarkingEnvironment)
 void MEFEnvironment::request(ConfigurationRequest *config)
 {
   config->push_back(CRP("sub_nominal_action", "signal/vector", "Subscriber to an external action from a nominal controller", sub_nominal_action_));
-
+  config->push_back(CRP("weights", "Per-dimention weight of MEF", weights_, CRP::Online));
   config->push_back(CRP("environment", "environment", "Real environment", environment_));
   config->push_back(CRP("state", "signal/vector", "Current state of the environment", state_obj_));
   config->push_back(CRP("task", "task", "Task to perform in the environment (should match model)", task_));
@@ -47,7 +47,7 @@ void MEFEnvironment::request(ConfigurationRequest *config)
 void MEFEnvironment::configure(Configuration &config)
 {
   sub_nominal_action_ = (VectorSignal*)config["sub_nominal_action"].ptr();
-
+  weights_ = config["weights"].v();
   environment_ = (Environment*)config["environment"].ptr();
   state_obj_ = (VectorSignal*)config["state"].ptr();
   task_ = (Task*)config["task"].ptr();
@@ -98,9 +98,14 @@ double MEFEnvironment::step(const Action &action, Observation *obs, double *rewa
   TRACE(*obs);
   TRACE(nominal_obs);
 
-  // Difference in state
-  int dof = obs->v.size() / 2;
-  Vector x = nominal_obs.v.head(dof) - obs->v.head(dof);
+  if (weights_.size() == 0)
+  {
+    int dof = obs->size() / 2;
+    weights_.resize(2*dof);
+    weights_ << ConstantVector(dof, 1.0), ConstantVector(dof, 0.0);
+  }
+
+  Vector x = (nominal_obs.v - obs->v) * weights_;
   *reward = - sqrt(x.cwiseProduct(x).sum()); // reward overwritten with mef
   mef_total_reward_ += *reward;
 

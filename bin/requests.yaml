@@ -1306,6 +1306,12 @@ environment/post/mef:
     mutability: configuration
     default: 0
     optional: 0
+  weights:
+    type: vector
+    description: Per-dimention weight of MEF
+    mutability: online
+    default: "[  ]"
+    optional: 1
   environment:
     type: environment
     description: Real environment
@@ -1338,6 +1344,12 @@ environment/post/mef/benchmarking:
     mutability: configuration
     default: 0
     optional: 0
+  weights:
+    type: vector
+    description: Per-dimention weight of MEF
+    mutability: online
+    default: "[  ]"
+    optional: 1
   environment:
     type: environment
     description: Real environment

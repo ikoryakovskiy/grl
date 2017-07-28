@@ -356,6 +356,7 @@ class MEFEnvironment : public Environment
 
   public:
     VectorSignal *sub_nominal_action_;
+    Vector weights_;
     Environment *environment_;
     VectorSignal *state_obj_;
     Task *task_;

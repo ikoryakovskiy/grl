@@ -64,11 +64,35 @@ double StateSpaceModelBase::coulomb_friction(double xd, double uc, double kc) co
   throw Exception("Unexpected friction model condition");
 }
 
+double StateSpaceModelBase::coulomb_friction_new(double xd, double uc, double kc) const
+{
+  // adapted from
+  // K. A. J. Verbert, R. Toth and R. Babuska, "Adaptive Friction Compensation: A Globally Stable Approach,"
+  // in IEEE/ASME Transactions on Mechatronics, vol. 21, no. 1, pp. 351-363, Feb. 2016.
+  double zero_tolerance = 1E-11;
+  double ridge = 0.1;
+  double alpha = 1.0;
+
+  if (fabs(xd) < ridge)
+    alpha = fabs(xd)/ridge;
+
+  if (xd > zero_tolerance || (fabs(xd) <= zero_tolerance && uc > kc))
+    return kc*alpha;
+
+  if (xd < -zero_tolerance || (fabs(xd) <= zero_tolerance && uc < -kc))
+    return -kc*alpha;
+
+  if (fabs(xd) <= zero_tolerance && fabs(uc) <= kc)
+    return uc;
+
+  throw Exception("Unexpected friction model condition");
+}
+
 double StateSpaceModelBase::step(const Vector &state, const Vector &actuation, Vector *next) const
 {
   next->resize(3);
 
-  double a = actuation[0] - coulomb_friction(state[1], actuation[0], coulomb_);// + coulomb_;
+  double a = actuation[0] - coulomb_friction_new(state[1], actuation[0], coulomb_);// + coulomb_;
 
   (*next)[0] = A_(0,0) * state[0] + A_(0,1) * state[1] + B_[0] * a;
   (*next)[1] = A_(1,0) * state[0] + A_(1,1) * state[1] + B_[1] * a;
