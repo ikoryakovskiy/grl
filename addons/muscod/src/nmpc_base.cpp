@@ -104,79 +104,6 @@ void *NMPCBase::setup_model_path(const std::string path, const std::string model
   return so_handle;
 }
 
-//-------------------------------------- EXPORT -----------------------------------//
-/*
-std::string path = "/home/ivan/work/Project/Software/grl/qt-build/leo_squat/mlrti_timing/";
-
-void erase_file(const std::string& file_name)
-{
-  // erase contents if it exists
-  std::ofstream ofs;
-  ofs.open(file_name, std::ofstream::out | std::ofstream::trunc);
-  if (!ofs) {
-    std::cerr << "Error opening file " << file_name << std::endl;
-    abort();
-  }
-  ofs.close();
-
-  return;
-}
-
-void write_header_to_file(const std::string& data_file)
-{
-  std::ofstream data_stream;
-  data_stream.open (data_file, std::ios_base::trunc);
-  if (!data_stream) {
-    std::cerr << "Error opening file " << data_file << std::endl;
-    abort();
-  }
-
-  // configure data stream
-  data_stream << std::setprecision(18) << std::scientific;
-
-  // add header to file:
-  // # feedback, transition, shift, preparation, simulation
-  data_stream << "#" << " ";
-  //data_stream << "time" << ", ";
-  data_stream << "feedback" << ", ";
-  data_stream << "transition" << ", ";
-  data_stream << "shift" << ", ";
-  data_stream << "prepare" << ", ";
-  data_stream << "preparation" << ", ";
-  data_stream << "total";
-  data_stream << std::endl;
-
-  // finally close file
-  data_stream.close();
-}
-
-
-void append_timing_to_file(Vector d_values, const std::string& data_file)
-{
-  std::ofstream data_stream;
-  data_stream.open (data_file, std::ios_base::app);
-  if (!data_stream) {
-    std::cerr << "Error opening file " << data_file << std::endl;
-    abort();
-  }
-
-  // configure data stream
-  data_stream << std::setprecision(18) << std::scientific;
-  //data_stream << time << ", ";
-
-  for (unsigned int j = 0; j < d_values.size(); j++) {
-    data_stream << d_values[j];
-    if (j < d_values.size() -1 ) {
-      data_stream << ", ";
-    }
-  }
-  data_stream << std::endl;
-
-    // finally close file
-    data_stream.close();
-}
-*/
-
 std::string path = "";
 void erase_file(const std::string& file_name){}
 void write_header_to_file(const std::string& data_file) {}
@@ -380,7 +307,7 @@ void *muscod_run (void *indata)
               std::cout << "THREAD '" << thread_id << "': created MUSCOD instance!" << std::endl;
           }
           muscod_muscod_ = new MUSCOD(false);
-          muscod_muscod_->setModelPathAndName(nmpc.m_problem_path.c_str(), nmpc.m_model_name.c_str());
+          muscod_muscod_->setModelPathAndName(nmpc.m_problem_path.c_str(), nmpc.m_model_name.c_str()); // #ivan : Dat file is loaded here
           muscod_muscod_->loadFromDatFile(NULL, NULL);
           muscod_muscod_->nmpcInitialize(0, NULL, NULL);
       } else {
@@ -521,7 +448,7 @@ void *muscod_run (void *indata)
 
         // initialize controller
         std::cout << "THREAD '" << thread_id << "': ninit: " << nmpc.m_ninit << std::endl;
-        initialize_controller (nmpc, nmpc.m_ninit, sd, pf);
+        initialize_controller (nmpc, nmpc.m_ninit, sd, pf); // #ivan : controller is initialised here given the initial state and the setpoint
 
         // if (verbose) {
             std::cout << "finished!" << std::endl;
