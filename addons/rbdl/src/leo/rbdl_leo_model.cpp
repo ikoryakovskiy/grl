@@ -57,6 +57,12 @@ void LeoSandboxModel::configure(Configuration &config)
   true_model_ = (Model*)config["true_model"].ptr();
 
   animation_ = config["animation"].str();
+  if (animation_ == "full")
+  {
+    // remove file because will be append otherwice
+    std::remove("sd_leo.csv");
+    std::remove("u_leo.csv");
+  }
 }
 
 void LeoSandboxModel::export_meshup_animation(const Vector &state, const Vector &action) const

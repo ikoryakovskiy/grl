@@ -138,7 +138,7 @@ void LeoSquattingTask::reconfigure(const Configuration &config)
 
 void LeoSquattingTask::start(int test, Vector *state) const
 {
-  *state = ConstantVector(4*2+2, 0); // Same size for both tasks with FA and without
+  *state = ConstantVector(4*2+3, 0); // Same size for both tasks with FA and without
 
   if (target_env_)
   {
@@ -149,20 +149,40 @@ void LeoSquattingTask::start(int test, Vector *state) const
   }
   else
   {
-    // Default initialization in a sitted pose
-    *state <<
-           1.0586571916803691E+00,
-          -2.1266836153365212E+00,
-           1.2680264236561250E+00,
-          -2.5999999999984957E-01,
-          -0.0,
-          -0.0,
-          -0.0,
-          -0.0,           // end of rlsDofDim
-           0.0,           // rlsTime
-          25.0,           // rlsTemperature
-          upper_height_;  // rlsRefRootZ
+    int low_start = 0;
 
+    if (low_start)
+    {
+      // initialization in a sitted pose
+      *state <<
+             1.0586571916803691E+00,
+            -2.1266836153365212E+00,
+             1.2680264236561250E+00,
+            -2.5999999999984957E-01,
+            -0.0,
+            -0.0,
+            -0.0,
+            -0.0,           // end of rlsDofDim
+             0.0,           // rlsTime
+            25.0,           // rlsTemperature
+            upper_height_;  // rlsRefRootZ
+    }
+    else
+    {
+      // initialization in a standing pose
+      *state <<
+             0.458644,
+            -1.19249,
+             1.03384,
+            -0.191774,
+            -0.0,
+            -0.0,
+            -0.0,
+            -0.0,           // end of rlsDofDim
+             0.0,           // rlsTime
+            25.0,           // rlsTemperature
+            lower_height_;  // rlsRefRootZ
+    }
 
     if (randomize_)
     {
