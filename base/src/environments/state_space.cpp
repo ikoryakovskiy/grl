@@ -70,7 +70,7 @@ double StateSpaceModelBase::coulomb_friction_new(double xd, double uc, double kc
   // K. A. J. Verbert, R. Toth and R. Babuska, "Adaptive Friction Compensation: A Globally Stable Approach,"
   // in IEEE/ASME Transactions on Mechatronics, vol. 21, no. 1, pp. 351-363, Feb. 2016.
   double zero_tolerance = 1E-11;
-  double ridge = 0.1;
+  double ridge = 0.001;
   double alpha = 1.0;
 
   if (fabs(xd) < ridge)
