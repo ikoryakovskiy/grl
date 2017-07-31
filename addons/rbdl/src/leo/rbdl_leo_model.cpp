@@ -57,6 +57,12 @@ void LeoSandboxModel::configure(Configuration &config)
   true_model_ = (Model*)config["true_model"].ptr();
 
   animation_ = config["animation"].str();
+  if (animation_ == "full")
+  {
+    // remove file because will be append otherwice
+    std::remove("sd_leo.csv");
+    std::remove("u_leo.csv");
+  }
 }
 
 void LeoSandboxModel::export_meshup_animation(const Vector &state, const Vector &action) const
@@ -165,11 +171,12 @@ void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
   dynamics_->finalize(rbdl_state, rbdl_addition_);
 
   double temperature = (*state)[rlsTemperature];
+  double setpoint = (*state)[rlsRefRootZ];
 
   // Compose a complete state <state, time, height, com, ..., squats>
   // Immediately try to stand up
   state->resize(stsStateDim);
-  *state << rbdl_state, VectorConstructor(temperature, upper_height_), rbdl_addition_,
+  *state << rbdl_state, VectorConstructor(temperature, setpoint), rbdl_addition_,
       VectorConstructor(0),           // zero mef error
       VectorConstructor(sma_state_),  // none type of state machine
       VectorConstructor(0);           // zero squats
