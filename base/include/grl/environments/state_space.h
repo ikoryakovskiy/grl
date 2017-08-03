@@ -54,6 +54,7 @@ class StateSpaceModelBase : public Model
   private:
     virtual double coulomb_friction(double xd, double uc, double kc) const;
     virtual double coulomb_friction_new(double xd, double uc, double kc) const;
+    virtual double coulomb_friction_tanh(double xd, double uc, double kc) const;
 };
 
 /// Generic state-space model

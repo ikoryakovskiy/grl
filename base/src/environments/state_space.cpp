@@ -88,11 +88,33 @@ double StateSpaceModelBase::coulomb_friction_new(double xd, double uc, double kc
   throw Exception("Unexpected friction model condition");
 }
 
+double StateSpaceModelBase::coulomb_friction_tanh(double xd, double uc, double kc) const
+{
+  // adapted from
+  // "Characterization and modeling of a Dynamixel servo" by Arno Mensink
+  // https://www.ram.ewi.utwente.nl/aigaion/attachments/single/1015
+  double zero_tolerance = 1E-11;
+  double ridge = 2000;
+
+  double alpha = tanh(ridge*xd);
+
+  if (xd > zero_tolerance || (fabs(xd) <= zero_tolerance && uc > kc))
+    return kc*alpha;
+
+  if (xd < -zero_tolerance || (fabs(xd) <= zero_tolerance && uc < -kc))
+    return -kc*alpha;
+
+  if (fabs(xd) <= zero_tolerance && fabs(uc) <= kc)
+    return uc;
+
+  throw Exception("Unexpected friction model condition");
+}
+
 double StateSpaceModelBase::step(const Vector &state, const Vector &actuation, Vector *next) const
 {
   next->resize(3);
 
-  double a = actuation[0] - coulomb_friction_new(state[1], actuation[0], coulomb_);// + coulomb_;
+  double a = actuation[0] - coulomb_friction_tanh(state[1], actuation[0], coulomb_);// + coulomb_;
 
   (*next)[0] = A_(0,0) * state[0] + A_(0,1) * state[1] + B_[0] * a;
   (*next)[1] = A_(1,0) * state[0] + A_(1,1) * state[1] + B_[1] * a;
