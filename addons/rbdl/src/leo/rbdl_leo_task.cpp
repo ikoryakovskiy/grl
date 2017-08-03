@@ -149,7 +149,13 @@ void LeoSquattingTask::start(int test, Vector *state) const
   }
   else
   {
-    int low_start = 0;
+    Rand rand;
+    int low_start;
+
+    if (test == 0)
+      low_start = rand.getInteger(2); // testing: random start
+    else
+      low_start = test % 2; // learning: setpoint selection is determined by test parameter value (test = 1 => low start)
 
     if (low_start)
     {

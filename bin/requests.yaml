@@ -1586,6 +1586,101 @@ experiment/batch_learning:
     type: signal/vector
     description: Current observed state of the environment
     mutability: provided
+experiment/leo/online_learning/squatting:
+  description: Interactive learning experiment of squatting for LEO
+  runs:
+    type: int
+    description: Number of separate learning runs to perform
+    mutability: configuration
+    default: 1
+    optional: 1
+    min: 1
+    max: 2147483647
+  trials:
+    type: int
+    description: Number of episodes per learning run
+    mutability: configuration
+    default: 0
+    optional: 1
+    min: 0
+    max: 2147483647
+  steps:
+    type: int
+    description: Number of steps per learning run
+    mutability: configuration
+    default: 0
+    optional: 1
+    min: 0
+    max: 2147483647
+  rate:
+    type: double
+    description: Control step frequency in Hz
+    mutability: online
+    default: 0
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  test_interval:
+    type: int
+    description: Number of episodes in between test trials
+    mutability: configuration
+    default: -1
+    optional: 1
+    min: -1
+    max: 2147483647
+  output:
+    type: string
+    description: Output base filename
+    mutability: configuration
+    default: ""
+    optional: 1
+  environment:
+    type: environment
+    description: Environment in which the agent acts
+    mutability: configuration
+    default: 0
+    optional: 0
+  agent:
+    type: agent
+    description: Agent
+    mutability: configuration
+    default: 0
+    optional: 0
+  test_agent:
+    type: agent
+    description: Agent to use in test trials
+    mutability: configuration
+    default: 0
+    optional: 1
+  state:
+    type: signal/vector
+    description: Current observed state of the environment
+    mutability: provided
+  action:
+    type: signal/vector
+    description: Current action applied to the environment
+    mutability: provided
+  curve:
+    type: signal/vector
+    description: Learning curve
+    mutability: provided
+  load_file:
+    type: string
+    description: Load policy filename
+    mutability: configuration
+    default: ""
+    optional: 1
+  save_every:
+    type: string
+    description: Save policy to 'output' at the end of event
+    mutability: configuration
+    default: never
+    optional: 1
+    options:
+      - never
+      - run
+      - test
+      - trail
 experiment/multi:
   description: Run multiple experiments in parallel
   instances:
@@ -6794,6 +6889,22 @@ task/leo_squatting:
     optional: 1
     min: 0
     max: 1
+  lower_height:
+    type: double.lower_height
+    description: Lower bound of root height to switch direction
+    mutability: configuration
+    default: 0.28
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  upper_height:
+    type: double.upper_height
+    description: Upper bound of root height to switch direction
+    mutability: configuration
+    default: 0.35
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
   friction_compensation:
     type: int.fixed_arm
     description: Require friction compensation

@@ -55,7 +55,7 @@ bool LeoBaseAgent::failed(const Observation &obs) const
     return true;
   }
 
-  // for squatting experiment, ancle angles are in the range [0.43, 1.16]
+  // for squatting experiment, ankle angles are in the range [0.43, 1.16]
   // or 0.8 +/- 0.37 => should not exceed +/- 0.5
   if (fabs(obs[0] - 0.8) > 0.5)
   {

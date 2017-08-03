@@ -1,8 +1,8 @@
-/** \file online_learning.cpp
- * \brief Online learning experiment source file.
+/** \file leo_online_learning.cpp
+ * \brief Leo online learning experiment source file.
  *
- * \author    Wouter Caarls <wouter@caarls.org>
- * \date      2015-01-22
+ * \author    Ivan Koryakovskiy <i.koryakovskiy@tudelft.nl>
+ * \date      2017-07-31
  *
  * \copyright \verbatim
  * Copyright (c) 2015, Wouter Caarls
@@ -29,67 +29,13 @@
 #include <iostream>
 #include <iomanip>
 
-#include <grl/experiments/online_learning.h>
+#include <grl/experiments/leo_online_learning.h>
 
 using namespace grl;
 
-REGISTER_CONFIGURABLE(OnlineLearningExperiment)
+REGISTER_CONFIGURABLE(LeoSquattingOnlineLearningExperiment)
 
-void OnlineLearningExperiment::request(ConfigurationRequest *config)
-{
-  config->push_back(CRP("runs", "Number of separate learning runs to perform", runs_, CRP::Configuration, 1));
-  config->push_back(CRP("trials", "Number of episodes per learning run", (int)trials_));
-  config->push_back(CRP("steps", "Number of steps per learning run", (int)steps_));
-  config->push_back(CRP("rate", "Control step frequency in Hz", (double)rate_, CRP::Online, 0.0, DBL_MAX));
-  config->push_back(CRP("test_interval", "Number of episodes in between test trials", test_interval_, CRP::Configuration, -1));
-  config->push_back(CRP("output", "Output base filename", output_));
-  
-  config->push_back(CRP("environment", "environment", "Environment in which the agent acts", environment_));
-  config->push_back(CRP("agent", "agent", "Agent", agent_));
-  config->push_back(CRP("test_agent", "agent", "Agent to use in test trials", agent_, true));
-  
-  config->push_back(CRP("state", "signal/vector", "Current observed state of the environment", CRP::Provided));
-  config->push_back(CRP("action", "signal/vector", "Current action applied to the environment", CRP::Provided));
-  config->push_back(CRP("curve", "signal/vector", "Learning curve", CRP::Provided));
-
-  config->push_back(CRP("load_file", "Load policy filename", load_file_));
-  config->push_back(CRP("save_every", "Save policy to 'output' at the end of event", save_every_, CRP::Configuration, {"never", "run", "test", "trail"}));
-}
-
-void OnlineLearningExperiment::configure(Configuration &config)
-{
-  agent_ = (Agent*)config["agent"].ptr();
-  test_agent_ = (Agent*)config["test_agent"].ptr();
-  environment_ = (Environment*)config["environment"].ptr();
-  
-  runs_ = config["runs"];
-  trials_ = config["trials"];
-  steps_ = config["steps"];
-  rate_ = config["rate"];
-  test_interval_ = config["test_interval"];
-  output_ = config["output"].str();
-  load_file_ = config["load_file"].str();
-  save_every_ = config["save_every"].str();
-  
-  state_ = new VectorSignal();
-  action_ = new VectorSignal();
-  curve_ = new VectorSignal();
-  
-  config.set("state", state_);
-  config.set("action", action_);
-  config.set("curve", curve_);
-
-  if (test_interval_ >= 0 && !test_agent_)
-    throw bad_param("experiment/online_learning:test_agent");
-}
-
-void OnlineLearningExperiment::reconfigure(const Configuration &config)
-{
-  config.get("rate", rate_);
-  config.get("identity", identity_);
-}
-
-void OnlineLearningExperiment::run()
+void LeoSquattingOnlineLearningExperiment::run()
 {
   std::ofstream ofs;
   
@@ -128,7 +74,10 @@ void OnlineLearningExperiment::run()
       Action action;
       double reward, total_reward=0;
       int terminal;
-      int test = (test_interval_ >= 0 && tt%(test_interval_+1) == test_interval_) * (rr+1);
+      int test_ls = (test_interval_ >= 0 && tt%(test_interval_+1) == test_interval_-1) * (rr+1); // start testing at low setpoint
+      int test_hs = (test_interval_ >= 0 && tt%(test_interval_+1) == test_interval_) * (rr+1);   // start testing at high setpoint
+      int test = (test_ls || test_hs) ? (test_ls?1:2) : 0;
+
       timer step_timer;
 
       Agent *agent = agent_;      
@@ -178,7 +127,7 @@ void OnlineLearningExperiment::run()
         if (test)
         {
           std::ostringstream oss;
-          oss << std::setw(15) << tt+1-(tt+1)/(test_interval_+1) << std::setw(15) << ss << std::setw(15) << std::setprecision(3) << std::fixed << total_reward;
+          oss << std::setw(15) << tt+1-round((double)(tt+1)/(test_interval_+1)) << std::setw(15) << ss << std::setw(15) << std::setprecision(3) << std::fixed << total_reward;
           agent->report(oss);
           environment_->report(oss);
           curve_->set(VectorConstructor(total_reward));
