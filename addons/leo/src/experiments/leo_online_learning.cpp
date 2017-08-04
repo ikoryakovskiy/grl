@@ -37,6 +37,10 @@ REGISTER_CONFIGURABLE(LeoSquattingOnlineLearningExperiment)
 
 void LeoSquattingOnlineLearningExperiment::run()
 {
+  // if we need testing, then increase interval by 1 to test both starting setpoints
+  if (test_interval_ >= 0)
+    test_interval_++;
+
   std::ofstream ofs;
   
   // Store configuration with output

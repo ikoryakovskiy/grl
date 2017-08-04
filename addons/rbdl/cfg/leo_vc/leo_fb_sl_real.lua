@@ -26,7 +26,7 @@ armICangle = -0.26 -- = -15*degtorad
 torsoheight = (0.24155)
 torsoHipDistX = (0.00273)
 torsoHipDistZ = (-torsoheight/2)
-torsoMass = 1.083599 --1.41339 --0.94226
+torsoMass = 1.083599
 boomMass = 0.860
 boomCMY = 0.835
 boomLength = 1.70
@@ -166,11 +166,13 @@ function control(state, action)
     G = 212.6
     R = 4.6
     dof = 4
+    --Kc = 0.5
+    --ridge = 2000
     for ii = 0, dof-1 do
---      print(action[ii])
-      action[ii] = Kt*G*(action[ii] - Kt*G*state[dof + ii])/R;
---      print(action[ii])
-      -- action[ii] = action[ii] - 0.0*state[dof + ii]; -- Friction
+      -- Friction
+      --print(math.tanh(ridge*state[dof + ii]))
+      --action[ii] = action[ii] - Kc*math.tanh(ridge*state[dof + ii])
+      action[ii] = Kt*G*(action[ii] - Kt*G*state[dof + ii])/R
     end
     return {action[0], action[1], action[2], action[3]}
 end
