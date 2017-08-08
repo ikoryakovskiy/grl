@@ -46,7 +46,7 @@ void LeoSquattingTask::request(ConfigurationRequest *config)
   Task::request(config);
   config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_, true));
   config->push_back(CRP("timeout", "double.timeout", "Task timeout", timeout_, CRP::System, 0.0, DBL_MAX));
-  config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
+  config->push_back(CRP("randomize", "double.randomize", "Initialization from a random pose", randomize_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("weight_nmpc", "double.weight_nmpc", "Weight on the NMPC cost (excluding shaping)", weight_nmpc_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("weight_nmpc_aux", "double.weight_nmpc_aux", "Weight on the part of NMPC cost with auxilary", weight_nmpc_aux_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("weight_nmpc_qd", "double.weight_nmpc_qd", "Weight on the part of NMPC cost which penalizes large velocities", weight_nmpc_qd_, CRP::System, 0.0, DBL_MAX));
@@ -153,7 +153,7 @@ void LeoSquattingTask::start(int test, Vector *state) const
     int low_start;
 
     if (test == 0)
-      low_start = rand.getInteger(2); // testing: random start
+      low_start = rand.getInteger(2); // testing: random setpoint
     else
       low_start = test % 2; // learning: setpoint selection is determined by test parameter value (test = 1 => low start)
 
@@ -190,7 +190,7 @@ void LeoSquattingTask::start(int test, Vector *state) const
             lower_height_;  // rlsRefRootZ
     }
 
-    if (randomize_)
+    if (test == 0 && randomize_)
     {
       // sample angles
       const double upLegLength  = 0.1160;
@@ -198,13 +198,16 @@ void LeoSquattingTask::start(int test, Vector *state) const
       double a, b, c, d, hh;
       do
       {
-        a = RandGen::getUniform(-1.65,  1.48)*randomize_;
-        b = RandGen::getUniform(-2.53,  0.00)*randomize_;
-        c = RandGen::getUniform(-0.61,  2.53)*randomize_;
-        d = RandGen::getUniform(-0.10,  0.10)*randomize_;
+        a = (*state)[rlsAnkleAngle] + RandGen::getUniform(-1, 1) * randomize_;
+        b = (*state)[rlsKneeAngle]  + RandGen::getUniform(-1, 1) * randomize_;
+        c = (*state)[rlsHipAngle]   + RandGen::getUniform(-1, 1) * randomize_;
+        d = (*state)[rlsArmAngle]   + RandGen::getUniform(-1, 1) * randomize_;
         hh = loLegLength*cos(a) + upLegLength*cos(a+b);
+        INFO("Try");
       }
-      while (fabs(a + b + c) > 3.1415/2.0 || hh < 0.07);
+      while (fabs(a + b + c) > 3.1415/2.0 || hh < 0.07 || b >= -0.02); // knee can have only negative values
+
+      INFO("ABC: " << a << "; " << b << "; " << c << "; ");
 
       (*state)[rlsAnkleAngle] = a;
       (*state)[rlsKneeAngle] = b;
