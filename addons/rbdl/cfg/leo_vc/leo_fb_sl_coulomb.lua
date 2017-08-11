@@ -166,7 +166,7 @@ function control(state, action)
     G = 212.6
     R = 4.6
     dof = 4
-    Kc = 0.5
+    Kc = 0.2
     ridge = 2000
     for ii = 0, dof-1 do
       -- Friction

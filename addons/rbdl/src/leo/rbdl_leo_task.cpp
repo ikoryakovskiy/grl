@@ -203,11 +203,8 @@ void LeoSquattingTask::start(int test, Vector *state) const
         c = (*state)[rlsHipAngle]   + RandGen::getUniform(-1, 1) * randomize_;
         d = (*state)[rlsArmAngle]   + RandGen::getUniform(-1, 1) * randomize_;
         hh = loLegLength*cos(a) + upLegLength*cos(a+b);
-        INFO("Try");
       }
       while (fabs(a + b + c) > 3.1415/2.0 || hh < 0.07 || b >= -0.02); // knee can have only negative values
-
-      INFO("ABC: " << a << "; " << b << "; " << c << "; ");
 
       (*state)[rlsAnkleAngle] = a;
       (*state)[rlsKneeAngle] = b;
