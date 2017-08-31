@@ -348,24 +348,27 @@ class ShapingEnvironment : public Environment
     virtual void report(std::ostream &os) const;
 };
 
-/// Environment modifier that substitutes reward with Model-error reward.
-class MEFEnvironment : public Environment
+/// Environment that benchmarks external action on a different (ideal) model, without modification of reward
+class MPMLBenchmarkingEnvironment : public Environment
 {
   public:
-    TYPEINFO("environment/post/mef", "Substitutes reward with model-error reward")
+    TYPEINFO("environment/post/mpml/benchmarking", "Benchmark external action on an ideal model (MPML is not used as a reward)")
 
   public:
     VectorSignal *sub_nominal_action_;
     Vector weights_;
     Environment *environment_;
-    VectorSignal *state_obj_;
     Task *task_;
     Model *model_;
+    Exporter *exporter_;
 
-    double total_reward_, mef_total_reward_;
+    double total_reward_, mismatch_total_;
+    int test_;
+    double time_test_, time_learn_;
 
   public:
-    MEFEnvironment() : sub_nominal_action_(NULL), environment_(NULL), state_obj_(NULL), task_(NULL), model_(NULL), total_reward_(0.), mef_total_reward_(0.)
+    MPMLBenchmarkingEnvironment() : sub_nominal_action_(NULL), environment_(NULL), task_(NULL), model_(NULL),
+      total_reward_(0.), mismatch_total_(0.), test_(0), time_test_(0.), time_learn_(0.)
     {
     }
 
@@ -373,22 +376,25 @@ class MEFEnvironment : public Environment
     virtual void request(ConfigurationRequest *config);
     virtual void configure(Configuration &config);
     virtual void reconfigure(const Configuration &config);
-    virtual MEFEnvironment &copy(const Configurable &obj);
+    virtual MPMLBenchmarkingEnvironment &copy(const Configurable &obj);
 
     // From Environment
     virtual void start(int test, Observation *obs);
     virtual double step(const Action &action, Observation *obs, double *reward, int *terminal);
     virtual void report(std::ostream &os) const;
+
+  protected:
+    double mpml_step(const Action &action, Observation *obs, double *reward, int *terminal, double *mismatch);
 };
 
-/// Environment that benchmarks external action on a different (ideal) model.
-class MEFBenchmarkingEnvironment : public MEFEnvironment
+/// Environment modifier that substitutes reward with model-plant mismatch
+class MPMLEnvironment : public MPMLBenchmarkingEnvironment
 {
   public:
-    TYPEINFO("environment/post/mef/benchmarking", "Benchmark external action on an ideal model (MEF is not used as a reward)")
+    TYPEINFO("environment/post/mpml", "Substitutes reward with model-plant mismatch")
 
   public:
-    MEFBenchmarkingEnvironment() {}
+    MPMLEnvironment() {}
 
     // From Environment
     virtual double step(const Action &action, Observation *obs, double *reward, int *terminal);

@@ -1019,13 +1019,13 @@ environment/leo/phantom:
     description: Subscriber to the transition type
     mutability: configuration
     default: 0
-    optional: 0
+    optional: 1
   pub_ic_signal:
     type: signal/vector
     description: Publisher of the initialization and contact signal
     mutability: configuration
     default: 0
-    optional: 0
+    optional: 1
 environment/leo2:
   description: LEO/2 environment
   port:
@@ -1298,14 +1298,14 @@ environment/ode:
     type: double.reward_max
     description: Upper limit on immediate reward
     mutability: provided
-environment/post/mef:
-  description: Substitutes reward with model-error reward
+environment/post/mpml:
+  description: Substitutes reward with model-plant mismatch
   sub_nominal_action:
     type: signal/vector
     description: Subscriber to an external action from a nominal controller
     mutability: configuration
     default: 0
-    optional: 0
+    optional: 1
   weights:
     type: vector
     description: Per-dimention weight of MEF
@@ -1318,32 +1318,32 @@ environment/post/mef:
     mutability: configuration
     default: 0
     optional: 0
-  state:
-    type: signal/vector
-    description: Current state of the environment
-    mutability: configuration
-    default: 0
-    optional: 0
   task:
     type: task
     description: Task to perform in the environment (should match model)
     mutability: configuration
     default: 0
-    optional: 0
+    optional: 1
   model:
     type: model
     description: Approximated model of the system
     mutability: configuration
     default: 0
     optional: 0
-environment/post/mef/benchmarking:
-  description: Benchmark external action on an ideal model (MEF is not used as a reward)
+  exporter:
+    type: exporter
+    description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
+    mutability: configuration
+    default: 0
+    optional: 1
+environment/post/mpml/benchmarking:
+  description: Benchmark external action on an ideal model (MPML is not used as a reward)
   sub_nominal_action:
     type: signal/vector
     description: Subscriber to an external action from a nominal controller
     mutability: configuration
     default: 0
-    optional: 0
+    optional: 1
   weights:
     type: vector
     description: Per-dimention weight of MEF
@@ -1356,24 +1356,24 @@ environment/post/mef/benchmarking:
     mutability: configuration
     default: 0
     optional: 0
-  state:
-    type: signal/vector
-    description: Current state of the environment
-    mutability: configuration
-    default: 0
-    optional: 0
   task:
     type: task
     description: Task to perform in the environment (should match model)
     mutability: configuration
     default: 0
-    optional: 0
+    optional: 1
   model:
     type: model
     description: Approximated model of the system
     mutability: configuration
     default: 0
     optional: 0
+  exporter:
+    type: exporter
+    description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
+    mutability: configuration
+    default: 0
+    optional: 1
 environment/pre/noise:
   description: Injects noise into an environment
   environment:

@@ -37,23 +37,15 @@ void LeoPhantomEnvironment::request(ConfigurationRequest *config)
 {
   config->push_back(CRP("importer", "importer", "Importer with time as the first column", importer_));
   config->push_back(CRP("exporter", "exporter", "Optional exporter for transition log (supports time, state, observation, action, reward, terminal)", exporter_, true));
-  config->push_back(CRP("sub_transition_type", "signal/vector", "Subscriber to the transition type", sub_transition_type_));
-  config->push_back(CRP("pub_ic_signal", "signal/vector", "Publisher of the initialization and contact signal", pub_ic_signal_));
+  config->push_back(CRP("sub_transition_type", "signal/vector", "Subscriber to the transition type", sub_transition_type_, true));
+  config->push_back(CRP("pub_ic_signal", "signal/vector", "Publisher of the initialization and contact signal", pub_ic_signal_, true));
 }
 
 void LeoPhantomEnvironment::configure(Configuration &config)
 {
+  Vector time, state0, state1, action, reward, terminal, transition_type, contact;
   importer_ = (Importer*)config["importer"].ptr();
   importer_->open();
-
-  exporter_ = (Exporter*) config["exporter"].ptr();
-  if (exporter_)
-    exporter_->init({"time", "state0", "state1", "action", "reward", "terminal", "transition_type", "contact"});
-
-  sub_transition_type_ = (VectorSignal*)config["sub_transition_type"].ptr();
-  pub_ic_signal_ = (VectorSignal*)config["pub_ic_signal"].ptr();
-
-  Vector time, state0, state1, action, reward, terminal, transition_type, contact;
   while (importer_->read({&time, &state0, &state1, &action, &reward, &terminal, &transition_type, &contact}))
   {
     time_.push_back(time);
@@ -66,6 +58,13 @@ void LeoPhantomEnvironment::configure(Configuration &config)
     ERROR("Could not import file");
     throw bad_param("environment/phantom:importer");
   }
+
+  exporter_ = (Exporter*) config["exporter"].ptr();
+  if (exporter_)
+    exporter_->init({"time", "state0", "state1", "action", "reward", "terminal", "transition_type", "contact"});
+
+  sub_transition_type_ = (VectorSignal*)config["sub_transition_type"].ptr();
+  pub_ic_signal_ = (VectorSignal*)config["pub_ic_signal"].ptr();
 }
 
 void LeoPhantomEnvironment::reconfigure(const Configuration &config)
@@ -82,8 +81,11 @@ void LeoPhantomEnvironment::start(int test, Observation *obs)
   CRAWL(obs->v);
 
   // copy contact
-  pub_ic_signal_->set(contact_[idx_]);
-  CRAWL(contact_[idx_]);
+  if (pub_ic_signal_)
+  {
+    pub_ic_signal_->set(contact_[idx_]);
+    CRAWL(contact_[idx_]);
+  }
 
   if (exporter_)
     exporter_->open("test", 0);
@@ -101,10 +103,11 @@ double LeoPhantomEnvironment::step(const Action &action, Observation *obs, doubl
   else
     *terminal = 1;
 
-  exporter_->write({time_[idx_], state0_[idx_], state0_[idx_+1], action.v,
-                    grl::VectorConstructor(*reward), grl::VectorConstructor(*terminal),
-                    grl::VectorConstructor(atUndefined), contact_[idx_]
-                   });
+  if (exporter_)
+    exporter_->write({time_[idx_], state0_[idx_], state0_[idx_+1], action.v,
+                      grl::VectorConstructor(*reward), grl::VectorConstructor(*terminal),
+                      grl::VectorConstructor(atUndefined), contact_[idx_]
+                     });
 
   // Prepare new observation
   obs->v.resize(state0_[idx_+1].size());
@@ -112,8 +115,11 @@ double LeoPhantomEnvironment::step(const Action &action, Observation *obs, doubl
   CRAWL(obs->v);
 
   // Prepare new contact
-  pub_ic_signal_->set(contact_[idx_+1]);
-  CRAWL(contact_[idx_+1]);
+  if (pub_ic_signal_)
+  {
+    pub_ic_signal_->set(contact_[idx_+1]);
+    CRAWL(contact_[idx_+1]);
+  }
 
   double tau = (time_[idx_+1][0] - time_[idx_][0]);
   ++idx_;

@@ -381,6 +381,12 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   }
 }
 
+bool LeoSquattingTask::invert(const Observation &obs, Vector *state) const
+{
+  state->resize(obs.size());
+  *state = obs;
+}
+
 int LeoSquattingTask::failed(const Vector &state) const
 {
   if (std::isnan(state[rlsRootZ]))
@@ -453,7 +459,7 @@ void LeoSquattingTask::report(std::ostream &os, const Vector &state) const
 {
   const int pw = 15;
   std::stringstream progressString;
-  progressString << std::fixed << std::setprecision(3) << std::right;
+  progressString << std::fixed << std::setprecision(5) << std::right;
   progressString << std::setw(pw) << state[rlsRootZ];
   progressString << std::setw(pw) << state[stsSquats];
   progressString << std::setw(pw) << task_reward_;
