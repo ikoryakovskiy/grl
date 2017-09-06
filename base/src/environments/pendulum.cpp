@@ -136,11 +136,12 @@ void PendulumSwingupTask::observe(const Vector &state, Observation *obs, int *te
   (*obs)[1] = b;
   obs->absorbing = false;
   
-//  if (state[1] > 20 || state[1] < -20)
-//  {
-//    *terminal = 1;
-//    obs->absorbing = true;
-//  }
+  if (state[1] > 20 || state[1] < -20)
+  {
+    *terminal = 1;
+    obs->absorbing = true;
+  }
+
   if (state[2] > T_)
     *terminal = 1;
   else
