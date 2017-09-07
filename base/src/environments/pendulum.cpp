@@ -103,7 +103,7 @@ void PendulumSwingupTask::start(int test, Vector *state) const
   if (randomization_ == 0)
   {
     (*state)[0] = (test==0)*RandGen::getUniform(-M_PI,M_PI) + (test==1)*M_PI;
-    (*state)[1] = (test==0)*RandGen::getUniform(-1,1);
+//    (*state)[1] = (test==0)*RandGen::getUniform(-1,1) + (test==1)*0;
   }
   else
   {
@@ -136,12 +136,11 @@ void PendulumSwingupTask::observe(const Vector &state, Observation *obs, int *te
   (*obs)[1] = b;
   obs->absorbing = false;
   
-  if (state[1] > 20 || state[1] < -20)
-  {
-    *terminal = 1;
-    obs->absorbing = true;
-  }
-
+//  if (state[1] > 20 || state[1] < -20)
+//  {
+//    *terminal = 2;
+//    obs->absorbing = true;
+//  }
   if (state[2] > T_)
     *terminal = 1;
   else
