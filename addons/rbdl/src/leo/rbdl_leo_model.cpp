@@ -340,13 +340,13 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   }
   else
     (*next)[rlsMEF] = 0;
-/*
+
   std::cout << "  > " << (int)(*next)[rlsSMAState]
             << "  Height: " << std::fixed << std::setprecision(3) << std::right
             << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
             << std::setw(10) << (*next)[rlsRefRootZ]
             << std::setw(10) << (*next)[rlsMEF] << std::endl;
-*/
+
   export_meshup_animation(*next, target_action_);
 
   return tau;
