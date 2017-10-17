@@ -26,11 +26,11 @@
  */
 
 #include <grl/environment.h>
-
 using namespace grl;
 
 REGISTER_CONFIGURABLE(ModeledEnvironment)
 REGISTER_CONFIGURABLE(DynamicalModel)
+REGISTER_CONFIGURABLE(DRLEnvironment)
 
 void ModeledEnvironment::request(ConfigurationRequest *config)
 {
@@ -126,7 +126,7 @@ void ModeledEnvironment::report(std::ostream &os) const
 
 void DynamicalModel::request(ConfigurationRequest *config)
 {
-  config->push_back(CRP("control_step", "double.control_step", "Control step time", tau_, CRP::Configuration, 0.001, DBL_MAX));
+  config->push_back(CRP("control_step", "double.control_step", "Control step time", tau_, CRP::Configuration, 0.0001, DBL_MAX));
   config->push_back(CRP("integration_steps", "Number of integration steps per control step", (int)steps_, CRP::Configuration, 1));
 
   config->push_back(CRP("dynamics", "dynamics", "Equations of motion", dynamics_));
@@ -163,7 +163,122 @@ double DynamicalModel::step(const Vector &state, const Vector &actuation, Vector
     Vector k4 = h*xd;
 
     *next = *next + (k1+2*k2+2*k3+k4)/6;
+
   }
   
   return tau_;
+}
+
+void DRLEnvironment::request(ConfigurationRequest *config)
+{
+  config->push_back(CRP("model", "model", "Environment model", model_));
+  config->push_back(CRP("task", "task", "Task to perform in the environment (should match model)", task_));
+  config->push_back(CRP("exporter", "exporter", "Optional exporter for transition log (supports time, state, observation, action, reward, terminal)", exporter_, true));
+  config->push_back(CRP("state", "signal/vector", "Current state of the model", CRP::Provided));
+  config->push_back(CRP("sub_state_drl","signal/vector","state received from deep rl agent", sub_state_drl_, true));
+  config->push_back(CRP("noise","int.noise","Measurement noise to be added",noise_, CRP::System));
+}
+
+void DRLEnvironment::configure(Configuration &config)
+{
+  model_ = (Model*)config["model"].ptr();
+  task_ = (Task*)config["task"].ptr();
+  exporter_ = (Exporter*)config["exporter"].ptr();
+
+  // Register fields to be exported
+  if (exporter_)
+    exporter_->init({"time", "state", "observation", "action", "reward", "terminal"});
+
+  state_obj_ = new VectorSignal();
+  config.set("state", state_obj_);
+  sub_state_drl_ = (VectorSignal*)config["sub_state_drl"].ptr();
+  noise_ = config["noise"];
+
+}
+
+void DRLEnvironment::reconfigure(const Configuration &config)
+{
+  if (config.has("action") && config["action"].str() == "reset")
+    time_learn_ = time_test_ = 0.;
+}
+
+DRLEnvironment &DRLEnvironment::copy(const Configurable &obj)
+{
+  const DRLEnvironment& me = dynamic_cast<const DRLEnvironment&>(obj);
+
+  obs_ = me.obs_;
+  test_ = me.test_;
+
+  return *this;
+}
+
+void DRLEnvironment::start(int test, Observation *obs)
+{
+  int terminal;
+
+  task_->start(test, &state_);
+  task_->observe(state_, obs, &terminal);
+
+  obs_ = *obs;
+  state_obj_->set(state_);
+
+  test_ = test;
+
+  if (exporter_)
+    exporter_->open((test_?"test":"learn"), (test_?time_test_:time_learn_) != 0.0);
+}
+
+double DRLEnvironment::step(const Action &action, Observation *obs, double *reward, int *terminal)
+{
+  Vector drl_state, state, next, actuation;
+  double tau = 0;
+  bool done = false;
+
+  if (sub_state_drl_)
+  {
+    drl_state = sub_state_drl_->get();
+    state_ << drl_state, state_(2);
+    if (state_(0) < 0)
+      state_(0) = 2*M_PI - fabs(state_(0));
+    state = state_;
+  }
+  else
+    state = state_;
+
+  do
+  {
+    done = task_->actuate(state, action, &actuation);
+    tau += model_->step(state, actuation, &next);
+    state = next;
+  } while (!done);
+
+  task_->observe(next, obs, terminal);
+
+  //Add measurement noise
+  if (noise_)
+  {
+    (*obs)[0] += RandGen::getUniform(-0.2,0.2);
+    (*obs)[1] += RandGen::getUniform(-1,1);
+  }
+
+  task_->evaluate(state_, action, next, reward);
+
+  double &time = test_?time_test_:time_learn_;
+
+  if (exporter_)
+    exporter_->write({VectorConstructor(time), state_, *obs, action, VectorConstructor(*reward), VectorConstructor((double)*terminal)});
+
+  time += tau;
+
+  state_ = next;
+  obs_ = *obs;
+  state_obj_->set(state_);
+
+  return tau;
+}
+
+void DRLEnvironment::report(std::ostream &os) const
+{
+  model_->report(os, state_);
+  task_->report(os, state_);
 }

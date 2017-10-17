@@ -30,8 +30,8 @@
 
 #include <grl/environment.h>
 #include <grl/environments/rbdl.h>
-#include <grl/butterworth.h>
-#include <../../agents/leo_sma.h>
+//#include <grl/butterworth.h>
+//#include <../../agents/leo_sma.h>
 
 namespace grl
 {
@@ -50,7 +50,7 @@ class LeoSandboxModel: public Sandbox
     virtual double step(const Vector &action, Vector *next) = 0;
 
   protected:
-    virtual void export_meshup_animation(const Vector &state, const Vector &action = Vector()) const;
+    virtual void export_meshup_animation(double time, const Vector &state, const Vector &action = Vector()) const;
 
   protected:
     int target_dof_;
@@ -65,38 +65,6 @@ class LeoSandboxModel: public Sandbox
     VectorSignal *sub_sma_state_;
 
     Vector target_state_, target_state_next_, target_action_;
-};
-
-class LeoSquattingSandboxModel : public LeoSandboxModel
-{
-  public:
-    TYPEINFO("sandbox_model/leo_squatting", "State transition model that integrates equations of motion and augments state vector with additional elements")
-
-  public:
-    LeoSquattingSandboxModel() : lower_height_(0.28), upper_height_(0.35), mode_("vc"), sim_filtered_(0), main_time_(0.), idle_time_(0.), timer_switch_(0), sma_state_(SMA_NONE) { }
-
-    // From Configurable
-    virtual void request(ConfigurationRequest *config);
-    virtual void configure(Configuration &config);
-    virtual void reconfigure(const Configuration &config);
-
-    // From Model
-    virtual void start(const Vector &hint, Vector *state);
-    virtual double step(const Vector &action, Vector *next);
-
-  protected:
-    Vector rbdl_addition_;
-    double lower_height_, upper_height_;
-    Vector precision_;
-    std::string mode_;
-    Vector true_state_next_;
-    int sim_filtered_;
-    Vector state_raw_vel_;
-    CButterworthFilter<2> speedFilter_[4];
-
-    double main_time_, idle_time_;
-    int timer_switch_;
-    SMAState sma_state_;
 };
 
 }

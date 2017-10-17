@@ -31,6 +31,7 @@ using namespace grl;
 
 REGISTER_CONFIGURABLE(ZeromqPubSubCommunicator)
 REGISTER_CONFIGURABLE(ZeromqRequestReplyCommunicator)
+//REGISTER_CONFIGURABLE(ZeromqAgentDRL)
 
 void ZeromqCommunicator::request(ConfigurationRequest *config)
 {

@@ -1,43 +1,28 @@
 experiment: 
   type: experiment/online_learning
   runs: 1
-  trials: 10000
+  trials: 0
   steps: 0
   rate: 0
-  test_interval: -1
-  output: rbdl_ac_tc_squat_fb_sl_fa
+  test_interval: 0
   environment: 
-    type: environment/sandbox
+    type: environment/modeled_deeprl
     model: 
-      type: sandbox_model/leo_squatting
-      control_step: 0.03
-      integration_steps: 25
+      type: model/dynamical
+      control_step: 0.05
+      integration_steps: 10
       dynamics: 
-        type: dynamics/rbdl
-        file: leo_fb_sl_ivan.lua
-        points: tip_left, heel_left, root
-        auxiliary: mm, com, comv, am
-      target_dof: 3
-      animation: nope
-      condition: [0.01, 0.01]
-      lower_height: 0.28
-      upper_height: 0.35
-      mode: vc
+        type: dynamics/pendulum
+        mass: 0.09
     task: 
-      type: task/leo_squatting
-      timeout: 0
-      randomize: 0
-      weight_nmpc: 0.0001
-      weight_nmpc_aux: 1
-      weight_nmpc_qd: 1
-      weight_shaping: 0
-      power: 2
-      setpoint_reward: 1
-      continue_after_fall: 0
-      gamma: 0.97
-      fixed_arm: 0
+      type: task/pendulum/swingup
+      timeout: 25
+      randomization: 1
+    sub_state_drl: 
+      type: signal/vector
+    noise: 1
   agent: 
-    type: agent/zmq_action
+    type: agent/zmq_action_state
     communicator: 
       type: communicator/zeromq/request_reply
       pattern: ZMQ_REQ
@@ -48,8 +33,9 @@ experiment:
     action_min: experiment/environment/task/action_min
     action_max: experiment/environment/task/action_max
     test: 0
+    pub_state_drl: experiment/environment/sub_state_drl
   test_agent: 
-    type: agent/zmq_action
+    type: agent/zmq_action_state
     communicator: 
       type: communicator/zeromq/request_reply
       pattern: ZMQ_REQ
@@ -59,5 +45,12 @@ experiment:
     action_dims: experiment/environment/task/action_dims
     action_min: experiment/environment/task/action_min
     action_max: experiment/environment/task/action_max
-    test: experiment/agent/test
-  save_every: run
+    test: 1
+    pub_state_drl: experiment/environment/sub_state_drl
+  load_file: /home/divyam/rl-agent/pendulum_drl/model-pendulum-new-2.ckpt
+  save_every: never
+visualizer: 
+  type: visualizer/glut
+visualization: 
+  type: visualization/pendulum
+  state: experiment/environment/state

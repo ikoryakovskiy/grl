@@ -39,7 +39,7 @@ void PendulumDynamics::request(ConfigurationRequest *config)
 }
 
 void PendulumDynamics::configure(Configuration &config)
-{ 
+{
   J_ = 0.000191;
   m_ = 0.055;
   g_ = 9.81;
@@ -173,8 +173,16 @@ void PendulumSwingupTask::observe(const Vector &state, Observation *obs, int *te
   (*obs)[1] = state[1];
   obs->absorbing = false;
   
-  if (state[0] > 2*M_PI || state[0] < -M_PI)
+  if (wrap_angle_)
+  {
+    if (state[0] > 2*M_PI || state[0] < -M_PI)
+      *terminal = 2;
+  }
+  else if (state[1] > 20 || state[1] < -20) // #divyam For DDPG
+  {
     *terminal = 2;
+    obs->absorbing = true;
+  }
   else if (state[2] > T_)
     *terminal = 1;
   else
@@ -193,6 +201,8 @@ void PendulumSwingupTask::evaluate(const Vector &state, const Action &action, co
     if (a > M_PI) a -= 2*M_PI;
   }
 
+  // For DDPG:
+  // *reward = -5*pow(a, 2) - .1*pow(b, 2) - .01*pow(action[0], 2);
   *reward = -5*pow(a, 2) - 0.1*pow(next[1], 2) - 1*pow(action[0], 2);
 }
 

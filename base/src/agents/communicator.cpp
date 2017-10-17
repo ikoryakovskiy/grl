@@ -32,6 +32,7 @@
 using namespace grl;
 
 REGISTER_CONFIGURABLE(CommunicatorAgent)
+REGISTER_CONFIGURABLE(CommunicatorAgentAS)
 
 void CommunicatorAgent::request(ConfigurationRequest *config)
 {
@@ -90,4 +91,61 @@ void CommunicatorAgent::end(double tau, const Observation &obs, double reward)
   communicator_->recv(&temp);
 }
 
+//////////////////////////////////
+void CommunicatorAgentAS::request(ConfigurationRequest *config)
+{
+  CommunicatorAgent::request(config);
+  config->push_back(CRP("pub_state_drl","signal/vector","State received from python",pub_state_drl_,true));
+}
+
+void CommunicatorAgentAS::configure(Configuration &config)
+{
+  CommunicatorAgent::configure(config);
+  pub_state_drl_ = (VectorSignal*)config["pub_state_drl"].ptr();
+}
+
+
+void CommunicatorAgentAS::start(const Observation &obs, Action *action)
+{
+  action->v.resize(action_dims_);
+  action->type = atUndefined;
+
+  Vector to_send(obs.v.cols()+1);
+  Vector to_recv(action->v.cols()+obs.v.cols());
+  Vector to_publish(obs.v.cols());
+  to_send << test_, obs.v;
+  communicator_->send(to_send);
+
+  communicator_->recv(&to_recv);
+  action->v << to_recv.head((action->v.cols()));
+  to_publish << to_recv.tail(obs.v.cols());
+  pub_state_drl_->set(to_publish);
+}
+
+void CommunicatorAgentAS::step(double tau, const Observation &obs, double reward, Action *action)
+{
+  action->v.resize(action_dims_);
+  action->type = atUndefined;
+
+  Vector to_send(obs.v.cols()+3);
+  Vector to_recv(action->v.cols()+obs.v.cols());
+  Vector to_publish(obs.v.cols());
+  to_send << test_, obs.v, reward, 0;
+  communicator_->send(to_send);
+
+  communicator_->recv(&to_recv);
+  action->v << to_recv.head(action->v.cols());
+  to_publish << to_recv.tail(obs.v.cols());
+  pub_state_drl_->set(to_publish);
+}
+
+void CommunicatorAgentAS::end(double tau, const Observation &obs, double reward)
+{
+  Vector temp(action_dims_+obs.v.cols());
+
+  Vector to_send(obs.v.cols()+3);
+  to_send << test_, obs.v, reward, 2;
+  communicator_->send(to_send);
+  communicator_->recv(&temp);
+}
 

@@ -1,41 +1,29 @@
 experiment: 
   type: experiment/online_learning
   runs: 1
-  trials: 10000
+  trials: 0
   steps: 0
   rate: 0
-  test_interval: -1
-  output: rbdl_ac_tc_squat_fb_sl_fa
+  test_interval: 10
+  output: rbdl_test
   environment: 
     type: environment/sandbox
     model: 
-      type: sandbox_model/leo_squatting
-      control_step: 0.03
-      integration_steps: 25
+      type: sandbox_model/leo_walk
+      control_step: 0.0003
+      integration_steps: 1
       dynamics: 
         type: dynamics/rbdl
-        file: leo_fb_sl_ivan.lua
-        points: tip_left, heel_left, root
-        auxiliary: mm, com, comv, am
-      target_dof: 3
-      animation: nope
+        file: leo_ff_dl.lua
+        points: tip_left, tip_right, heel_left, heel_right
+        auxiliary: com
+      target_dof: 9
       condition: [0.01, 0.01]
-      lower_height: 0.28
-      upper_height: 0.35
       mode: vc
     task: 
-      type: task/leo_squatting
-      timeout: 0
+      type: task/leo_walking
+      timeout: 20
       randomize: 0
-      weight_nmpc: 0.0001
-      weight_nmpc_aux: 1
-      weight_nmpc_qd: 1
-      weight_shaping: 0
-      power: 2
-      setpoint_reward: 1
-      continue_after_fall: 0
-      gamma: 0.97
-      fixed_arm: 0
   agent: 
     type: agent/zmq_action
     communicator: 
@@ -59,5 +47,5 @@ experiment:
     action_dims: experiment/environment/task/action_dims
     action_min: experiment/environment/task/action_min
     action_max: experiment/environment/task/action_max
-    test: experiment/agent/test
+    test: 1
   save_every: run

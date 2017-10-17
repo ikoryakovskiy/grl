@@ -1,4 +1,4 @@
-/** \file rbdl_leo_task.cpp
+/** \file rbdl_leo_squatting_task.cpp
  * \brief RBDL file for C++ description of Leo task.
  *
  * \author    Ivan Koryakovskiy <i.koryakovskiy@tudelft.nl>
@@ -33,7 +33,7 @@
 #include <rbdl/addons/luamodel/luamodel.h>
 
 #include <grl/lua_utils.h>
-#include <grl/environments/leo/rbdl_leo_task.h>
+#include <grl/environments/leo/rbdl_leo_squatting_task.h>
 
 #include <DynamixelSpecs.h>
 
