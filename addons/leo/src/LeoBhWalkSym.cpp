@@ -133,7 +133,7 @@ bool CLeoBhWalkSym::readConfig(const CConfigSection &xmlRoot)
 
   /////////////
   configNode = xmlRoot.section("ode");
-  configNode.get("steptime", &mTotalStepTime);
+  configresult &= mLogAssert(configNode.get("steptime", &mTotalStepTime));
 
   /////////////
   configNode = xmlRoot.section("constants");
