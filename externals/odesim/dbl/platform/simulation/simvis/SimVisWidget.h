@@ -18,7 +18,7 @@
 #ifndef SIMVISWIDGET_H_
 #define SIMVISWIDGET_H_
 
-        #include <GLWidget.h>
+#include <GLWidget.h>
 #include "SimVis.h"
 
 class CSimVisWidget: public GLWidget, public CSimVisLoggable

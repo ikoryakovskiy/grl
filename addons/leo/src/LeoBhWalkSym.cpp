@@ -75,10 +75,6 @@ CLeoBhWalkSym::CLeoBhWalkSym(ISTGActuation *actuationInterface):
   mScaleFactKneeSwingAngleRate  = 0.15;
   mContinueAfterFall            = false;
 
-//  mNumActionsPerJoint        = 7;
-//  mScaleFactVoltage        = 0.2;
-
-  // Set mPreviousAction to 0.0 - this is the initialization value of the torques in the simulator, and probably close to the real robot's situation (although it doesn't matter much)
   for (int iAction=0; iAction<LEOBHWALKSYM_MAX_NUM_ACTIONS; iAction++)
     mPreviousAction[iAction] = 0.0;
 }
@@ -109,16 +105,11 @@ bool CLeoBhWalkSym::readConfig(const CConfigSection &xmlRoot)
   configresult &= mLogAssert(configNode.get("rewardTorsoUpright", &mRwTorsoUpright));
   configresult &= mLogAssert(configNode.get("rewardTorsoUprightAngle", &mRwTorsoUprightAngle));
   configresult &= mLogAssert(configNode.get("rewardTorsoUprightAngleMargin", &mRwTorsoUprightAngleMargin));
+  configresult &= mLogAssert(configNode.get("rewardFootContact", &mRwFootContact));
   configresult &= mLogAssert(configNode.get("preprogrammedTorsoAngle", &mPreProgTorsoAngle));
   configresult &= mLogAssert(configNode.get("preprogrammedHipAngle", &mPreProgHipAngle));
   configresult &= mLogAssert(configNode.get("preprogrammedShoulderAngle", &mPreProgShoulderAngle));
   configresult &= mLogAssert(configNode.get("preprogrammedAnkleAngle", &mPreProgAnkleAngle));
-
-  // ivan: The following values are not found in XML
-  //mLogAssert(configNode.get("preprogrammedStanceKneeAngle", &mPreProgStanceKneeAngle));
-  //mLogAssert(configNode.get("preprogrammedEarlySwingTime", &mPreProgEarlySwingTime));
-  //mLogAssert(configNode.get("preprogrammedExploreRate", &mPreProgExploreRate));
-
 
   double timeSeconds = 0;
   configresult &= mLogAssert(configNode.get("trialTimeoutSeconds", &timeSeconds));
@@ -138,17 +129,16 @@ bool CLeoBhWalkSym::readConfig(const CConfigSection &xmlRoot)
   configresult &= mLogAssert(configNode.get("scaleFactKneeStanceAngleRate",	&mScaleFactKneeStanceAngleRate));
   configresult &= mLogAssert(configNode.get("scaleFactKneeSwingAngle", 		&mScaleFactKneeSwingAngle));
   configresult &= mLogAssert(configNode.get("scaleFactKneeSwingAngleRate",	&mScaleFactKneeSwingAngleRate));
-
   configresult &= mLogAssert(configNode.get("continueAfterFall",	&mContinueAfterFall));
-
-
-
-//  configresult &= mLogAssert(configNode.get("numActionsPerJoint", &mNumActionsPerJoint));
-//  configresult &= mLogAssert(configNode.get("scaleFactVoltage",	&mScaleFactVoltage));
 
   /////////////
   configNode = xmlRoot.section("ode");
   configNode.get("steptime", &mTotalStepTime);
+
+  /////////////
+  configNode = xmlRoot.section("constants");
+  configresult &= mLogAssert(configNode.get("upleglength", &mUpLegLength));
+  configresult &= mLogAssert(configNode.get("loleglength", &mLoLegLength));
 
   return configresult;
 }
@@ -170,8 +160,8 @@ void CLeoBhWalkSym::updateDerivedStateVars(CLeoState* currentSTGState)
   mFootContactNum = std::bitset<8>(currentSTGState->mFootContacts).count();
 
   // Determine foot position relative to the hip axis
-  double upLegLength        = 0.116;  // length of the thigh
-  double loLegLength        = 0.1045; // length of the shin
+  double upLegLength        = mUpLegLength; // length of the thigh
+  double loLegLength        = mLoLegLength; // length of the shin
   double leftHipAbsAngle    = currentSTGState->mJointAngles[ljTorso] + currentSTGState->mJointAngles[ljHipLeft];
   double leftKneeAbsAngle   = leftHipAbsAngle + currentSTGState->mJointAngles[ljKneeLeft];
   double leftAnkleAbsAngle  = leftKneeAbsAngle + currentSTGState->mJointAngles[ljAnkleLeft];
@@ -417,8 +407,8 @@ double CLeoBhWalkSym::calculateReward()
   }
 
   // Foot contact penalty
-//  if (mFootContactNum <= 1)
-//    reward += -2;
+  if (mFootContactNum <= 1)
+    reward += mRwFootContact;
 
   // Footstep reward (calculation is a little bit more complicated -> separate function)
   reward += getFootstepReward();
@@ -431,9 +421,7 @@ double CLeoBhWalkSym::calculateReward()
         (!mLastStancelegWasLeft && mRightAnklePos > mLeftAnklePos-0.1) )  // left swing leg is behind
       clearanceReward = mRwFootClearance;
 
-    //std::cout << "[REWARD] Robot has low foot clearance of " << mFootClearance*100.0 << "cm! Reward = " << clearanceReward << std::endl;
-
-    mLogNoticeLn("[REWARD] Robot has low foot clearance of " << mFootClearance*100.0 << "cm! Reward = " << clearanceReward);
+    //INFO("[REWARD] Robot has low foot clearance of " << mFootClearance*100.0 << "cm! Reward = " << clearanceReward);
     reward += clearanceReward;
   }
 
@@ -453,9 +441,9 @@ double CLeoBhWalkSym::calculateReward()
   }
 
   // Reward for keeping torso upright
-  double torsoReward = mRwTorsoUpright * 1.0/(1.0 + (getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle)*(getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle)/(mRwTorsoUprightAngleMargin*mRwTorsoUprightAngleMargin));
-  //double torsoReward = mRwTorsoUpright * pow(getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle, 2) / pow(mRwTorsoUprightAngleMargin, 2);  
-  //mLogInfoLn("Torso upright reward: " << torsoReward);
+  //double torsoReward = mRwTorsoUpright * 1.0/(1.0 + (getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle)*(getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle)/(mRwTorsoUprightAngleMargin*mRwTorsoUprightAngleMargin));
+  double torsoReward = mRwTorsoUpright * pow(getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle, 2) / pow(mRwTorsoUprightAngleMargin, 2);
+  //mLogDebugLn("Torso upright reward: " << torsoReward);
   reward += torsoReward;
 
   // Penalty for both feet touching the floor
@@ -496,12 +484,18 @@ bool CLeoBhWalkSym::isDoomedToFall(CLeoState* state, bool report)
 {
   double torsoComstraint = 1; // 1
   double stanceComstraint = 0.36*M_PI; // 0.36*M_PI
-  double ankleComstraint = 0.25*M_PI;
+
+  // Divyam's termination condition
+  if ((fabs(state->mJointAngles[ljTorso]) > torsoComstraint) ||
+      (fabs(state->mJointAngles[ljAnkleLeft]) > stanceComstraint) ||
+      (fabs(state->mJointAngles[ljAnkleRight]) > stanceComstraint) ||
+      (mHipHeight < 0.15))
+    return true;
+  else
+    return false;
 
   if (!mContinueAfterFall)
   {
-    // Divyam's termination condition
-    if ((fabs(state->mJointAngles[ljTorso]) > torsoComstraint) || (fabs(state->mJointAngles[ljAnkleLeft]) > stanceComstraint) || (fabs(state->mJointAngles[ljAnkleRight]) > stanceComstraint) || (mHipHeight < 0.15))
     // Torso angle out of 'range'
     //if (fabs(state->mJointAngles[ljTorso]) > torsoComstraint)
     {
@@ -602,7 +596,7 @@ void CLeoBhWalkSym::autoActuateArm(ISTGActuation* actuationInterface)
   if (actuationInterface->getActuationMode() == amVoltage)
   {
     // The "torque" here is not actually torque, but a leftover from the "endless turn mode" control from dynamixels, which is actually voltage control
-    const double torqueToVoltage  = 14.0/3.3;
+    const double torqueToVoltage  = XM430_VS_RX28_COEFF*14.0/3.3;
     getActuationInterface()->setJointVoltage(ljShoulder, torqueToVoltage*armTorque);
   }
   else if (actuationInterface->getActuationMode() == amTorque)

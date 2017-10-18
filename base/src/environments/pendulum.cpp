@@ -173,12 +173,12 @@ void PendulumSwingupTask::observe(const Vector &state, Observation *obs, int *te
   (*obs)[1] = state[1];
   obs->absorbing = false;
   
-  if (wrap_angle_)
+  if (wrap_angle_ && (state[0] > 2*M_PI || state[0] < -M_PI))
   {
-    if (state[0] > 2*M_PI || state[0] < -M_PI)
-      *terminal = 2;
+    obs->absorbing = true;
+    *terminal = 2;
   }
-  else if (state[1] > 20 || state[1] < -20) // #divyam For DDPG
+  else if (state[1] > 6*M_PI || state[1] < -6*M_PI) // #divyam For DDPG
   {
     *terminal = 2;
     obs->absorbing = true;

@@ -16,7 +16,7 @@ experiment:
         type: dynamics/rbdl
         file: leo_ff_dl.lua
         points: tip_left, tip_right, heel_left, heel_right
-        auxiliary: com
+        auxiliary: ptpos, ptvel, com
       target_dof: 9
       condition: [0.01, 0.01]
       mode: vc

@@ -68,7 +68,7 @@ class RBDLDynamics : public Dynamics
     mutable std::map<std::string, ConstraintSetInfo> constraintSetInfos;
 
   public:
-    RBDLDynamics() : acting_constraint_set_(""), active_constraint_set_(""), dynamics_computed_(false), impulses_computed_(false), kinematics_computed_(false), momentum_computed_(false), rbdl_state_(std::bind(&RBDLDynamics::createRBDLState, this)) { }
+    RBDLDynamics() : dynamics_computed_(false), impulses_computed_(false), kinematics_computed_(false), momentum_computed_(false), rbdl_state_(std::bind(&RBDLDynamics::createRBDLState, this)) { }
   
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -93,7 +93,7 @@ class RBDLDynamics : public Dynamics
 
   protected:
     // own
-    std::vector<std::string> points_, auxiliary_;
+    std::vector<std::string> points_, ptprop_, auxiliary_;
 
   protected:
     RBDLState *createRBDLState() const;

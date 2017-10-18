@@ -58,6 +58,20 @@ void RBDLDynamics::configure(Configuration &config)
   points_ = cutLongStr(config["points"].str());
   auxiliary_ = cutLongStr(config["auxiliary"].str());
 
+  for (int ii = 0; ii < auxiliary_.size(); ii++)
+  {
+    if (auxiliary_[ii] == "ptpos")
+    {
+      auxiliary_.erase(auxiliary_.begin()+ii,auxiliary_.begin()+ii+1);
+      ptprop_.push_back("ptpos");
+    }
+    if (auxiliary_[ii] == "ptvel")
+    {
+      auxiliary_.erase(auxiliary_.begin()+ii,auxiliary_.begin()+ii+1);
+      ptprop_.push_back("ptvel");
+    }
+  }
+
   struct stat buffer;   
   if (stat (file_.c_str(), &buffer) != 0)
     file_ = std::string(RBDL_LUA_CONFIG_DIR) + "/" + file_;
@@ -111,9 +125,8 @@ void RBDLDynamics::eom(const Vector &state, const Vector &actuation, Vector *xd)
   Vector qdd;
   qdd.resize(dim);
 
-//  calcCollisionImpactRhs(state, qd_plus);
+  //calcCollisionImpactRhs(state, qd_plus);
   updateForwardDynamics(state, qd, controls, qdd);
-
 
   xd->resize(2*dim+1);
 
@@ -217,20 +230,34 @@ void RBDLDynamics::updateKinematics(const Vector &state) const
 void RBDLDynamics::finalize(const Vector &state, Vector &out) const
 {
   Vector pt;
-  Vector pt2;
   std::vector<double> v;
 
-  for (int ii = 0; ii < points_.size(); ii++)
+  // Process points
+  for (int ii = 0; ii < ptprop_.size(); ii++)
   {
-    getPointPosition(state, points_[ii], pt);
-    getPointVelocity(state, points_[ii], pt2);
-//    v.push_back(pt[0]);
-//    v.push_back(pt[1]);
-    // Only conerned with z position and z velocity
-    v.push_back(pt[2]);
-    v.push_back(pt2[2]);
+    if (ptprop_[ii] == "ptpos")
+    {
+      for (int ii = 0; ii < points_.size(); ii++)
+      {
+        getPointPosition(state, points_[ii], pt);
+        v.push_back(pt[0]);
+        v.push_back(pt[1]);
+        v.push_back(pt[2]);
+      }
+    }
+    if (ptprop_[ii] == "ptvel")
+    {
+      for (int ii = 0; ii < points_.size(); ii++)
+      {
+        getPointVelocity(state, points_[ii], pt);
+        v.push_back(pt[0]);
+        v.push_back(pt[1]);
+        v.push_back(pt[2]);
+      }
+    }
   }
 
+  // Process the rest auxiliary
   double modelMass;
   Vector centerOfMass, centerOfMassVelocity, angularMomentum;
   if (auxiliary_.size())
@@ -242,10 +269,9 @@ void RBDLDynamics::finalize(const Vector &state, Vector &out) const
       v.push_back(modelMass);
     if (auxiliary_[ii] == "com")
     {
-      //Only concerned with the x position
       v.push_back(centerOfMass[0]);
-//      v.push_back(centerOfMass[1]);
-//      v.push_back(centerOfMass[2]);
+      v.push_back(centerOfMass[1]);
+      v.push_back(centerOfMass[2]);
     }
     if (auxiliary_[ii] == "comv")
     {

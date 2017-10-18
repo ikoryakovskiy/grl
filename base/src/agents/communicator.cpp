@@ -32,7 +32,7 @@
 using namespace grl;
 
 REGISTER_CONFIGURABLE(CommunicatorAgent)
-REGISTER_CONFIGURABLE(CommunicatorAgentAS)
+REGISTER_CONFIGURABLE(ExtStateCommunicatorAgent)
 
 void CommunicatorAgent::request(ConfigurationRequest *config)
 {
@@ -92,20 +92,20 @@ void CommunicatorAgent::end(double tau, const Observation &obs, double reward)
 }
 
 //////////////////////////////////
-void CommunicatorAgentAS::request(ConfigurationRequest *config)
+void ExtStateCommunicatorAgent::request(ConfigurationRequest *config)
 {
   CommunicatorAgent::request(config);
-  config->push_back(CRP("pub_state_drl","signal/vector","State received from python",pub_state_drl_,true));
+  config->push_back(CRP("pub_ext_state","signal/vector","External state",pub_ext_state_,true));
 }
 
-void CommunicatorAgentAS::configure(Configuration &config)
+void ExtStateCommunicatorAgent::configure(Configuration &config)
 {
   CommunicatorAgent::configure(config);
-  pub_state_drl_ = (VectorSignal*)config["pub_state_drl"].ptr();
+  pub_ext_state_ = (VectorSignal*)config["pub_ext_state"].ptr();
 }
 
 
-void CommunicatorAgentAS::start(const Observation &obs, Action *action)
+void ExtStateCommunicatorAgent::start(const Observation &obs, Action *action)
 {
   action->v.resize(action_dims_);
   action->type = atUndefined;
@@ -119,10 +119,10 @@ void CommunicatorAgentAS::start(const Observation &obs, Action *action)
   communicator_->recv(&to_recv);
   action->v << to_recv.head((action->v.cols()));
   to_publish << to_recv.tail(obs.v.cols());
-  pub_state_drl_->set(to_publish);
+  pub_ext_state_->set(to_publish);
 }
 
-void CommunicatorAgentAS::step(double tau, const Observation &obs, double reward, Action *action)
+void ExtStateCommunicatorAgent::step(double tau, const Observation &obs, double reward, Action *action)
 {
   action->v.resize(action_dims_);
   action->type = atUndefined;
@@ -136,10 +136,10 @@ void CommunicatorAgentAS::step(double tau, const Observation &obs, double reward
   communicator_->recv(&to_recv);
   action->v << to_recv.head(action->v.cols());
   to_publish << to_recv.tail(obs.v.cols());
-  pub_state_drl_->set(to_publish);
+  pub_ext_state_->set(to_publish);
 }
 
-void CommunicatorAgentAS::end(double tau, const Observation &obs, double reward)
+void ExtStateCommunicatorAgent::end(double tau, const Observation &obs, double reward)
 {
   Vector temp(action_dims_+obs.v.cols());
 

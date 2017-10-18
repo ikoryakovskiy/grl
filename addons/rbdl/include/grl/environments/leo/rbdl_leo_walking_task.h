@@ -65,53 +65,38 @@ enum RbdlLeoWalkingState
 
     rlwTime = 18,
 
+    // Contact points locations
+    rlwLeftTipX,
+    rlwLeftTipY,
     rlwLeftTipZ,
-    rlwLeftTipVelZ,
-
+    rlwRightTipX,
+    rlwRightTipY,
     rlwRightTipZ,
-    rlwRightTipVelZ,
-
+    rlwLeftHeelX,
+    rlwLeftHeelY,
     rlwLeftHeelZ,
-    rlwLeftHeelVelZ,
-
+    rlwRightHeelX,
+    rlwRightHeelY,
     rlwRightHeelZ,
+
+    rlwLeftTipVelX,
+    rlwLeftTipVelY,
+    rlwLeftTipVelZ,
+    rlwRightTipVelX,
+    rlwRightTipVelY,
+    rlwRightTipVelZ,
+    rlwLeftHeelVelX,
+    rlwLeftHeelVelY,
+    rlwLeftHeelVelZ,
+    rlwRightHeelVelX,
+    rlwRightHeelVelY,
     rlwRightHeelVelZ,
 
     rlwComX,
-
-//    rlwStateDim,
-
     rlwComY,
     rlwComZ,
 
-    rlwLeftTipX,
-    rlwLeftTipY,
-
-    rlwLeftHeelX,
-    rlwLeftHeelY,
-
-    rlwRightTipX,
-    rlwRightTipY,
-
-    rlwRightHeelX,
-    rlwRightHeelY,
-
-    rlwRootX,
-    rlwRootY,
-    rlwRootZ,
-    rlwRefRootZ,
-
-    rlwMass,
-
-    rlwComVelocityX,
-    rlwComVelocityY,
-    rlwComVelocityZ,
-
-    rlwAngularMomentumX,
-    rlwAngularMomentumY,
-    rlwAngularMomentumZ,
-
-    rlwStateDim = rlwAngularMomentumZ // Ivan: moving rlwStateDim to the end
+    rlwStateDim = rlwComZ
 };
 
 class LeoWalkingTask : public Task

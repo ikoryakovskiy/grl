@@ -64,11 +64,11 @@ class CommunicatorAgent : public Agent
 /// The new state is published, and the system can be eforced to this state.
 /// Used to implement a difference model: s1' = s1 + d(s0, a0)
 /// See MSc thasis "Deep Reinforcement Learning for Bipedal Robots" by Divyam Rastogi, TU Delft, Netherlands, 2017
-class CommunicatorAgentAS : public CommunicatorAgent
+class ExtStateCommunicatorAgent : public CommunicatorAgent
 {
   public:
-    TYPEINFO("agent/communicator/action_state", "Communicator agent which connects GRL to a remote agent")
-    CommunicatorAgentAS() : pub_state_drl_(NULL) { }
+    TYPEINFO("agent/communicator/ext_state_provider", "Communicator agent which connects GRL to a remote agent and can provide state as a part of the message")
+    ExtStateCommunicatorAgent() : pub_ext_state_(NULL) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -80,7 +80,7 @@ class CommunicatorAgentAS : public CommunicatorAgent
     virtual void end(double tau, const Observation &obs, double reward);\
 
   protected:
-    VectorSignal *pub_state_drl_;
+    VectorSignal *pub_ext_state_;
 };
 
 }
