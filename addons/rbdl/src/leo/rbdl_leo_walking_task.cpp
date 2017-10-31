@@ -99,7 +99,7 @@ void LeoWalkingTask::configure(Configuration &config)
 
 void LeoWalkingTask::start(int test, Vector *state) const
 {
-  *state = ConstantVector(2*dof_+1, 0); // Same size for both tasts with FA and without
+  *state = ConstantVector(2*dof_+1, 0);
 
   if (target_env_)
   {
@@ -110,14 +110,12 @@ void LeoWalkingTask::start(int test, Vector *state) const
   }
   else
   {
-    // Default initialization for walking pose
-    *state <<
-           0, 0, -0.101485, 0.100951, 0.819996, -0.00146549, -1.27, 4.11e-6, 2.26e-7,
-           //0, 0, 0, 0, 0, 0, 0, 0, 0,
-           0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0.0;  // rlwTime
+    // Default initialization of the walking pose
+    *state << 0, 0, -0.101485, 0.100951, 0.819996, -0.00146549, -1.27, 4.11e-6, 2.26e-7,
+              0, 0, 0, 0, 0, 0, 0, 0, 0,
+              0;  // + rlwTime
 
-    if ((randomize_) || (!test))
+    if (test == 0 && randomize_)
     {
       for (int ii=4; ii < dof_; ii+=2)
       {

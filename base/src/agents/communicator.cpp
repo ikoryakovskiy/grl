@@ -95,7 +95,7 @@ void CommunicatorAgent::end(double tau, const Observation &obs, double reward)
 void ExtStateCommunicatorAgent::request(ConfigurationRequest *config)
 {
   CommunicatorAgent::request(config);
-  config->push_back(CRP("pub_ext_state","signal/vector","External state",pub_ext_state_,true));
+  config->push_back(CRP("pub_ext_state", "signal/vector", "External state", pub_ext_state_, true));
 }
 
 void ExtStateCommunicatorAgent::configure(Configuration &config)
@@ -103,7 +103,6 @@ void ExtStateCommunicatorAgent::configure(Configuration &config)
   CommunicatorAgent::configure(config);
   pub_ext_state_ = (VectorSignal*)config["pub_ext_state"].ptr();
 }
-
 
 void ExtStateCommunicatorAgent::start(const Observation &obs, Action *action)
 {
@@ -117,9 +116,10 @@ void ExtStateCommunicatorAgent::start(const Observation &obs, Action *action)
   communicator_->send(to_send);
 
   communicator_->recv(&to_recv);
-  action->v << to_recv.head((action->v.cols()));
+  action->v << to_recv.head(action->v.cols());
   to_publish << to_recv.tail(obs.v.cols());
-  pub_ext_state_->set(to_publish);
+  if (pub_ext_state_)
+    pub_ext_state_->set(to_publish);
 }
 
 void ExtStateCommunicatorAgent::step(double tau, const Observation &obs, double reward, Action *action)
@@ -136,7 +136,8 @@ void ExtStateCommunicatorAgent::step(double tau, const Observation &obs, double 
   communicator_->recv(&to_recv);
   action->v << to_recv.head(action->v.cols());
   to_publish << to_recv.tail(obs.v.cols());
-  pub_ext_state_->set(to_publish);
+  if (pub_ext_state_)
+    pub_ext_state_->set(to_publish);
 }
 
 void ExtStateCommunicatorAgent::end(double tau, const Observation &obs, double reward)

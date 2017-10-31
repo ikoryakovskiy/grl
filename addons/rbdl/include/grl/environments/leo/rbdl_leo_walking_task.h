@@ -58,10 +58,10 @@ enum RbdlLeoWalkingState
     rlwLeftAnkleAngleRate,
     rlwRightAnkleAngleRate,
 
-    rlwLeftArmAngle,
-    rlwRightArmAngle,
-    rlwLeftArmAngleRate,
-    rlwRightArmAngleRate,
+    //rlwLeftArmAngle,
+    //rlwRightArmAngle,
+    //rlwLeftArmAngleRate,
+    //rlwRightArmAngleRate,
 
     rlwTime = 18,
 
@@ -96,7 +96,7 @@ enum RbdlLeoWalkingState
     rlwComY,
     rlwComZ,
 
-    rlwStateDim = rlwComZ
+    rlwStateDim
 };
 
 class LeoWalkingTask : public Task

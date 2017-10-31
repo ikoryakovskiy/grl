@@ -38,14 +38,14 @@ void LeoWalkingSandboxModel::request(ConfigurationRequest *config)
 {
   LeoSandboxModel::request(config);
   config->push_back(CRP("mode", "Control mode (torque/voltage )", mode_, CRP::Configuration, {"tc", "vc"}));
-  config->push_back(CRP("sub_state_drl","signal/vector","state received from deep rl agent", sub_state_drl_, true));
+  config->push_back(CRP("sub_ext_state","signal/vector","external state", sub_ext_state_, true));
 }
 
 void LeoWalkingSandboxModel::configure(Configuration &config)
 {
   LeoSandboxModel::configure(config);
   mode_ = config["mode"].str();
-  sub_state_drl_ = (VectorSignal*)config["sub_state_drl"].ptr();
+  sub_ext_state_ = (VectorSignal*)config["sub_ext_state"].ptr();
 }
 
 void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
@@ -72,7 +72,7 @@ void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
 
   export_meshup_animation(state_[rlwTime], state_, ConstantVector(target_dof_, 0));
 
-  //TRACE("Initial state: " << state_);
+  TRACE("Initial state: " << state_);
 }
 
 double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
@@ -87,9 +87,9 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
   target_action_.resize(target_dof_);
   next->resize(state_.size());
 
-  if (sub_state_drl_) //If you receive the state from DRL
+  if (sub_ext_state_) //If you receive the state from DRL
   {
-    sub_state_drl = sub_state_drl_->get();
+    sub_state_drl = sub_ext_state_->get();
     target_state_ << sub_state_drl, state_[rlwTime];
     dynamics_->updateKinematics(target_state_);
     dynamics_->finalize(target_state_,rbdl_addition_mid);
@@ -100,28 +100,26 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
     getConstraintSet(acting_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
     dynamics_->updateActingConstraintSet(acting_constraint_set_);
   }
-
   else
   {
     // reduce state
     target_state_ << state_.head(2*target_dof_+1);
   }
-  target_action_ << action;
 
+  target_action_ << action;
 
   double tau = 0;
 
-  for (int ii=0; ii < 100; ++ii)
+  if (target_env_)
   {
-
-    if (target_env_)
-    {
-      Observation obs;
-      tau = target_env_->step(target_action_, &obs, NULL, NULL);
-      target_state_next_ <<  obs.v, VectorConstructor(target_state_[rlwTime] + tau);
-      dynamics_->updateKinematics(target_state_next_); // update kinematics if rbdl integration is not used
-    }
-    else
+    Observation obs;
+    tau = target_env_->step(target_action_, &obs, NULL, NULL);
+    target_state_next_ <<  obs.v, VectorConstructor(target_state_[rlwTime] + tau);
+    dynamics_->updateKinematics(target_state_next_); // update kinematics if rbdl integration is not used
+  }
+  else
+  {
+    for (int ii=0; ii < 100; ++ii)
     {
       tau += dm_.step(target_state_, target_action_, &target_state_next_);
 
@@ -297,7 +295,6 @@ void LeoWalkingSandboxModel::checkContactForces()
       }
     }
   }
-
 }
 
 void LeoWalkingSandboxModel::getActingConstraintPoints(const Vector &state)
@@ -323,7 +320,6 @@ void LeoWalkingSandboxModel::getActingConstraintPoints(const Vector &state)
     acting_right_heel_contact_ = 1;
   else
     acting_right_heel_contact_ = 0;
-
 }
 
 int LeoWalkingSandboxModel::getNumActingConstraintPoints()

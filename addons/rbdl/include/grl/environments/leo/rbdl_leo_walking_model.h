@@ -39,7 +39,7 @@ class LeoWalkingSandboxModel : public LeoSandboxModel
     TYPEINFO("sandbox_model/leo_walk", "State transition model that integrates equations of motion and augments state vector with additional elements")
 
   public:
-    LeoWalkingSandboxModel() : sub_state_drl_(NULL), mode_("vc"), active_constraint_set_(""), acting_constraint_set_(""), active_left_tip_contact_(0), active_right_tip_contact_(0), active_left_heel_contact_(0), active_right_heel_contact_(0) { }
+    LeoWalkingSandboxModel() : sub_ext_state_(NULL), mode_("vc"), active_constraint_set_(""), acting_constraint_set_(""), active_left_tip_contact_(0), active_right_tip_contact_(0), active_left_heel_contact_(0), active_right_heel_contact_(0) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -58,7 +58,7 @@ class LeoWalkingSandboxModel : public LeoSandboxModel
 
   protected:
     Vector rbdl_addition_;
-    VectorSignal *sub_state_drl_;
+    VectorSignal *sub_ext_state_;
     std::string mode_, active_constraint_set_, acting_constraint_set_;
     double root_to_feet_height_ = -0.393865;
     int active_left_tip_contact_, active_right_tip_contact_, active_left_heel_contact_, active_right_heel_contact_, active_num_contacts_;
