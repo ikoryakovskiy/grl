@@ -1,0 +1,136 @@
+/** \file rbdl_leo_walking task.h
+ * \brief RBDL file for C++ description of Leo task.
+ *
+ * \author    Ivan Koryakovskiy <i.koryakovskiy@tudelft.nl>
+ * \date      2016-06-30
+ *
+ * \copyright \verbatim
+ * Copyright (c) 2016, Ivan Koryakovskiy
+ * All rights reserved.
+ *
+ * This file is part of GRL, the Generic Reinforcement Learning library.
+ *
+ * GRL is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * \endverbatim
+ */
+ 
+#ifndef GRL_RBDL_LEO_WALKING_TASK_H_
+#define GRL_RBDL_LEO_WALKING_TASK_H_
+
+#include <functional>
+#include <grl/environment.h>
+#include <grl/environments/rbdl.h>
+
+namespace grl
+{
+
+// TODO change rlw
+enum RbdlLeoWalkingState
+{
+    rlwTorsoX,
+    rlwTorsoZ,
+    rlwTorsoAngle,
+    rlwLeftHipAngle,
+    rlwRightHipAngle,
+    rlwLeftKneeAngle,
+    rlwRightKneeAngle,
+    rlwLeftAnkleAngle,
+    rlwRightAnkleAngle,
+
+    rlwTorsoXRate,
+    rlwTorsoZRate,
+    rlwTorsoAngleRate,
+    rlwLeftHipAngleRate,
+    rlwRightHipAngleRate,
+    rlwLeftKneeAngleRate,
+    rlwRightKneeAngleRate,
+    rlwLeftAnkleAngleRate,
+    rlwRightAnkleAngleRate,
+
+    //rlwLeftArmAngle,
+    //rlwRightArmAngle,
+    //rlwLeftArmAngleRate,
+    //rlwRightArmAngleRate,
+
+    rlwTime = 18,
+
+    // Contact points locations
+    rlwLeftTipX,
+    rlwLeftTipY,
+    rlwLeftTipZ,
+    rlwRightTipX,
+    rlwRightTipY,
+    rlwRightTipZ,
+    rlwLeftHeelX,
+    rlwLeftHeelY,
+    rlwLeftHeelZ,
+    rlwRightHeelX,
+    rlwRightHeelY,
+    rlwRightHeelZ,
+
+    rlwLeftTipVelX,
+    rlwLeftTipVelY,
+    rlwLeftTipVelZ,
+    rlwRightTipVelX,
+    rlwRightTipVelY,
+    rlwRightTipVelZ,
+    rlwLeftHeelVelX,
+    rlwLeftHeelVelY,
+    rlwLeftHeelVelZ,
+    rlwRightHeelVelX,
+    rlwRightHeelVelY,
+    rlwRightHeelVelZ,
+
+    rlwComX,
+    rlwComY,
+    rlwComZ,
+
+    rlwStateDim
+};
+
+class LeoWalkingTask : public Task
+{
+  public:
+    TYPEINFO("task/leo_walking", "Task specification for Leo walking with all joints actuated (except for shoulder)")
+
+  public:
+    LeoWalkingTask() : target_env_(NULL), randomize_(0), measurement_noise_(0), dof_(4), timeout_(0) { }
+
+    // From Configurable
+    virtual void request(ConfigurationRequest *config);
+    virtual void configure(Configuration &config);
+
+    // From Task
+    virtual void start(int test, Vector *state) const;
+    virtual void observe(const Vector &state, Observation *obs, int *terminal) const;
+    virtual void evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const;
+    virtual void report(std::ostream &os, const Vector &state) const;
+
+  protected:
+    Environment *target_env_;
+    int randomize_;
+    int measurement_noise_;
+    int dof_;
+    double timeout_;
+    Vector target_obs_min_, target_obs_max_;
+
+  protected:
+    virtual double calculateReward(const Vector &state, const Vector &next) const;
+    virtual bool isDoomedToFall(const Vector &state) const;
+    virtual double getEnergyUsage(const Vector &state, const Vector &next, const Action &action) const;
+};
+
+}
+
+#endif /* GRL_RBDL_LEO_WALKING_TASK_H_ */

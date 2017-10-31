@@ -185,11 +185,11 @@ void CLeoBhWalkSym::updateDerivedStateVars(CLeoState* currentSTGState)
   double rightHeelZ         = rightAnkleZ + ankleHeelDZ*cos(rightAnkleAbsAngle) + ankleHeelDX*sin(rightAnkleAbsAngle);
   double rightToeZ          = rightAnkleZ + ankleToeDZ*cos(rightAnkleAbsAngle) + ankleToeDX*sin(rightAnkleAbsAngle);
 
-  mHipHeight                = std::max(std::max(leftHeelZ, leftToeZ), std::max(rightHeelZ, rightToeZ));
-  leftHeelZ  = mHipHeight - leftHeelZ;
-  leftToeZ   = mHipHeight - leftToeZ;
-  rightHeelZ = mHipHeight - rightHeelZ;
-  rightToeZ  = mHipHeight - rightToeZ;
+  double hipHeight          = std::max(std::max(leftHeelZ, leftToeZ), std::max(rightHeelZ, rightToeZ));
+  leftHeelZ  = hipHeight - leftHeelZ;
+  leftToeZ   = hipHeight - leftToeZ;
+  rightHeelZ = hipHeight - rightHeelZ;
+  rightToeZ  = hipHeight - rightToeZ;
   mLogDebugLn("leftHeelZ:" << leftHeelZ << ", leftToeZ:" << leftToeZ << ", rightHeelZ:" << rightHeelZ << ", rightToeZ:" << rightToeZ);
 
   bool leftIsStance;
@@ -237,8 +237,6 @@ void CLeoBhWalkSym::updateDerivedStateVars(CLeoState* currentSTGState)
     // Calculate clearance for left foot
     mFootClearance      = std::min(leftToeZ, leftHeelZ);
   }
-//  std::cout << " leftIsStance = " << leftIsStance << "; FC " << (int)(currentSTGState->mFootContacts) << "; l-r " << leftFootContact << ", " << rightFootContact << std::endl;
-
   mLogInfoLn("Foot clearance is " << mFootClearance);
   // Adjust swing time, used to determine early swing against late swing
   mSwingTime += (uint64_t)(1.0E6/mDesiredFrequency);
@@ -376,7 +374,7 @@ double CLeoBhWalkSym::getFootstepReward()
     if (mFootstepLength < 0)
       reward += mRwFootstepBackward;
 
-    mLogInfoLn("[REWARD] Robot made a footstep of " << mFootstepLength*100.0 << "cm! Reward = " << reward);
+    mLogNoticeLn("[REWARD] Robot made a footstep of " << mFootstepLength*100.0 << "cm! Reward = " << reward);
     if (mHipStance == ljHipRight)
       mLastRewardedFoot = lpFootRight;
     else
@@ -412,7 +410,7 @@ double CLeoBhWalkSym::calculateReward()
   if (mFootContactNum <= 1)
     reward += mRwFootContact;
 
-  // Footstep reward
+  // Footstep reward (calculation is a little bit more complicated -> separate function)
   reward += getFootstepReward();
 
   // Foot clearance reward
@@ -445,7 +443,7 @@ double CLeoBhWalkSym::calculateReward()
   // Reward for keeping torso upright
   //double torsoReward = mRwTorsoUpright * 1.0/(1.0 + (getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle)*(getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle)/(mRwTorsoUprightAngleMargin*mRwTorsoUprightAngleMargin));
   double torsoReward = mRwTorsoUpright * pow(getCurrentSTGState()->mJointAngles[ljTorso] - mRwTorsoUprightAngle, 2) / pow(mRwTorsoUprightAngleMargin, 2);
-  mLogDebugLn("Torso upright reward: " << torsoReward);
+  //mLogDebugLn("Torso upright reward: " << torsoReward);
   reward += torsoReward;
 
   // Penalty for both feet touching the floor
@@ -499,7 +497,7 @@ bool CLeoBhWalkSym::isDoomedToFall(CLeoState* state, bool report)
   if (!mContinueAfterFall)
   {
     // Torso angle out of 'range'
-    if (fabs(state->mJointAngles[ljTorso]) > torsoComstraint)
+    //if (fabs(state->mJointAngles[ljTorso]) > torsoComstraint)
     {
       if (report)
         mLogNoticeLn("[TERMINATION] Torso angle too large");
@@ -598,7 +596,7 @@ void CLeoBhWalkSym::autoActuateArm(ISTGActuation* actuationInterface)
   if (actuationInterface->getActuationMode() == amVoltage)
   {
     // The "torque" here is not actually torque, but a leftover from the "endless turn mode" control from dynamixels, which is actually voltage control
-    const double torqueToVoltage  =XM430_VS_RX28_COEFF*14.0/3.3;
+    const double torqueToVoltage  = XM430_VS_RX28_COEFF*14.0/3.3;
     getActuationInterface()->setJointVoltage(ljShoulder, torqueToVoltage*armTorque);
   }
   else if (actuationInterface->getActuationMode() == amTorque)

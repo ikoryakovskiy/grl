@@ -32,6 +32,7 @@
 using namespace grl;
 
 REGISTER_CONFIGURABLE(CommunicatorAgent)
+REGISTER_CONFIGURABLE(ExtStateCommunicatorAgent)
 
 void CommunicatorAgent::request(ConfigurationRequest *config)
 {
@@ -90,4 +91,62 @@ void CommunicatorAgent::end(double tau, const Observation &obs, double reward)
   communicator_->recv(&temp);
 }
 
+//////////////////////////////////
+void ExtStateCommunicatorAgent::request(ConfigurationRequest *config)
+{
+  CommunicatorAgent::request(config);
+  config->push_back(CRP("pub_ext_state", "signal/vector", "External state", pub_ext_state_, true));
+}
+
+void ExtStateCommunicatorAgent::configure(Configuration &config)
+{
+  CommunicatorAgent::configure(config);
+  pub_ext_state_ = (VectorSignal*)config["pub_ext_state"].ptr();
+}
+
+void ExtStateCommunicatorAgent::start(const Observation &obs, Action *action)
+{
+  action->v.resize(action_dims_);
+  action->type = atUndefined;
+
+  Vector to_send(obs.v.cols()+1);
+  Vector to_recv(action->v.cols()+obs.v.cols());
+  Vector to_publish(obs.v.cols());
+  to_send << test_, obs.v;
+  communicator_->send(to_send);
+
+  communicator_->recv(&to_recv);
+  action->v << to_recv.head(action->v.cols());
+  to_publish << to_recv.tail(obs.v.cols());
+  if (pub_ext_state_)
+    pub_ext_state_->set(to_publish);
+}
+
+void ExtStateCommunicatorAgent::step(double tau, const Observation &obs, double reward, Action *action)
+{
+  action->v.resize(action_dims_);
+  action->type = atUndefined;
+
+  Vector to_send(obs.v.cols()+3);
+  Vector to_recv(action->v.cols()+obs.v.cols());
+  Vector to_publish(obs.v.cols());
+  to_send << test_, obs.v, reward, 0;
+  communicator_->send(to_send);
+
+  communicator_->recv(&to_recv);
+  action->v << to_recv.head(action->v.cols());
+  to_publish << to_recv.tail(obs.v.cols());
+  if (pub_ext_state_)
+    pub_ext_state_->set(to_publish);
+}
+
+void ExtStateCommunicatorAgent::end(double tau, const Observation &obs, double reward)
+{
+  Vector temp(action_dims_+obs.v.cols());
+
+  Vector to_send(obs.v.cols()+3);
+  to_send << test_, obs.v, reward, 2;
+  communicator_->send(to_send);
+  communicator_->recv(&temp);
+}
 

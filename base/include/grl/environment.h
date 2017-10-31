@@ -448,6 +448,40 @@ class SandboxEnvironment : public Environment
     virtual void report(std::ostream &os) const;
 };
 
+///Environment that simulates an internal transition model but uses the state from Deep RL
+class ExtStateModeledEnvironment : public Environment
+{
+  public:
+    TYPEINFO("environment/modeled/ext_state", "Environment that uses a state transition model internally but oprionally can use external state")
+
+  public:
+    Model *model_;
+    Task *task_;
+    Vector state_;
+    Observation obs_;
+    VectorSignal *state_obj_;
+    Exporter *exporter_;
+    VectorSignal *sub_ext_state_;
+
+    int test_;
+    int noise_;
+    double time_test_, time_learn_;
+
+  public:
+    ExtStateModeledEnvironment() : model_(NULL), task_(NULL), state_obj_(NULL), exporter_(NULL), sub_ext_state_(NULL), test_(false), noise_(0), time_test_(0.), time_learn_(0.){ }
+
+    // From Configurable
+    virtual void request(ConfigurationRequest *config);
+    virtual void configure(Configuration &config);
+    virtual void reconfigure(const Configuration &config);
+    virtual ExtStateModeledEnvironment &copy(const Configurable &obj);
+
+    // From Environment
+    virtual void start(int test, Observation *obs);
+    virtual double step(const Action &action, Observation *obs, double *reward, int *terminal);
+    virtual void report(std::ostream &os) const;
+};
+
 }
 
 #endif /* GRL_ENVIRONMENT_H_ */

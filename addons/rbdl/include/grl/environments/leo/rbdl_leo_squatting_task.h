@@ -1,4 +1,4 @@
-/** \file rbdl_leo_task.h
+/** \file rbdl_leo_squatting_task.h
  * \brief RBDL file for C++ description of Leo task.
  *
  * \author    Ivan Koryakovskiy <i.koryakovskiy@tudelft.nl>
@@ -25,8 +25,8 @@
  * \endverbatim
  */
  
-#ifndef GRL_RBDL_LEO_TASK_H_
-#define GRL_RBDL_LEO_TASK_H_
+#ifndef GRL_RBDL_LEO_SQUATTING_TASK_H_
+#define GRL_RBDL_LEO_SQUATTING_TASK_H_
 
 #include <functional>
 #include <grl/environment.h>
@@ -35,7 +35,7 @@
 namespace grl
 {
 
-enum RbdlLeoState
+enum RbdlLeoSquattingState
 {
   rlsAnkleAngle,
   rlsKneeAngle,
@@ -138,4 +138,4 @@ class LeoSquattingTask : public Task
 
 }
 
-#endif /* GRL_RBDL_LEO_TASK_H_ */
+#endif /* GRL_RBDL_LEO_SQUATTING_TASK_H_ */

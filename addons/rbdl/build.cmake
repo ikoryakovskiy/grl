@@ -14,8 +14,11 @@ if (LUA51_FOUND)
   add_library(${TARGET} SHARED
               ${SRC}/rbdl.cpp
 #              ${SRC}/leohelper.cpp
-              ${SRC}/leo/rbdl_leo_task.cpp
               ${SRC}/leo/rbdl_leo_model.cpp
+              ${SRC}/leo/rbdl_leo_squatting_task.cpp
+              ${SRC}/leo/rbdl_leo_squatting_model.cpp
+              ${SRC}/leo/rbdl_leo_walking_task.cpp
+              ${SRC}/leo/rbdl_leo_walking_model.cpp
              )
 
   set_source_files_properties(${SRC}/rbdl.cpp PROPERTIES COMPILE_FLAGS "-Wno-pedantic -Wno-variadic-macros")

@@ -58,6 +58,20 @@ void RBDLDynamics::configure(Configuration &config)
   points_ = cutLongStr(config["points"].str());
   auxiliary_ = cutLongStr(config["auxiliary"].str());
 
+  for (int ii = 0; ii < auxiliary_.size(); ii++)
+  {
+    if (auxiliary_[ii] == "ptpos")
+    {
+      auxiliary_.erase(auxiliary_.begin()+ii,auxiliary_.begin()+ii+1);
+      ptprop_.push_back("ptpos");
+    }
+    if (auxiliary_[ii] == "ptvel")
+    {
+      auxiliary_.erase(auxiliary_.begin()+ii,auxiliary_.begin()+ii+1);
+      ptprop_.push_back("ptvel");
+    }
+  }
+
   struct stat buffer;   
   if (stat (file_.c_str(), &buffer) != 0)
     file_ = std::string(RBDL_LUA_CONFIG_DIR) + "/" + file_;
@@ -102,19 +116,18 @@ void RBDLDynamics::eom(const Vector &state, const Vector &actuation, Vector *xd)
 
   lua_pop(rbdl->L, 1);
 
-  RigidBodyDynamics::Math::VectorNd u = RigidBodyDynamics::Math::VectorNd::Zero(dim);
-  RigidBodyDynamics::Math::VectorNd q = RigidBodyDynamics::Math::VectorNd::Zero(dim);
   RigidBodyDynamics::Math::VectorNd qd = RigidBodyDynamics::Math::VectorNd::Zero(dim);
-  RigidBodyDynamics::Math::VectorNd qdd = RigidBodyDynamics::Math::VectorNd::Zero(dim);
 
   for (size_t ii=0; ii < dim; ++ii)
-  {
-    u[ii] = controls[ii];
-    q[ii] = state[ii];
     qd[ii] = state[ii + dim];
-  }
 
-  RigidBodyDynamics::ForwardDynamics(*rbdl->model, q, qd, u, qdd);
+  // Update velocities based on collision
+  Vector qdd;
+  qdd.resize(dim);
+
+  //--calcCollisionImpactRhs(state, qd_plus);
+  //updateForwardDynamics(state, qd, controls, qdd);
+  updateForwardDynamics(state.head(dim), state.tail(dim+1), controls, qdd);
 
   xd->resize(2*dim+1);
 
@@ -124,6 +137,75 @@ void RBDLDynamics::eom(const Vector &state, const Vector &actuation, Vector *xd)
     (*xd)[ii + dim] = qdd[ii];
   }
   (*xd)[2*dim] = 1.;
+}
+
+void RBDLDynamics::updateForwardDynamics(const Vector &state, const Vector &qd_plus, const Vector &controls, Vector &out) const
+{
+  RBDLState *rbdl = rbdl_state_.instance();
+
+  size_t dim = rbdl->model->dof_count;
+
+  RigidBodyDynamics::Math::VectorNd u = RigidBodyDynamics::Math::VectorNd::Zero(dim);
+  RigidBodyDynamics::Math::VectorNd q = RigidBodyDynamics::Math::VectorNd::Zero(dim);
+  RigidBodyDynamics::Math::VectorNd qd = RigidBodyDynamics::Math::VectorNd::Zero(dim);
+  RigidBodyDynamics::Math::VectorNd qdd = RigidBodyDynamics::Math::VectorNd::Zero(dim);
+
+  for (size_t ii=0; ii < dim; ++ii)
+  {
+    u[ii] = controls[ii];
+    q[ii] = state[ii];
+    qd[ii] = qd_plus[ii];
+  }
+
+  if (!acting_constraint_set_.empty())
+    RigidBodyDynamics::ForwardDynamicsContactsDirect (*rbdl->model, q, qd, u, constraints[acting_constraint_set_], qdd);
+  else
+    RigidBodyDynamics::ForwardDynamics (*rbdl->model, q, qd, u, qdd);
+
+  out.resize(dim);
+  for (size_t ii=0; ii < dim; ++ii)
+  {
+    out[ii] = qdd[ii];
+  }
+  dynamics_computed_ = true;
+}
+
+void RBDLDynamics::updateActingConstraintSet(std::string point) const
+{
+  acting_constraint_set_ = point;
+}
+
+void RBDLDynamics::updateActiveConstraintSet(std::string point) const
+{
+  active_constraint_set_ = point;
+}
+
+
+void RBDLDynamics::calcCollisionImpactRhs(const Vector &state, Vector &out) const
+{
+  RBDLState *rbdl = rbdl_state_.instance();
+
+  size_t dim = rbdl->model->dof_count;
+
+  RigidBodyDynamics::Math::VectorNd q = RigidBodyDynamics::Math::VectorNd::Zero(dim);
+  RigidBodyDynamics::Math::VectorNd qd = RigidBodyDynamics::Math::VectorNd::Zero(dim);
+  RigidBodyDynamics::Math::VectorNd qd_plus = RigidBodyDynamics::Math::VectorNd::Zero(dim);
+
+  for (size_t ii=0; ii < dim; ++ii)
+  {
+    q[ii] = state[ii];
+    qd[ii] = state[ii + dim];
+  }
+
+  if (!active_constraint_set_.empty())
+    RigidBodyDynamics::ComputeContactImpulsesDirect (*rbdl->model, q, qd, constraints[active_constraint_set_], qd_plus);
+  else
+    qd_plus = qd;
+
+  for (size_t ii=0; ii < dim; ++ii)
+  {
+    out[ii] = qd_plus[ii];
+  }
 }
 
 void RBDLDynamics::updateKinematics(const Vector &state) const
@@ -151,14 +233,32 @@ void RBDLDynamics::finalize(const Vector &state, Vector &out) const
   Vector pt;
   std::vector<double> v;
 
-  for (int ii = 0; ii < points_.size(); ii++)
+  // Process points
+  for (int ii = 0; ii < ptprop_.size(); ii++)
   {
-    getPointPosition(state, points_[ii], pt);
-    v.push_back(pt[0]);
-    v.push_back(pt[1]);
-    v.push_back(pt[2]);
+    if (ptprop_[ii] == "ptpos")
+    {
+      for (int ii = 0; ii < points_.size(); ii++)
+      {
+        getPointPosition(state, points_[ii], pt);
+        v.push_back(pt[0]);
+        v.push_back(pt[1]);
+        v.push_back(pt[2]);
+      }
+    }
+    if (ptprop_[ii] == "ptvel")
+    {
+      for (int ii = 0; ii < points_.size(); ii++)
+      {
+        getPointVelocity(state, points_[ii], pt);
+        v.push_back(pt[0]);
+        v.push_back(pt[1]);
+        v.push_back(pt[2]);
+      }
+    }
   }
 
+  // Process the rest auxiliary
   double modelMass;
   Vector centerOfMass, centerOfMassVelocity, angularMomentum;
   if (auxiliary_.size())
@@ -270,7 +370,7 @@ bool RBDLDynamics::loadConstraintSetsFromFile(const char* filename, RigidBodyDyn
     }
 
     // save constraint set infos
-    //constraintSetInfos[set_name_str] = csi;
+    constraintSetInfos[set_name_str] = csi;
 
     // assign constraint set
     constraints[set_name_str] = cs;
@@ -318,6 +418,88 @@ void RBDLDynamics::getPointPosition(const Vector &state, const std::string point
   for (size_t ii=0; ii < 3; ++ii)
     out[ii] = point3d[ii];
 }
+
+// Compute the velocity of a point
+void RBDLDynamics::getPointVelocity (const Vector &state, const std::string point_name, Vector &out) const
+{
+  RBDLState *rbdl = rbdl_state_.instance();
+
+  if ( !points.count( point_name ) ) {
+          std::cerr << "ERROR in " << __func__ << std::endl;
+          std::cerr << "Could not find point '" << point_name << "'!" << std::endl;
+          std::cerr << "bailing out ..." << std::endl;
+          abort();
+  }
+
+  size_t dim = rbdl->model->dof_count;
+
+  RigidBodyDynamics::Math::VectorNd q = RigidBodyDynamics::Math::VectorNd::Zero(dim);
+  RigidBodyDynamics::Math::VectorNd qd = RigidBodyDynamics::Math::VectorNd::Zero(dim);
+
+  for (size_t ii=0; ii < dim; ++ii)
+  {
+    q[ii] = state[ii];
+    qd[ii] = state[ii+dim];
+  }
+
+  Point point = points[point_name];
+  unsigned int body_id = point.body_id;
+  RigidBodyDynamics::Math::Vector3d point_local = point.point_local;
+
+  RigidBodyDynamics::Math::Vector3d vel3d = RigidBodyDynamics::CalcPointVelocity(*rbdl->model, q, qd, body_id, point_local, false);
+
+  out.resize(3);
+  for (size_t ii=0; ii < 3; ++ii)
+    out[ii] = vel3d[ii];
+}
+
+void RBDLDynamics::getPointForce (const std::string point_name, Vector3_t &out) const
+{
+
+  // check existence of points
+  if ( !points.count( point_name ) ) {
+          std::cerr << "ERROR in " << __func__ << std::endl;
+          std::cerr << "Could not find point '" << point_name << "'!" << std::endl;
+          std::cerr << "bailing out ..." << std::endl;
+          abort();
+  }
+
+  // check existence of constraint set
+  if ( !constraints.count(acting_constraint_set_) ) {
+          std::cerr << "ERROR in " << __func__ << std::endl;
+          std::cerr << "Could not find constraint set '" << acting_constraint_set_ << "'!" << std::endl;
+          std::cerr << "bailing out ..." << std::endl;
+          abort();
+  }
+
+  bool found = false;
+
+  const RigidBodyDynamics::ConstraintSet &active_constraint_set = constraints[acting_constraint_set_];
+  const ConstraintSetInfo constraint_set_info = constraintSetInfos[acting_constraint_set_];;
+
+  //std::vector<ConstraintInfo>::const_iterator constraint_iter = constraintSetInfos[active_constraint_set_].constraints.begin();
+
+  for (unsigned int ci = 0; ci < constraint_set_info.constraints.size(); ci++) {
+    const ConstraintInfo& constraint_info = constraint_set_info.constraints[ci];
+
+    if (constraint_info.point_name != point_name) {
+            continue;
+    }
+
+    found = true;
+    assert (constraint_info.normal == active_constraint_set.normal[ci]);
+
+    out += active_constraint_set.force[ci] * active_constraint_set.normal[ci];
+  }
+
+////  if (!found) {
+////    cerr << "Error (" << __func__ << "): Point '" << point_name;
+////    cerr << "' is not constrained in constraint set '";
+////    cerr << constraintSetInfos[active_constraint_set_].name << "'!" << endl;
+////    abort();
+////  }
+}
+
 
 void RBDLDynamics::getAuxiliary(const Vector &state, double &modelMass, Vector &centerOfMass, Vector &centerOfMassVelocity, Vector &angularMomentum) const
 {
