@@ -87,7 +87,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
   target_action_.resize(target_dof_);
   next->resize(state_.size());
 
-  if (sub_ext_state_) //If you receive the state from DRL
+  if (sub_ext_state_) // If you receive the state from DRL
   {
     sub_state_drl = sub_ext_state_->get();
     target_state_ << sub_state_drl, state_[rlwTime];

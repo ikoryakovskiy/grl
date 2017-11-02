@@ -47,6 +47,7 @@ enum RbdlLeoWalkingState
     rlwRightKneeAngle,
     rlwLeftAnkleAngle,
     rlwRightAnkleAngle,
+//    rlwArmAngle,
 
     rlwTorsoXRate,
     rlwTorsoZRate,
@@ -57,13 +58,9 @@ enum RbdlLeoWalkingState
     rlwRightKneeAngleRate,
     rlwLeftAnkleAngleRate,
     rlwRightAnkleAngleRate,
+//    rlwArmAngleRate,
 
-    //rlwLeftArmAngle,
-    //rlwRightArmAngle,
-    //rlwLeftArmAngleRate,
-    //rlwRightArmAngleRate,
-
-    rlwTime = 18,
+    rlwTime,
 
     // Contact points locations
     rlwLeftTipX,
