@@ -138,7 +138,7 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
 
   obs->v << state.head(2*dof_);
 
-  //Adding measurement noise
+  // Adding measurement noise
   if (measurement_noise_)
   {
     for (int ij=2; ij<dof_; ++ij)
@@ -163,7 +163,7 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
 void LeoWalkingTask::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const
 {
   //State is previous state and next is the new state
-  *reward = calculateReward(state, next); //Add the work with COM moving forward
+  *reward = calculateReward(state, next); // Add the work with COM moving forward
   *reward += getEnergyUsage(state, next, action);
 }
 
@@ -174,28 +174,27 @@ void LeoWalkingTask::report(std::ostream &os, const Vector &state) const
 double LeoWalkingTask::calculateReward(const Vector &state, const Vector &next) const
 {
   double reward = 0;
-  double mRwDoomedToFall = -75;
-  double mRwTime = -1.5;
-  double mRwForward = 300;
+  double rwDoomedToFall = -75;
+  double rwTime = -1.5;
+  double rwForward = 300;
 
-// Time penalty
-  reward += mRwTime;
+  // Time penalty
+  reward += rwTime;
 
-  reward += mRwForward*(next[rlwComX] - state[rlwComX]);
+  // Forward promotion
+  reward += rwForward*(next[rlwComX] - state[rlwComX]);
 
-//  // Negative reward for 'falling' (doomed to fall)
+  // Negative reward for 'falling' (doomed to fall)
   if (isDoomedToFall(next))
-  {
-    reward += mRwDoomedToFall;
-  }
+    reward += rwDoomedToFall;
 
   return reward;
 }
 
 bool LeoWalkingTask::isDoomedToFall(const Vector &state) const
 {
-  double torsoConstraint = 1; // 1
-  double stanceConstraint = 0.36*M_PI; // 0.36*M_PI
+  double torsoConstraint = 1;
+  double stanceConstraint = 0.36*M_PI;
   double torsoHeightConstraint = -0.15;
 
   if ((fabs(state[rlwTorsoAngle]) > torsoConstraint) || (fabs(state[rlwRightAnkleAngle]) > stanceConstraint) || (fabs(state[rlwLeftAnkleAngle]) > stanceConstraint)
@@ -223,7 +222,7 @@ double LeoWalkingTask::getEnergyUsage(const Vector &state, const Vector &next, c
     U = action.v[ii];
     I = (U - DXL_TORQUE_CONST*DXL_GEARBOX_RATIO*omega)/DXL_RESISTANCE;
 
-  // Negative electrical work is not beneficial (no positive reward), but does not harm either.
+    // Negative electrical work is not beneficial (no positive reward), but does not harm either.
     JointWork += std::max(0.0, U*I)/mDesiredFrequency;  // Divide power by frequency to get energy (work)
   }
   return mRwEnergy*JointWork;
