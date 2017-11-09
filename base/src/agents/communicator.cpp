@@ -142,11 +142,11 @@ void ExtStateCommunicatorAgent::step(double tau, const Observation &obs, double 
 
 void ExtStateCommunicatorAgent::end(double tau, const Observation &obs, double reward)
 {
-  Vector temp(action_dims_+obs.v.cols());
+  Vector dummy(action_dims_+obs.v.cols());
 
   Vector to_send(obs.v.cols()+3);
   to_send << test_, obs.v, reward, 2;
   communicator_->send(to_send);
-  communicator_->recv(&temp);
+  communicator_->recv(&dummy); // Request-reply architecture requires to always send an action back
 }
 

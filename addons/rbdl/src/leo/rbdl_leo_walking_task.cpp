@@ -112,6 +112,8 @@ void LeoWalkingTask::reconfigure(const Configuration &config)
 
 void LeoWalkingTask::initLeo(int test, Vector *state) const
 {
+  test_ = test;
+
   if (target_env_)
   {
     // Obtain initial state from real Leo
@@ -167,8 +169,8 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
     *terminal = 1;
   else if (isDoomedToFall(state) || isKneeBroken(state))
   {
-    if (isDoomedToFall(state))
-      falls_++;
+    if (isDoomedToFall(state) && !test_)
+      falls_++; // increase number of falls only in learning trials
     obs->absorbing = false;
     *terminal = 2;
   }

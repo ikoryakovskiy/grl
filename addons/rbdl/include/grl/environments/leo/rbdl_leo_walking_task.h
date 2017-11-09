@@ -107,7 +107,7 @@ class LeoWalkingTask : public Task
     TYPEINFO("task/leo_walking", "Task specification for Leo walking with all joints actuated (except for shoulder)")
 
   public:
-    LeoWalkingTask() : target_env_(NULL), randomize_(0), measurement_noise_(0), dof_(4), timeout_(0), falls_(0),
+    LeoWalkingTask() : test_(0), target_env_(NULL), randomize_(0), measurement_noise_(0), dof_(4), timeout_(0), falls_(0),
       trialEnergy_(.0), knee_mode_("fail_and_restart"), rwForward_(300.) { }
 
     // From Configurable
@@ -122,6 +122,7 @@ class LeoWalkingTask : public Task
     virtual void report(std::ostream &os, const Vector &state) const;
 
   protected:
+    mutable int test_;
     Environment *target_env_;
     int randomize_;
     int measurement_noise_;
