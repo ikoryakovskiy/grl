@@ -1422,7 +1422,7 @@ environment/post/mpml:
     type: exporter
     description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
     mutability: configuration
-    default: 0
+    default: 0xdfcbb8
     optional: 1
 environment/post/mpml/benchmarking:
   description: Benchmark external action on an ideal model (MPML is not used as a reward)
@@ -1460,7 +1460,7 @@ environment/post/mpml/benchmarking:
     type: exporter
     description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
     mutability: configuration
-    default: 0
+    default: 0xdfcbb8
     optional: 1
 environment/pre/noise:
   description: Injects noise into an environment
@@ -6910,6 +6910,79 @@ task/flyer2d/regulator:
     optional: 1
     min: 0
     max: 1.797693134862316e+308
+task/leo_balancing:
+  description: Task specification for Leo balancing with all joints actuated (except for shoulder) and both feet on the floor
+  observation_dims:
+    type: int.observation_dims
+    description: Number of observation dimensions
+    mutability: provided
+  observation_min:
+    type: vector.observation_min
+    description: Lower limit on observations
+    mutability: provided
+  observation_max:
+    type: vector.observation_max
+    description: Upper limit on observations
+    mutability: provided
+  action_dims:
+    type: int.action_dims
+    description: Number of action dimensions
+    mutability: provided
+  action_min:
+    type: vector.action_min
+    description: Lower limit on actions
+    mutability: provided
+  action_max:
+    type: vector.action_max
+    description: Upper limit on actions
+    mutability: provided
+  reward_min:
+    type: double.reward_min
+    description: Lower limit on immediate reward
+    mutability: provided
+  reward_max:
+    type: double.reward_max
+    description: Upper limit on immediate reward
+    mutability: provided
+  target_env:
+    type: environment
+    description: Interaction environment
+    mutability: configuration
+    default: 0
+    optional: 1
+  timeout:
+    type: double.timeout
+    description: Task timeout
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
+  randomize:
+    type: int.randomize
+    description: Initialization from a random pose
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
+  measurement_noise:
+    type: int.measurement_noise
+    description: Adding measurement noise to observations
+    mutability: system
+    default: 0
+    optional: 1
+    min: 0
+    max: 1
+  knee_mode:
+    type: string
+    description: Select the mode knee constrain is handled
+    mutability: configuration
+    default: fail_and_restart
+    optional: 1
+    options:
+      - fail_and_restart
+      - punish_and_continue
 task/leo_squatting:
   description: Task specification for Leo squatting without an auto-actuated arm by default
   observation_dims:
@@ -7134,6 +7207,15 @@ task/leo_walking:
     optional: 1
     min: 0
     max: 1
+  knee_mode:
+    type: string
+    description: Select the mode knee constrain is handled
+    mutability: configuration
+    default: fail_and_restart
+    optional: 1
+    options:
+      - fail_and_restart
+      - punish_and_continue
 task/lua:
   description: User-provided task specification in LUA
   observation_dims:

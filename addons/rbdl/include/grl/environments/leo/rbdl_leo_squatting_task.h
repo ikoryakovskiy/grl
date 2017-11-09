@@ -81,13 +81,13 @@ enum RbdlLeoSquattingState
   rlsMEF,
   rlsSMAState,
 
-  rlsStateDim = rlsSMAState + 1
+  rlsModelStateDim
 };
 
 enum SquattingTaskState
 {
-  stsSquats = rlsStateDim,
-  stsStateDim
+  rlsSquats = rlsModelStateDim,
+  rlsStateDim
 };
 
 class LeoSquattingTask : public Task

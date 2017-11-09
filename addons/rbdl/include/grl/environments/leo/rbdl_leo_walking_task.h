@@ -93,7 +93,12 @@ enum RbdlLeoWalkingState
     rlwComY,
     rlwComZ,
 
-    rlwStateDim
+    rlwModelStateDim
+};
+
+enum WalkingTaskState
+{
+  rlwStateDim = rlwModelStateDim
 };
 
 class LeoWalkingTask : public Task
@@ -102,7 +107,7 @@ class LeoWalkingTask : public Task
     TYPEINFO("task/leo_walking", "Task specification for Leo walking with all joints actuated (except for shoulder)")
 
   public:
-    LeoWalkingTask() : target_env_(NULL), randomize_(0), measurement_noise_(0), dof_(4), timeout_(0) { }
+    LeoWalkingTask() : target_env_(NULL), randomize_(0), measurement_noise_(0), dof_(4), timeout_(0), falls_(0), trialEnergy_(.0), knee_mode_("fail_and_restart") { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -121,11 +126,31 @@ class LeoWalkingTask : public Task
     int dof_;
     double timeout_;
     Vector target_obs_min_, target_obs_max_;
+    mutable int falls_;
+    mutable double trialEnergy_;
+    std::string knee_mode_;
 
   protected:
     virtual double calculateReward(const Vector &state, const Vector &next) const;
     virtual bool isDoomedToFall(const Vector &state) const;
-    virtual double getEnergyUsage(const Vector &state, const Vector &next, const Action &action) const;
+    virtual bool isKneeBroken(const Vector &state) const;
+    virtual double getMotorWork(const Vector &state, const Vector &next, const Action &action) const;
+    virtual void initLeo(int test, Vector *state) const;
+};
+
+class LeoBalancingTask : public LeoWalkingTask
+{
+  public:
+    TYPEINFO("task/leo_balancing", "Task specification for Leo balancing with all joints actuated (except for shoulder) and both feet on the floor")
+
+  public:
+    LeoBalancingTask() { }
+
+    // From Task
+    virtual void start(int test, Vector *state) const;
+
+  protected:
+    virtual double calculateReward(const Vector &state, const Vector &next) const;
 };
 
 }

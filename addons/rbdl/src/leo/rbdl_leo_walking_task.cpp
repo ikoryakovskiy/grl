@@ -40,6 +40,7 @@
 using namespace grl;
 
 REGISTER_CONFIGURABLE(LeoWalkingTask)
+REGISTER_CONFIGURABLE(LeoBalancingTask)
 
 void LeoWalkingTask::request(ConfigurationRequest *config)
 {
@@ -48,7 +49,7 @@ void LeoWalkingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("timeout", "double.timeout", "Task timeout", timeout_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
   config->push_back(CRP("measurement_noise", "int.measurement_noise", "Adding measurement noise to observations", measurement_noise_, CRP::System, 0, 1));
-
+  config->push_back(CRP("knee_mode", "Select the mode knee constrain is handled", knee_mode_, CRP::Configuration, {"fail_and_restart", "punish_and_continue"}));
 }
 
 void LeoWalkingTask::configure(Configuration &config)
@@ -57,6 +58,7 @@ void LeoWalkingTask::configure(Configuration &config)
   timeout_ = config["timeout"];
   randomize_ = config["randomize"];
   measurement_noise_ = config["measurement_noise"];
+  knee_mode_ = config["knee_mode"].str();
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-1000, -1000, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -1000, -1000, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
@@ -97,10 +99,8 @@ void LeoWalkingTask::configure(Configuration &config)
   std::cout << "action_max: " << config["action_max"].v() << std::endl;
 }
 
-void LeoWalkingTask::start(int test, Vector *state) const
+void LeoWalkingTask::initLeo(int test, Vector *state) const
 {
-  *state = ConstantVector(2*dof_+1, 0);
-
   if (target_env_)
   {
     // Obtain initial state from real Leo
@@ -108,26 +108,30 @@ void LeoWalkingTask::start(int test, Vector *state) const
     target_env_->start(0, &obs);
     *state << obs.v, VectorConstructor(0.0);
   }
-  else
+  else if (test == 0 && randomize_)
   {
-    // Default initialization of the walking pose
-    *state << 0, 0, -0.101485, 0.100951, 0.819996, -0.00146549, -1.27, 4.11e-6, 2.26e-7,
-              0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0;  // + rlwTime
-
-    if (test == 0 && randomize_)
+    for (int ii=4; ii < dof_; ii+=2)
     {
-      for (int ii=4; ii < dof_; ii+=2)
-      {
-        (*state)[ii] += RandGen::getUniform(-0.0872, 0.0872);
-      }
-      (*state)[rlwLeftKneeAngle] += RandGen::getUniform(-2*0.0872, 0);
-      (*state)[rlwLeftHipAngle] += RandGen::getUniform(-0.0872, 0.0872);
-      (*state)[rlwLeftAnkleAngle] +=RandGen::getUniform(-0.0872, 0.0872);
+      (*state)[ii] += RandGen::getUniform(-0.0872, 0.0872);
     }
+    (*state)[rlwLeftKneeAngle] += RandGen::getUniform(-2*0.0872, 0);
+    (*state)[rlwLeftHipAngle] += RandGen::getUniform(-0.0872, 0.0872);
+    (*state)[rlwLeftAnkleAngle] +=RandGen::getUniform(-0.0872, 0.0872);
   }
 
+  trialEnergy_ = 0;
   CRAWL("Initial state: " << *state);
+}
+
+void LeoWalkingTask::start(int test, Vector *state) const
+{
+  // Default initialization of the walking pose
+  *state = ConstantVector(2*dof_+1, 0);
+  *state << 0, 0, 0, 0, 0.82, 0, -1.27, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0;  // + rlwTime
+
+  initLeo(test, state);
 }
 
 void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *terminal) const
@@ -135,7 +139,6 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
   grl_assert(state.size() == rlwStateDim);
 
   obs->v.resize(2*dof_);
-
   obs->v << state.head(2*dof_);
 
   // Adding measurement noise
@@ -151,8 +154,10 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
   obs->absorbing = false;
   if ((timeout_> 0) && (state[rlwTime] >= timeout_))
     *terminal = 1;
-  else if (isDoomedToFall(state))
+  else if (isDoomedToFall(state) || isKneeBroken(state))
   {
+    if (isDoomedToFall(state))
+      falls_++;
     obs->absorbing = false;
     *terminal = 2;
   }
@@ -162,21 +167,22 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
 
 void LeoWalkingTask::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const
 {
-  //State is previous state and next is the new state
-  *reward = calculateReward(state, next); // Add the work with COM moving forward
-  *reward += getEnergyUsage(state, next, action);
-}
+  // State is previous state and next is the new state
+  double rwWork = -2;
+  double stepEnergy = getMotorWork(state, next, action);
+  trialEnergy_ += stepEnergy;
 
-void LeoWalkingTask::report(std::ostream &os, const Vector &state) const
-{
+  *reward = rwWork*stepEnergy;
+  *reward += calculateReward(state, next);
 }
 
 double LeoWalkingTask::calculateReward(const Vector &state, const Vector &next) const
 {
   double reward = 0;
-  double rwDoomedToFall = -75;
+  double rwFail = -75;
   double rwTime = -1.5;
   double rwForward = 300;
+  double rwBrokenKnee = rwFail;
 
   // Time penalty
   reward += rwTime;
@@ -184,9 +190,11 @@ double LeoWalkingTask::calculateReward(const Vector &state, const Vector &next) 
   // Forward promotion
   reward += rwForward*(next[rlwComX] - state[rlwComX]);
 
-  // Negative reward for 'falling' (doomed to fall)
-  if (isDoomedToFall(next))
-    reward += rwDoomedToFall;
+  // Negative reward
+  if (isDoomedToFall(next) || isKneeBroken(next))
+    reward += rwFail;       // when failing the task due to 'fall' or 'broken knee'
+  else if (!isDoomedToFall(next) && isKneeBroken(next) && knee_mode_ == "punish_and_continue")
+    reward += rwBrokenKnee; // when 'broken knee' is allowed but not preferred
 
   return reward;
 }
@@ -198,19 +206,27 @@ bool LeoWalkingTask::isDoomedToFall(const Vector &state) const
   double torsoHeightConstraint = -0.15;
 
   if ((fabs(state[rlwTorsoAngle]) > torsoConstraint) || (fabs(state[rlwRightAnkleAngle]) > stanceConstraint) || (fabs(state[rlwLeftAnkleAngle]) > stanceConstraint)
-      || (state[rlwTorsoZ] < torsoHeightConstraint) || (state[rlwRightKneeAngle] > 0) || (state[rlwLeftKneeAngle] > 0))
-  {
+      || (state[rlwTorsoZ] < torsoHeightConstraint))
     return true;
-  }
 
   return false;
 }
 
-double LeoWalkingTask::getEnergyUsage(const Vector &state, const Vector &next, const Action &action) const
+bool LeoWalkingTask::isKneeBroken(const Vector &state) const
 {
-  double mRwEnergy = -2;
-  double JointWork = 0;
-  double mDesiredFrequency = 30;
+  if (knee_mode_ == "fail_and_restart")
+  {
+    // terminate trial ?
+    if ((state[rlwRightKneeAngle] > 0) || (state[rlwLeftKneeAngle] > 0))
+      return true;
+  }
+  return false;
+}
+
+double LeoWalkingTask::getMotorWork(const Vector &state, const Vector &next, const Action &action) const
+{
+  double motorWork = 0;
+  double desiredFrequency = 30;
   double I, U; // Electrical work: P = U*I
 
   for (int ii=3; ii<dof_; ii++)  //Start from 3 to ignore work by torso joint
@@ -223,7 +239,63 @@ double LeoWalkingTask::getEnergyUsage(const Vector &state, const Vector &next, c
     I = (U - DXL_TORQUE_CONST*DXL_GEARBOX_RATIO*omega)/DXL_RESISTANCE;
 
     // Negative electrical work is not beneficial (no positive reward), but does not harm either.
-    JointWork += std::max(0.0, U*I)/mDesiredFrequency;  // Divide power by frequency to get energy (work)
+    motorWork += std::max(0.0, U*I)/desiredFrequency;  // Divide power by frequency to get energy (work)
   }
-  return mRwEnergy*JointWork;
+  return motorWork;
 }
+
+void LeoWalkingTask::report(std::ostream &os, const Vector &state) const
+{
+  const int pw = 15;
+  std::stringstream progressString;
+  progressString << std::fixed << std::setprecision(5) << std::right;
+
+  // Number of cumulative falls since the birth of the agent
+  progressString << std::setw(pw) << falls_;
+
+  // Walked distance
+  progressString << std::setw(pw) << state[rlwTorsoX];
+
+  // Speed
+  progressString << std::setw(pw) << state[rlwTorsoX]/state[rlwTime];
+
+  // Energy usage
+  progressString << std::setw(pw) << trialEnergy_;
+
+  // Energy per traveled meter
+  if (state[rlwTorsoX] > 0.001)
+    progressString << std::setw(pw) << trialEnergy_/state[rlwTorsoX];
+  else
+    progressString << std::setw(pw) << 0.0;
+
+  os << progressString.str();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+void LeoBalancingTask::start(int test, Vector *state) const
+{
+  // Default initialization of the balancing pose
+  *state = ConstantVector(2*dof_+1, 0);
+  *state << 0, 0, 0, 0, 0, -0.02, -0.02, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0;  // + rlwTime
+
+  initLeo(test, state);
+}
+
+double LeoBalancingTask::calculateReward(const Vector &state, const Vector &next) const
+{
+  double reward = 0;
+  double rwFail = -75;
+  double rwBrokenKnee = rwFail;
+
+  // Negative reward
+  if (isDoomedToFall(next) || isKneeBroken(next))
+    reward += rwFail;       // when failing the task due to 'fall' or 'broken knee'
+  else if (!isDoomedToFall(next) && isKneeBroken(next) && knee_mode_ == "punish_and_continue")
+    reward += rwBrokenKnee; // when 'broken knee' is allowed but not preferred
+
+  return reward;
+}
+

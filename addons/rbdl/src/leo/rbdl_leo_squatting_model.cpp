@@ -109,7 +109,7 @@ void LeoSquattingSandboxModel::start(const Vector &hint, Vector *state)
 
   // Compose a complete state <state, time, height, com, ..., squats>
   // Immediately try to stand up
-  state->resize(stsStateDim);
+  state->resize(rlsStateDim);
   *state << rbdl_state, VectorConstructor(temperature, setpoint), rbdl_addition_,
       VectorConstructor(0),           // zero mef error
       VectorConstructor(sma_state_),  // none type of state machine
@@ -201,7 +201,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
 
   // Compose the next state
   (*next) << target_state_next_, VectorConstructor(temperature, state[rlsRefRootZ]),
-      rbdl_addition_, VectorConstructor(state[rlsMEF], state[rlsSMAState], state[stsSquats]);
+      rbdl_addition_, VectorConstructor(state[rlsMEF], state[rlsSMAState], state[rlsSquats]);
 
   int changing_direction_ok = 1;
   if (sub_sma_state_)
@@ -253,7 +253,7 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
 
   // Increase number of half-squats if setpoint changed
   if ((*next)[rlsRefRootZ] != state[rlsRefRootZ])
-    (*next)[stsSquats] = state[stsSquats] + 1;
+    (*next)[rlsSquats] = state[rlsSquats] + 1;
 
   // Simulate true dynamics for Model Error Feedback algorithm
   if (true_model_ && sub_true_action_)

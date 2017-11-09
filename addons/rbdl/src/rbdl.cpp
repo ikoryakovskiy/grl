@@ -455,9 +455,9 @@ void RBDLDynamics::getPointVelocity (const Vector &state, const std::string poin
 
 void RBDLDynamics::getPointForce (const std::string point_name, Vector3_t &out) const
 {
-
   // check existence of points
-  if ( !points.count( point_name ) ) {
+  if ( !points.count( point_name ) )
+  {
           std::cerr << "ERROR in " << __func__ << std::endl;
           std::cerr << "Could not find point '" << point_name << "'!" << std::endl;
           std::cerr << "bailing out ..." << std::endl;
@@ -465,41 +465,28 @@ void RBDLDynamics::getPointForce (const std::string point_name, Vector3_t &out) 
   }
 
   // check existence of constraint set
-  if ( !constraints.count(acting_constraint_set_) ) {
+  if ( !constraints.count(acting_constraint_set_) )
+  {
           std::cerr << "ERROR in " << __func__ << std::endl;
           std::cerr << "Could not find constraint set '" << acting_constraint_set_ << "'!" << std::endl;
           std::cerr << "bailing out ..." << std::endl;
           abort();
   }
 
-  bool found = false;
-
   const RigidBodyDynamics::ConstraintSet &active_constraint_set = constraints[acting_constraint_set_];
   const ConstraintSetInfo constraint_set_info = constraintSetInfos[acting_constraint_set_];;
 
-  //std::vector<ConstraintInfo>::const_iterator constraint_iter = constraintSetInfos[active_constraint_set_].constraints.begin();
-
-  for (unsigned int ci = 0; ci < constraint_set_info.constraints.size(); ci++) {
+  for (unsigned int ci = 0; ci < constraint_set_info.constraints.size(); ci++)
+  {
     const ConstraintInfo& constraint_info = constraint_set_info.constraints[ci];
-
-    if (constraint_info.point_name != point_name) {
-            continue;
+    if (constraint_info.point_name != point_name)
+    {
+      continue;
     }
-
-    found = true;
     assert (constraint_info.normal == active_constraint_set.normal[ci]);
-
     out += active_constraint_set.force[ci] * active_constraint_set.normal[ci];
   }
-
-////  if (!found) {
-////    cerr << "Error (" << __func__ << "): Point '" << point_name;
-////    cerr << "' is not constrained in constraint set '";
-////    cerr << constraintSetInfos[active_constraint_set_].name << "'!" << endl;
-////    abort();
-////  }
 }
-
 
 void RBDLDynamics::getAuxiliary(const Vector &state, double &modelMass, Vector &centerOfMass, Vector &centerOfMassVelocity, Vector &angularMomentum) const
 {

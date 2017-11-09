@@ -247,7 +247,7 @@ bool LeoSquattingTask::actuate(const Vector &state, const Action &action, Vector
 
 void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *terminal) const
 {
-  grl_assert(state.size() == stsStateDim);
+  grl_assert(state.size() == rlsStateDim);
 
   obs->v.resize(2*dof_+2);
   if (fixed_arm_)
@@ -291,9 +291,9 @@ void LeoSquattingTask::observe(const Vector &state, Observation *obs, int *termi
 
 void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const
 {
-  grl_assert(state.size() == stsStateDim);
+  grl_assert(state.size() == rlsStateDim);
   grl_assert(action.size() == dof_);
-  grl_assert(next.size() == stsStateDim);
+  grl_assert(next.size() == rlsStateDim);
 
   if (failed(next))
   {
@@ -461,7 +461,7 @@ void LeoSquattingTask::report(std::ostream &os, const Vector &state) const
   std::stringstream progressString;
   progressString << std::fixed << std::setprecision(5) << std::right;
   progressString << std::setw(pw) << state[rlsRootZ];
-  progressString << std::setw(pw) << state[stsSquats];
+  progressString << std::setw(pw) << state[rlsSquats];
   progressString << std::setw(pw) << task_reward_;
 
   // append cumulative reward in case of timeout termination

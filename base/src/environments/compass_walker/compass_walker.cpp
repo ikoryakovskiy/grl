@@ -253,9 +253,6 @@ void CompassWalkerWalkTask::start(int test, Vector *state) const
   CSWModelState swstate, initial_state;
 
   initial_state.init(0, 0.1534, -0.1561, 2.0*0.1534, -0.0073);
-//  initial_state.init(0, 0.136189, -0.166861, 0.272379, -0.00615157); // OC initial state
-
-//  initial_state.init(0, 1.2653492928954811E-02, -4.5938714478526529E-02, -9.8968503267651428E-02, -4.0849665255999262E-01); // NMPC initial state
 
   swstate.mStanceFootX = 0;
 
