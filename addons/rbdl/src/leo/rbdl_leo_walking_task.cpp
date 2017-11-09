@@ -50,6 +50,7 @@ void LeoWalkingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
   config->push_back(CRP("measurement_noise", "int.measurement_noise", "Adding measurement noise to observations", measurement_noise_, CRP::System, 0, 1));
   config->push_back(CRP("knee_mode", "Select the mode knee constrain is handled", knee_mode_, CRP::Configuration, {"fail_and_restart", "punish_and_continue"}));
+  config->push_back(CRP("rwForward", "double", "Task timeout", rwForward_, CRP::System, 0.0, DBL_MAX));
 }
 
 void LeoWalkingTask::configure(Configuration &config)
@@ -59,6 +60,7 @@ void LeoWalkingTask::configure(Configuration &config)
   randomize_ = config["randomize"];
   measurement_noise_ = config["measurement_noise"];
   knee_mode_ = config["knee_mode"].str();
+  rwForward_ = config["rwForward"];
 
   // Target observations: 2*target_dof + time
   std::vector<double> obs_min = {-1000, -1000, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -1000, -1000, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
@@ -99,6 +101,15 @@ void LeoWalkingTask::configure(Configuration &config)
   std::cout << "action_max: " << config["action_max"].v() << std::endl;
 }
 
+void LeoWalkingTask::reconfigure(const Configuration &config)
+{
+  if (config["rwForward"])
+  {
+    rwForward_ = config["rwForward"];
+    INFO("New forward reward weighting is " << rwForward_);
+  }
+}
+
 void LeoWalkingTask::initLeo(int test, Vector *state) const
 {
   if (target_env_)
@@ -108,15 +119,15 @@ void LeoWalkingTask::initLeo(int test, Vector *state) const
     target_env_->start(0, &obs);
     *state << obs.v, VectorConstructor(0.0);
   }
-  else if (test == 0 && randomize_)
+  else if (!test)// == 0 && randomize_)
   {
-    for (int ii=4; ii < dof_; ii+=2)
-    {
-      (*state)[ii] += RandGen::getUniform(-0.0872, 0.0872);
-    }
-    (*state)[rlwLeftKneeAngle] += RandGen::getUniform(-2*0.0872, 0);
-    (*state)[rlwLeftHipAngle] += RandGen::getUniform(-0.0872, 0.0872);
-    (*state)[rlwLeftAnkleAngle] +=RandGen::getUniform(-0.0872, 0.0872);
+    double r = 5 * 3.1415/180.0;
+
+    for (int ii = rlwLeftHipAngle; ii <= rlwRightAnkleAngle; ii++)
+      (*state)[ii] += RandGen::getUniform(-r, r);
+
+    (*state)[rlwLeftKneeAngle] = fmin((*state)[rlwLeftKneeAngle], -0.02);
+    (*state)[rlwLeftKneeAngle] = fmin((*state)[rlwRightKneeAngle], -0.02);
   }
 
   trialEnergy_ = 0;
@@ -181,14 +192,14 @@ double LeoWalkingTask::calculateReward(const Vector &state, const Vector &next) 
   double reward = 0;
   double rwFail = -75;
   double rwTime = -1.5;
-  double rwForward = 300;
+  //double rwForward = 300;
   double rwBrokenKnee = rwFail;
 
   // Time penalty
   reward += rwTime;
 
   // Forward promotion
-  reward += rwForward*(next[rlwComX] - state[rlwComX]);
+  reward += rwForward_*(next[rlwComX] - state[rlwComX]);
 
   // Negative reward
   if (isDoomedToFall(next) || isKneeBroken(next))

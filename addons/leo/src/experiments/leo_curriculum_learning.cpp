@@ -1,8 +1,8 @@
-/** \file online_learning.cpp
- * \brief Online learning experiment source file.
+/** \file leo_curriculum_learning.cpp
+ * \brief Leo curriculum learning experiment source file.
  *
- * \author    Wouter Caarls <wouter@caarls.org>
- * \date      2015-01-22
+ * \author    Ivan Koryakovskiy <i.koryakovskiy@tudelft.nl>
+ * \date      2017-11-09
  *
  * \copyright \verbatim
  * Copyright (c) 2015, Wouter Caarls
@@ -29,70 +29,40 @@
 #include <iostream>
 #include <iomanip>
 
-#include <grl/experiments/online_learning.h>
+#include <grl/experiments/leo_curriculum_learning.h>
 
 using namespace grl;
 
-REGISTER_CONFIGURABLE(OnlineLearningExperiment)
+REGISTER_CONFIGURABLE(LeoCurriculumLearningExperiment)
 
-void OnlineLearningExperiment::request(ConfigurationRequest *config)
+void LeoCurriculumLearningExperiment::request(ConfigurationRequest *config)
 {
-  config->push_back(CRP("runs", "Number of separate learning runs to perform", runs_, CRP::Configuration, 1));
-  config->push_back(CRP("trials", "Number of episodes per learning run", (int)trials_));
-  config->push_back(CRP("steps", "Number of steps per learning run", (int)steps_));
-  config->push_back(CRP("rate", "Control step frequency in Hz", (double)rate_, CRP::Online, 0.0, DBL_MAX));
-  config->push_back(CRP("test_interval", "Number of episodes in between test trials", test_interval_, CRP::Configuration, -1));
-  config->push_back(CRP("output", "Output base filename", output_));
-  
-  config->push_back(CRP("environment", "environment", "Environment in which the agent acts", environment_));
-  config->push_back(CRP("agent", "agent", "Agent", agent_));
-  config->push_back(CRP("test_agent", "agent", "Agent to use in test trials", agent_, true));
-  
-  config->push_back(CRP("state", "signal/vector", "Current observed state of the environment", CRP::Provided));
-  config->push_back(CRP("action", "signal/vector", "Current action applied to the environment", CRP::Provided));
-  config->push_back(CRP("curve", "signal/vector", "Learning curve", CRP::Provided));
+  OnlineLearningExperiment::request(config);
 
-  config->push_back(CRP("load_file", "Load policy filename", load_file_));
-  config->push_back(CRP("save_every", "Save policy to 'output' at the end of event", save_every_, CRP::Configuration, {"never", "run", "test", "trail"}));
+  config->push_back(CRP("updates", "Number of reward updates during learning", 0, CRP::Configuration, 0, INT_MAX));
+  config->push_back(CRP("rwForward", "Initial and target walue of forward reward weight", "[0.0, 300.0]"));
 }
 
-void OnlineLearningExperiment::configure(Configuration &config)
+void LeoCurriculumLearningExperiment::configure(Configuration &config)
 {
-  agent_ = (Agent*)config["agent"].ptr();
-  test_agent_ = (Agent*)config["test_agent"].ptr();
-  environment_ = (Environment*)config["environment"].ptr();
-  
-  runs_ = config["runs"];
-  trials_ = config["trials"];
-  steps_ = config["steps"];
-  rate_ = config["rate"];
-  test_interval_ = config["test_interval"];
-  output_ = config["output"].str();
-  load_file_ = config["load_file"].str();
-  save_every_ = config["save_every"].str();
-  
-  state_ = new VectorSignal();
-  action_ = new VectorSignal();
-  curve_ = new VectorSignal();
-  
-  config.set("state", state_);
-  config.set("action", action_);
-  config.set("curve", curve_);
+  OnlineLearningExperiment::configure(config);
+  int updates = config["updates"];
+  rwForward_ = config["rwForward"].v();
+  grl_assert(rwForward_.size() == 0 || rwForward_.size() == 2);
 
-  if (test_interval_ >= 0 && !test_agent_)
-    throw bad_param("experiment/online_learning:test_agent");
+  if (updates > 0 && rwForward_.size())
+  {
+    if (steps_ > 0)
+        ssdiv_ = static_cast<int>(floor(steps_/updates));
+    else if (trials_ > 0)
+        ttdiv_ = static_cast<int>(floor(trials_/updates));
+  }
 }
 
-void OnlineLearningExperiment::reconfigure(const Configuration &config)
-{
-  config.get("rate", rate_);
-  config.get("identity", identity_);
-}
-
-void OnlineLearningExperiment::run()
+void LeoCurriculumLearningExperiment::run()
 {
   std::ofstream ofs;
-  
+
   // Store configuration with output
   if (!output_.empty())
   {
@@ -123,7 +93,15 @@ void OnlineLearningExperiment::run()
     }
 
     for (size_t ss=0, tt=0; (!trials_ || tt < trials_) && (!steps_ || ss < steps_); ++tt)
-    { 
+    {
+      if ((ttdiv_) && (tt % ttdiv_ == 0))
+        reconfigureLeo(tt/trials_);
+      if ((ssdiv_) && ((double)ss / ssdiv_ >= ssdiv_stepup_))
+      {
+        reconfigureLeo(ss/steps_);
+        ssdiv_stepup_++;
+      }
+
       Observation obs;
       Action action;
       double reward, total_reward=0;
@@ -131,14 +109,14 @@ void OnlineLearningExperiment::run()
       int test = (test_interval_ >= 0 && tt%(test_interval_+1) == test_interval_) * (rr+1);
       timer step_timer;
 
-      Agent *agent = agent_;      
+      Agent *agent = agent_;
       if (test)
         agent = test_agent_;
-      
+
       environment_->start(test, &obs);
 
       CRAWL(obs);
-      
+
       agent->start(obs, &action);
       state_->set(obs.v);
       action_->set(action.v);
@@ -168,7 +146,7 @@ void OnlineLearningExperiment::run()
 
           state_->set(obs.v);
           action_->set(action.v);
-          
+
           if (!test) ss++;
         }
       } while (!terminal);
@@ -182,7 +160,7 @@ void OnlineLearningExperiment::run()
           agent->report(oss);
           environment_->report(oss);
           curve_->set(VectorConstructor(total_reward));
-        
+
           INFO(oss.str());
           if (ofs.is_open())
             ofs << oss.str() << std::endl;
@@ -212,7 +190,7 @@ void OnlineLearningExperiment::run()
         agent_->walk(saveconfig);
       }
     }
-    
+
     // Save policy every run
     if (save_every_ == "run" && !output_.empty())
     {
@@ -226,8 +204,17 @@ void OnlineLearningExperiment::run()
 
     if (ofs.is_open())
       ofs.close();
-      
+
     if (rr < runs_ - 1)
       reset();
   }
+}
+
+void LeoCurriculumLearningExperiment::reconfigureLeo(double frac)
+{
+  double reForward = rwForward_[0] + (rwForward_[1] - rwForward_[0]) * frac;
+
+  Configuration updateconfig;
+  updateconfig.set("reForward", reForward);
+  environment_->walk(updateconfig);
 }

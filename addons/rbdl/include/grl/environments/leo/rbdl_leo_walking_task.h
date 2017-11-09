@@ -107,11 +107,13 @@ class LeoWalkingTask : public Task
     TYPEINFO("task/leo_walking", "Task specification for Leo walking with all joints actuated (except for shoulder)")
 
   public:
-    LeoWalkingTask() : target_env_(NULL), randomize_(0), measurement_noise_(0), dof_(4), timeout_(0), falls_(0), trialEnergy_(.0), knee_mode_("fail_and_restart") { }
+    LeoWalkingTask() : target_env_(NULL), randomize_(0), measurement_noise_(0), dof_(4), timeout_(0), falls_(0),
+      trialEnergy_(.0), knee_mode_("fail_and_restart"), rwForward_(300.) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
     virtual void configure(Configuration &config);
+    virtual void reconfigure(const Configuration &config);
 
     // From Task
     virtual void start(int test, Vector *state) const;
@@ -129,6 +131,8 @@ class LeoWalkingTask : public Task
     mutable int falls_;
     mutable double trialEnergy_;
     std::string knee_mode_;
+
+    double rwForward_;
 
   protected:
     virtual double calculateReward(const Vector &state, const Vector &next) const;
