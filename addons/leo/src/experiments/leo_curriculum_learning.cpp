@@ -212,9 +212,9 @@ void LeoCurriculumLearningExperiment::run()
 
 void LeoCurriculumLearningExperiment::reconfigureLeo(double frac)
 {
-  double reForward = rwForward_[0] + (rwForward_[1] - rwForward_[0]) * frac;
+  double rwForward = rwForward_[0] + (rwForward_[1] - rwForward_[0]) * frac;
 
   Configuration updateconfig;
-  updateconfig.set("reForward", reForward);
+  updateconfig.set("rwForward", rwForward);
   environment_->walk(updateconfig);
 }

@@ -103,7 +103,7 @@ void LeoWalkingTask::configure(Configuration &config)
 
 void LeoWalkingTask::reconfigure(const Configuration &config)
 {
-  if (config["rwForward"])
+  if (config.has("rwForward"))
   {
     rwForward_ = config["rwForward"];
     INFO("New forward reward weighting is " << rwForward_);
