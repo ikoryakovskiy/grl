@@ -197,7 +197,7 @@ double LeoWalkingTask::calculateReward(const Vector &state, const Vector &next) 
   double rwBrokenKnee = rwFail;
 
   // Time penalty
-//  reward += rwTime;
+  reward += rwTime;
 
   // Forward promotion
   reward += rwForward_*(next[rlwComX] - state[rlwComX]);
