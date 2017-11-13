@@ -260,6 +260,7 @@ void LeoWalkingTask::report(std::ostream &os, const Vector &state) const
 {
   const int pw = 15;
   std::stringstream progressString;
+
   progressString << std::fixed << std::setprecision(5) << std::right;
 
   // Number of cumulative falls since the birth of the agent
@@ -279,6 +280,10 @@ void LeoWalkingTask::report(std::ostream &os, const Vector &state) const
     progressString << std::setw(pw) << trialEnergy_/state[rlwTorsoX];
   else
     progressString << std::setw(pw) << 0.0;
+
+  // Print task name and parameters
+  progressString << std::setw(30) << d_type();
+  progressString << std::setw(pw) << rwForward_;
 
   os << progressString.str();
 }

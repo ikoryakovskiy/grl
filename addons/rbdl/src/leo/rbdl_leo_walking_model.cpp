@@ -326,4 +326,3 @@ int LeoWalkingSandboxModel::getNumActingConstraintPoints()
 {
   return acting_left_tip_contact_ + acting_right_tip_contact_ + acting_left_heel_contact_ + acting_right_heel_contact_;
 }
-
