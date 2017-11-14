@@ -103,10 +103,13 @@ void LeoWalkingTask::configure(Configuration &config)
 
 void LeoWalkingTask::reconfigure(const Configuration &config)
 {
-  if (config.has("rwForward"))
+  if (config.has("action"))
   {
-    rwForward_ = config["rwForward"];
-    INFO("New forward reward weighting is " << rwForward_);
+    if (config["action"].str() == "update")
+    {
+      rwForward_ = config["rwForward"];
+      INFO("New forward reward weighting is " << rwForward_);
+    }
   }
 }
 
@@ -167,7 +170,7 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
   obs->absorbing = false;
   if ((timeout_> 0) && (state[rlwTime] >= timeout_))
     *terminal = 1;
-  else if (isDoomedToFall(state) || isKneeBroken(state))
+  else if (isDoomedToFall(state) || (isKneeBroken(state) && knee_mode_ == "fail_and_restart"))
   {
     if (isDoomedToFall(state) && !test_)
       falls_++; // increase number of falls only in learning trials
@@ -194,7 +197,7 @@ double LeoWalkingTask::calculateReward(const Vector &state, const Vector &next) 
   double reward = 0;
   double rwFail = -75;
   double rwTime = -1.5;
-  double rwBrokenKnee = rwFail;
+  double rwBrokenKnee = -10;
 
   // Time penalty
   reward += rwTime;
@@ -203,7 +206,7 @@ double LeoWalkingTask::calculateReward(const Vector &state, const Vector &next) 
   reward += rwForward_*(next[rlwComX] - state[rlwComX]);
 
   // Negative reward
-  if (isDoomedToFall(next) || isKneeBroken(next))
+  if (isDoomedToFall(next) || (isKneeBroken(next) && knee_mode_ == "fail_and_restart"))
     reward += rwFail;       // when failing the task due to 'fall' or 'broken knee'
   else if (!isDoomedToFall(next) && isKneeBroken(next) && knee_mode_ == "punish_and_continue")
     reward += rwBrokenKnee; // when 'broken knee' is allowed but not preferred
@@ -226,12 +229,8 @@ bool LeoWalkingTask::isDoomedToFall(const Vector &state) const
 
 bool LeoWalkingTask::isKneeBroken(const Vector &state) const
 {
-  if (knee_mode_ == "fail_and_restart")
-  {
-    // terminate trial ?
-    if ((state[rlwRightKneeAngle] > 0) || (state[rlwLeftKneeAngle] > 0))
-      return true;
-  }
+  if ((state[rlwRightKneeAngle] > 0) || (state[rlwLeftKneeAngle] > 0))
+    return true;
   return false;
 }
 
@@ -305,10 +304,10 @@ double LeoBalancingTask::calculateReward(const Vector &state, const Vector &next
 {
   double reward = 0;
   double rwFail = -75;
-  double rwBrokenKnee = rwFail;
+  double rwBrokenKnee = -10;
 
   // Negative reward
-  if (isDoomedToFall(next) || isKneeBroken(next))
+  if (isDoomedToFall(next) || (isKneeBroken(next) && knee_mode_ == "fail_and_restart"))
     reward += rwFail;       // when failing the task due to 'fall' or 'broken knee'
   else if (!isDoomedToFall(next) && isKneeBroken(next) && knee_mode_ == "punish_and_continue")
     reward += rwBrokenKnee; // when 'broken knee' is allowed but not preferred

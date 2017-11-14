@@ -98,7 +98,7 @@ void LeoCurriculumLearningExperiment::run()
         reconfigureLeo(tt/trials_);
       if ((ssdiv_) && ((double)ss / ssdiv_ >= ssdiv_stepup_))
       {
-        reconfigureLeo(ss/steps_);
+        reconfigureLeo((double)ss/steps_);
         ssdiv_stepup_++;
       }
 
@@ -215,6 +215,7 @@ void LeoCurriculumLearningExperiment::reconfigureLeo(double frac)
   double rwForward = rwForward_[0] + (rwForward_[1] - rwForward_[0]) * frac;
 
   Configuration updateconfig;
+  updateconfig.set("action", "update");
   updateconfig.set("rwForward", rwForward);
   environment_->walk(updateconfig);
 }

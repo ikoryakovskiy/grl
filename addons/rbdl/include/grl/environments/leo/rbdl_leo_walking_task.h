@@ -149,7 +149,7 @@ class LeoBalancingTask : public LeoWalkingTask
     TYPEINFO("task/leo_balancing", "Task specification for Leo balancing with all joints actuated (except for shoulder) and both feet on the floor")
 
   public:
-    LeoBalancingTask() { rwForward_ = 0; }
+    LeoBalancingTask() {}
 
     // From Task
     virtual void start(int test, Vector *state) const;
