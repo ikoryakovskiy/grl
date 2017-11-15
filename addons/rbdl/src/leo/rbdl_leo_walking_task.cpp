@@ -49,8 +49,8 @@ void LeoWalkingTask::request(ConfigurationRequest *config)
   config->push_back(CRP("timeout", "double.timeout", "Task timeout", timeout_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
   config->push_back(CRP("measurement_noise", "int.measurement_noise", "Adding measurement noise to observations", measurement_noise_, CRP::System, 0, 1));
-  config->push_back(CRP("knee_mode", "Select the mode knee constrain is handled", knee_mode_, CRP::Configuration, {"fail_and_restart", "punish_and_continue"}));
   config->push_back(CRP("rwForward", "double", "Task timeout", rwForward_, CRP::System, 0.0, DBL_MAX));
+  config->push_back(CRP("knee_mode", "Select the mode knee constrain is handled", knee_mode_, CRP::Configuration, {"fail_and_restart", "punish_and_continue", "continue"}));
 }
 
 void LeoWalkingTask::configure(Configuration &config)

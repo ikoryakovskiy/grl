@@ -39,6 +39,7 @@ void LeoWalkingSandboxModel::request(ConfigurationRequest *config)
   LeoSandboxModel::request(config);
   config->push_back(CRP("mode", "Control mode (torque/voltage )", mode_, CRP::Configuration, {"tc", "vc"}));
   config->push_back(CRP("sub_ext_state","signal/vector","external state", sub_ext_state_, true));
+  config->push_back(CRP("knee_mode", "Select the mode knee constrain is handled", knee_mode_, CRP::Configuration, {"fail_and_restart", "punish_and_continue", "continue"}));
 }
 
 void LeoWalkingSandboxModel::configure(Configuration &config)
@@ -46,6 +47,7 @@ void LeoWalkingSandboxModel::configure(Configuration &config)
   LeoSandboxModel::configure(config);
   mode_ = config["mode"].str();
   sub_ext_state_ = (VectorSignal*)config["sub_ext_state"].ptr();
+  knee_mode_ = config["knee_mode"].str();
 }
 
 void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
@@ -122,6 +124,21 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
     for (int ii=0; ii < 100; ++ii)
     {
       tau += dm_.step(target_state_, target_action_, &target_state_next_);
+
+      // Knee constraints
+      if (knee_mode_ == "continue")
+      {
+        if (target_state_next_[rlwLeftKneeAngle] > 0 && target_state_next_[rlwLeftKneeAngleRate] > 0)
+        {
+          target_state_next_[rlwLeftKneeAngle] = target_state_[rlwLeftKneeAngle];
+          target_state_next_[rlwLeftKneeAngleRate] = 0;
+        }
+        if (target_state_next_[rlwRightKneeAngle] > 0 && target_state_next_[rlwRightKneeAngleRate] > 0)
+        {
+          target_state_next_[rlwRightKneeAngle] = target_state_[rlwRightKneeAngle];
+          target_state_next_[rlwRightKneeAngleRate] = 0;
+        }
+      }
 
       // Add additional states
       dynamics_->finalize(target_state_next_, rbdl_addition_mid);

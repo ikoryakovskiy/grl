@@ -1422,7 +1422,7 @@ environment/post/mpml:
     type: exporter
     description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
     mutability: configuration
-    default: 0x134ace8
+    default: 0x1788b28
     optional: 1
 environment/post/mpml/benchmarking:
   description: Benchmark external action on an ideal model (MPML is not used as a reward)
@@ -1460,7 +1460,7 @@ environment/post/mpml/benchmarking:
     type: exporter
     description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
     mutability: configuration
-    default: 0x134ace8
+    default: 0x1788b28
     optional: 1
 environment/pre/noise:
   description: Injects noise into an environment
@@ -5913,6 +5913,16 @@ sandbox_model/leo_walk:
     mutability: configuration
     default: 0
     optional: 1
+  knee_mode:
+    type: string
+    description: Select the mode knee constrain is handled
+    mutability: configuration
+    default: fail_and_restart
+    optional: 1
+    options:
+      - fail_and_restart
+      - punish_and_continue
+      - continue
 signal/matrix:
   description: Matrix-based signal (trajectory, etc.)
 signal/vector:
@@ -7083,6 +7093,14 @@ task/leo_balancing:
     optional: 1
     min: 0
     max: 1
+  rwForward:
+    type: double
+    description: Task timeout
+    mutability: system
+    default: 300
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
   knee_mode:
     type: string
     description: Select the mode knee constrain is handled
@@ -7092,14 +7110,7 @@ task/leo_balancing:
     options:
       - fail_and_restart
       - punish_and_continue
-  rwForward:
-    type: double
-    description: Task timeout
-    mutability: system
-    default: 300
-    optional: 1
-    min: 0
-    max: 1.797693134862316e+308
+      - continue
 task/leo_squatting:
   description: Task specification for Leo squatting without an auto-actuated arm by default
   observation_dims:
@@ -7324,6 +7335,14 @@ task/leo_walking:
     optional: 1
     min: 0
     max: 1
+  rwForward:
+    type: double
+    description: Task timeout
+    mutability: system
+    default: 300
+    optional: 1
+    min: 0
+    max: 1.797693134862316e+308
   knee_mode:
     type: string
     description: Select the mode knee constrain is handled
@@ -7333,14 +7352,7 @@ task/leo_walking:
     options:
       - fail_and_restart
       - punish_and_continue
-  rwForward:
-    type: double
-    description: Task timeout
-    mutability: system
-    default: 300
-    optional: 1
-    min: 0
-    max: 1.797693134862316e+308
+      - continue
 task/lua:
   description: User-provided task specification in LUA
   observation_dims:

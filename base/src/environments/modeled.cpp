@@ -163,7 +163,6 @@ double DynamicalModel::step(const Vector &state, const Vector &actuation, Vector
     Vector k4 = h*xd;
 
     *next = *next + (k1+2*k2+2*k3+k4)/6;
-
   }
   
   return tau_;
