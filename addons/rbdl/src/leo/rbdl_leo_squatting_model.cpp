@@ -174,7 +174,11 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   }
   else
   {
+    //INFO("Hip angle " << target_state_[rlsHipAngle]);
+    //if (target_state_[rlsHipAngle] < 1.2)
+    //  INFO("Attention");
     tau = dm_.step(target_state_, target_action_, &target_state_next_);
+    //INFO("Hip angle " << target_state_next_[rlsHipAngle]);
 
     if (sim_filtered_)
     {
@@ -274,13 +278,13 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   }
   else
     (*next)[rlsMEF] = 0;
-
+/*
   std::cout << "  > " << (int)(*next)[rlsSMAState]
             << "  Height: " << std::fixed << std::setprecision(3) << std::right
             << std::setw(10) << (*next)[rlsRootZ] << std::setw(10) << (*next)[rlsComVelocityZ]
             << std::setw(10) << (*next)[rlsRefRootZ]
             << std::setw(10) << (*next)[rlsMEF] << std::endl;
-
+*/
   export_meshup_animation((*next)[rlsTime], *next, target_action_);
 
   return tau;
