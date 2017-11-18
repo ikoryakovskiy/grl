@@ -175,7 +175,7 @@ function control(state, action)
     -- Max torque at 10V is 2.92 Nm
     spring_pos = 1.20
     if state[2] < spring_pos then
-      stiffness = 2.92/(spring_pos-1.03) -- make it 3 times stronger to saturate -10 V bound on action (-4.1V is RL addition required to work against the spring)
+      stiffness = 1.4*2.92/(spring_pos-1.03) -- make it 3 times stronger to saturate -10 V bound on action (-4.1V is RL addition required to work against the spring)
       action[2] = action[2] - stiffness*(state[2] - spring_pos) -- positive spring torque for standing up (hip angle 1.27 -> 1.03 changes due to negative torque of controller)
       -- print(-stiffness*(state[2] - spring_pos))
     end
