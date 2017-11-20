@@ -4,30 +4,33 @@ import math
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib import cm
 
-l = 100
+l = 1000
 y0 = 0
 discrete = 0
 
 def main():
   lim = np.array([-10.7, 10.7])
 
-  if 1:
-    sigma = 0.15
-    theta = 0.1
+  mode = 2
+
+  if mode == 1:
+    sigma = 0.1
+    theta = 0.5
     plot_single(sigma, theta, lim)
+  elif mode == 2:
+    theta = 0.5
+    plot_grid(0.005*np.arange(1, 20, 1), [theta], lim, 3)
   else:
     plot_grid(np.linspace(0, 3, 10), np.linspace(0, 1, 10), lim)
 
-def plot_grid(sigma, theta, lim):
-  x = np.arange(l)
-  
+def plot_grid(sigma, theta, lim, idx = 2):
   w, h = len(sigma), len(theta)
-  Z = [[0 for i in range(w)] for j in range(h)] 
-  
+  Z = [[0 for i in range(w)] for j in range(h)]
+
   for i, s in enumerate(sigma):
     for j, t in enumerate(theta):
-      a, crossing_proc, crossing_mag = get_ou_data(s, t, lim)
-      Z[j][i] = crossing_mag
+      v = get_ou_data(s, t, lim)
+      Z[j][i] = v[idx]
       #print '{:04f} {:04f} {}'.format(s, t, crossing_mag)
 
   X, Y = np.meshgrid(sigma, theta)
@@ -40,13 +43,15 @@ def plot_grid(sigma, theta, lim):
 
     ax.set_zlim3d(np.matrix.min(np.matrix(Z)), np.matrix.max(np.matrix(Z)))
     fig.colorbar(surf, shrink=0.5, aspect=10)
+  elif h == 1:
+      plt.plot(sigma, Z[0])
   else:
     levels = np.linspace(np.matrix.min(np.matrix(Z)), np.matrix.max(np.matrix(Z)), 20)
     CS = plt.contour(X, Y, Z, levels=levels, cmap=cm.winter)
     plt.clabel(CS, inline=1, fontsize=10)
     plt.grid(True)
-    plt.xticks(np.linspace(0, 3, 16))
-    plt.yticks(np.linspace(0, 1, 11))
+    #plt.xticks(np.linspace(0, 3, 16))
+    #plt.yticks(np.linspace(0, 1, 11))
 
   plt.title('Magnitude')
   ax = fig.gca()
@@ -56,11 +61,11 @@ def plot_grid(sigma, theta, lim):
 
 def plot_single(sigma, theta, lim):
   x = np.arange(l)
-  a, crossing_proc, crossing_mag = get_ou_data(sigma, theta, lim)
+  v = get_ou_data(sigma, theta, lim)
 
-  print 'Crossing zero {} percent, magnitude is {}'.format(crossing_proc, crossing_mag)
+  print 'Crossing zero {} percent, magnitude is {}'.format(v[1], v[2])
 
-  plt.plot(x, a)
+  plt.plot(x, v[0])
   plt.xlabel('sample')
   plt.ylabel('value')
   plt.title('Ornstein-Uhlenbeck process for action selection')
@@ -90,7 +95,7 @@ def get_ou_data(sigma, theta, lim):
       y[i] = lim[0]
     if (y[i] > lim[1]):
       y[i] = lim[1]
-    
+
     #if discrete:
     #  y[i] = np.trunc(y[i]/step + np.copysign(0.5,y[i])) * step
 
@@ -113,7 +118,7 @@ def get_ou_data(sigma, theta, lim):
   Tm = np.asarray(Tm)
   Tm = np.absolute(Tm)
 
-  return a, np.count_nonzero(Tm)/float(l), np.sum(Tm)/float(l)
+  return a, np.count_nonzero(Tm)/float(l), np.sum(Tm)/float(l), np.max(np.absolute(a))
 
 if __name__ == "__main__":
   main()

@@ -96,8 +96,8 @@ class LeoSquattingTask : public Task
     TYPEINFO("task/leo_squatting", "Task specification for Leo squatting without an auto-actuated arm by default")
 
   public:
-    LeoSquattingTask() : target_env_(NULL), timeout_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_nmpc_qd_(1.0), weight_shaping_(0.0),
-      use_mef_(0), task_reward_(0.0), subtask_reward_(0.0), power_(2.0), randomize_(0.), dof_(4), continue_after_fall_(0), setpoint_reward_(1), gamma_(0.97),
+    LeoSquattingTask() : target_env_(NULL), timeout_(0), test_(0), weight_nmpc_(0.0001), weight_nmpc_aux_(1.0), weight_nmpc_qd_(1.0), weight_shaping_(0.0),
+      use_mef_(0), falls_(0), rl_failures_(0), nmpc_failures_(0), task_reward_(0.0), subtask_reward_(0.0), power_(2.0), randomize_(0.), dof_(4), continue_after_fall_(0), setpoint_reward_(1), gamma_(0.97),
       fixed_arm_(false), lower_height_(0.28), upper_height_(0.35), friction_compensation_(false) { }
 
     // From Configurable
@@ -115,12 +115,15 @@ class LeoSquattingTask : public Task
 
   protected:
     virtual int failed(const Vector &state) const;
+    virtual int nmpc_failed(const Vector &state) const;
 
   protected:
     Environment *target_env_;
     double timeout_;
+    mutable int test_;
     double weight_nmpc_, weight_nmpc_aux_, weight_nmpc_qd_, weight_shaping_;
     int use_mef_;
+    mutable int falls_, rl_failures_, nmpc_failures_;
     mutable double task_reward_;
     mutable double subtask_reward_;
     mutable std::vector<double> subtasks_rewards_;

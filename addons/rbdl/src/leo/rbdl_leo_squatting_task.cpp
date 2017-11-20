@@ -139,6 +139,7 @@ void LeoSquattingTask::reconfigure(const Configuration &config)
 void LeoSquattingTask::start(int test, Vector *state) const
 {
   *state = ConstantVector(4*2+3, 0); // Same size for both tasks with FA and without
+  test_ = test;
 
   if (target_env_)
   {
@@ -295,6 +296,17 @@ void LeoSquattingTask::evaluate(const Vector &state, const Action &action, const
   grl_assert(action.size() == dof_);
   grl_assert(next.size() == rlsStateDim);
 
+  // increment failures
+  if (!test_)
+  {
+    if (failed(next) == 2)
+      falls_++;
+    if (failed(next))
+      rl_failures_++;
+    if (nmpc_failed(next))
+      nmpc_failures_++;
+  }
+
   if (failed(next))
   {
     *reward = -100;
@@ -399,7 +411,7 @@ int LeoSquattingTask::failed(const Vector &state) const
   if (fabs(torsoAngle) > 1.0) // > 57 deg
   {
     TRACE("Terminate on large torso.");
-    return 1;
+    return 2;
   }
   //
   else if (state[rlsAnkleAngleRate] < target_obs_min_[rlsAnkleAngleRate])
@@ -455,6 +467,16 @@ int LeoSquattingTask::failed(const Vector &state) const
     return 0;
 }
 
+int LeoSquattingTask::nmpc_failed(const Vector &state) const
+{
+  if (state[rlsAnkleAngle] < -1.57 || state[rlsAnkleAngle] > 1.45 ||
+      state[rlsKneeAngle] < -2.53 || state[rlsKneeAngle] > -0.02 ||
+      state[rlsHipAngle] < -0.61 || state[rlsHipAngle] > 2.53 ||
+      state[rlsRootX] < state[rlsLeftHeelX] || state[rlsRootX] > state[rlsLeftTipX])
+    return 1;
+  return 0;
+}
+
 void LeoSquattingTask::report(std::ostream &os, const Vector &state) const
 {
   const int pw = 15;
@@ -479,6 +501,10 @@ void LeoSquattingTask::report(std::ostream &os, const Vector &state) const
 
   for (int i = size; i < max_size; i++)
     progressString << std::setw(pw) << std::numeric_limits<double>::quiet_NaN();
+
+  progressString << std::setw(pw) << falls_;
+  progressString << std::setw(pw) << rl_failures_;
+  progressString << std::setw(pw) << nmpc_failures_;
 
   os << progressString.str();
 }
