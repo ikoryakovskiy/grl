@@ -19,7 +19,7 @@ def main():
     plot_single(sigma, theta, lim)
   elif mode == 2:
     theta = 0.5
-    plot_grid(0.005*np.arange(1, 20, 1), [theta], lim, 3)
+    plot_grid(0.005*np.arange(1, 50, 1), [theta], lim, 3)
   else:
     plot_grid(np.linspace(0, 3, 10), np.linspace(0, 1, 10), lim)
 
