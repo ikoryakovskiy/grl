@@ -174,11 +174,11 @@ double LeoSquattingSandboxModel::step(const Vector &action, Vector *next)
   }
   else
   {
-    //INFO("Hip angle " << target_state_[rlsHipAngle]);
-    //if (target_state_[rlsHipAngle] < 1.2)
+    //INFO("Hip angle 0: " << target_state_[rlsHipAngle]);
+    //if (target_state_[rlsHipAngle] > 1.03)
     //  INFO("Attention");
     tau = dm_.step(target_state_, target_action_, &target_state_next_);
-    //INFO("Hip angle " << target_state_next_[rlsHipAngle]);
+    //INFO("Hip angle 1: " << target_state_next_[rlsHipAngle]);
 
     if (sim_filtered_)
     {

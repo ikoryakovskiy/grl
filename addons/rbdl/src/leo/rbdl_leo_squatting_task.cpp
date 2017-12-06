@@ -158,6 +158,7 @@ void LeoSquattingTask::start(int test, Vector *state) const
     else
       low_start = test % 2; // learning: setpoint selection is determined by test parameter value (test = 1 => low start)
 
+    //low_start = 1;
     if (low_start)
     {
       // initialization in a sitted pose
