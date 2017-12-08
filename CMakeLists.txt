@@ -27,12 +27,14 @@ set(MODULES base
             externals/itc
             externals/rbdl
             externals/cppzmq
+            externals/pybind11
             addons/cma
             addons/llr
             addons/gl
             addons/glut
             addons/ros
             addons/matlab
+            addons/py
             addons/odesim
             addons/rbdl
             addons/muscod
