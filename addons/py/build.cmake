@@ -85,23 +85,24 @@ find_package_handle_standard_args(Python DEFAULT_MSG
 
 find_python_module(gym REQUIRED)
 
-if (PY_GYM)
-  message("-- Building Python addon")
-  
-  pybind11_add_module(py_env ${SRC}/py_env.cpp)
-  
-  if(FALSE)
-  # Build library
-  add_library(${TARGET} SHARED
-              ${SRC}/py_env.cpp
-             )
+# Version of Eigen library
+file(READ "${EIGEN3_INCLUDE_DIRS}/Eigen/src/Core/util/Macros.h" _eigen_version_header)
+string(REGEX MATCH "define[ \t]+EIGEN_WORLD_VERSION[ \t]+([0-9]+)" _eigen_world_version_match "${_eigen_version_header}")
+set(EIGEN_WORLD_VERSION "${CMAKE_MATCH_1}")
+string(REGEX MATCH "define[ \t]+EIGEN_MAJOR_VERSION[ \t]+([0-9]+)" _eigen_major_version_match "${_eigen_version_header}")
+set(EIGEN_MAJOR_VERSION "${CMAKE_MATCH_1}")
+string(REGEX MATCH "define[ \t]+EIGEN_MINOR_VERSION[ \t]+([0-9]+)" _eigen_minor_version_match "${_eigen_version_header}")
+set(EIGEN_MINOR_VERSION "${CMAKE_MATCH_1}")
+set(EIGEN_VERSION_NUMBER ${EIGEN_WORLD_VERSION}.${EIGEN_MAJOR_VERSION}.${EIGEN_MINOR_VERSION})
+
+if (NOT EIGEN_VERSION_NUMBER GREATER 3.2.7)
+  message("-- Found Eigen == ${EIGEN_VERSION_NUMBER}")
+  message("-- Eigen support in pybind11 requires Eigen >= 3.2.7")
+else()
+  if (PY_GYM)
+    message("-- Building Python addon")
+    pybind11_add_module(py_env ${SRC}/py_env.cpp)
+    grl_link_libraries(py_env base)
   endif()
-  
-  grl_link_libraries(py_env base)
-  #install(TARGETS ${TARGET} DESTINATION ${GRL_LIB_DESTINATION})
-  #install(DIRECTORY ${SRC}/../include/grl DESTINATION ${GRL_INCLUDE_DESTINATION} FILES_MATCHING PATTERN "*.h")
 endif()
-
-
-
 

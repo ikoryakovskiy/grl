@@ -25,13 +25,14 @@
  * \endverbatim
  */
 
-#include <string.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
+#include <pybind11/eigen.h>
+
+#include <string.h>
 
 #include <grl/grl.h>
-
 #include <grl/configuration.h>
 #include <grl/environment.h>
 
@@ -42,6 +43,7 @@ namespace py = pybind11;
 static Configurator *g_configurator=NULL;
 static Environment *g_env=NULL;
 static int g_action_dims=0;
+static int g_observation_dims=0;
 static bool g_started=false;
 static std::string g_path;
 static bool g_first=true;
@@ -89,11 +91,16 @@ void py_init(const std::string &file)
   else
     std::cerr << "Could not determine task specification." << std::endl;
 
+  g_observation_dims = (*envconf)[g_path+"observation_dims"];
   g_action_dims = (*envconf)[g_path+"action_dims"];
+
+  std::cout << "Observation dims: " << g_observation_dims << std::endl;
+  std::cout << "Action dims: " << g_action_dims << std::endl;
+
   g_started = false;
 }
 
-py::array_t<double, py::array::c_style> py_start(int test)
+Vector py_start(int test)
 {
   if (!g_env)
     std::cerr << "Not initialized." << std::endl;
@@ -104,39 +111,21 @@ py::array_t<double, py::array::c_style> py_start(int test)
   g_env->start(test, &obs);
   g_started = true;
 
-  //std::cout << obs << std::endl;
 
   // Process output
-  std::vector<ssize_t> shape { obs.size() };
-  return py::array(shape, obs.v.data());
+  return obs.v;
 }
 
-/*
-void py_step()
+py::tuple py_step(const Vector &action)
 {
-  py::scoped_estream_redirect output;
-
   if (!g_env)
     std::cerr << "Not initialized." << std::endl;
 
-  Action action;
-
   if (!g_started)
-    std::cerr << "Environment not started.");
+    std::cerr << "Environment not started." << std::endl;
 
-  // Verify input
-  if (nrhs < 2 || !mxIsDouble(prhs[1]))
-    std::cerr << "Missing action.");
-
-  // Prepare input
-  int elements = mxGetNumberOfElements(prhs[1]);
-
-  if (elements != g_action_dims)
-    mexErrMsgTxt("Invalid action size.");
-
-  action.v.resize(elements);
-  for (size_t ii=0; ii < elements; ++ii)
-    action[ii] = mxGetPr(prhs[1])[ii];
+  if (action.size() != g_action_dims)
+    std::cerr << "Invalid action size." << std::endl;
 
   // Run environment
   Observation obs;
@@ -145,15 +134,8 @@ void py_step()
   double tau = g_env->step(action, &obs, &reward, &terminal);
 
   // Process output
-  plhs[0] = vectorToArray(obs);
-  if (nlhs > 1)
-    plhs[1] = mxCreateDoubleScalar(reward);
-  if (nlhs > 2)
-    plhs[2] = mxCreateDoubleScalar(terminal);
-  if (nlhs > 3)
-    plhs[3] = mxCreateDoubleScalar(tau);
+  return py::make_tuple(obs.v, reward, terminal, tau);
 }
-*/
 
 void py_fini()
 {
@@ -165,127 +147,15 @@ void py_fini()
   g_first=true;
 }
 
-/*
-void py_envv(int nlhs, mxArray *plhs[ ],
-                 int nrhs, const mxArray *prhs[ ])
-{
-  MexMemString func;
-  static bool first=true;
-  
-  if (first)
-  {
-    loadPlugins();
-    first = false;
-  }
-
-  if (nrhs < 1 || !mxIsChar(prhs[0]) || !(func = mxArrayToString(prhs[0])))
-    mexErrMsgTxt("Missing function name.");
-
-  if (!strcmp(func, "init"))
-  {
-    MexMemString file;
-  
-    if (g_env)
-      mexErrMsgTxt("Already initialized.");
-      
-    if (nrhs < 2 || !mxIsChar(prhs[1]) || !(file = mxArrayToString(prhs[1])))
-      mexErrMsgTxt("Missing configuration file name.");
-      
-    Configurator *conf, *envconf;
-    if (!(conf = loadYAML(file)) || !(g_configurator = conf->instantiate()) || !(envconf = g_configurator->find("environment")))
-    {
-      safe_delete(&conf);
-      safe_delete(&g_configurator);
-      return;
-    }
-    
-    safe_delete(&conf);
-    g_env = dynamic_cast<Environment*>(envconf->ptr());
-    
-    if (!g_env)
-    {
-      safe_delete(&g_configurator);
-      mexErrMsgTxt("Configuration file does not specify a valid environment.");
-    }
-
-    plhs[0] = taskSpecToStruct(*envconf);
-    
-    g_action_dims = mxGetPr(mxGetField(plhs[0], 0, "action_dims"))[0];
-    g_started = false;
-
-    mexLock();
-
-    return;
-  }
-  
-  if (!g_env)
-    mexErrMsgTxt("Not initialized.");
-
-  if (!strcmp(func, "fini"))
-  {
-    safe_delete(&g_configurator);
-    g_env = NULL;
-    mexUnlock();
-  }
-  else if (!strcmp(func, "start"))
-  {
-    // Run environment
-    Observation obs;
-    
-    // TODO: READ TEST ARGUMENT
-    g_env->start(0, &obs);
-    g_started = true;
-    
-    // Process output
-    plhs[0] = vectorToArray(obs);
-  }
-  else if (!strcmp(func, "step"))
-  {
-    Action action;
-    
-    if (!g_started)
-      mexErrMsgTxt("Environment not started.");
-
-    // Verify input    
-    if (nrhs < 2 || !mxIsDouble(prhs[1]))
-      mexErrMsgTxt("Missing action.");
-      
-    // Prepare input
-    int elements = mxGetNumberOfElements(prhs[1]);
-    
-    if (elements != g_action_dims)
-      mexErrMsgTxt("Invalid action size.");
-    
-    action.v.resize(elements);
-    for (size_t ii=0; ii < elements; ++ii)
-      action[ii] = mxGetPr(prhs[1])[ii];
-    
-    // Run environment
-    Observation obs;
-    double reward;
-    int terminal;
-    double tau = g_env->step(action, &obs, &reward, &terminal);
-    
-    // Process output
-    plhs[0] = vectorToArray(obs);
-    if (nlhs > 1) 
-      plhs[1] = mxCreateDoubleScalar(reward);
-    if (nlhs > 2)
-      plhs[2] = mxCreateDoubleScalar(terminal);
-    if (nlhs > 3)
-      plhs[3] = mxCreateDoubleScalar(tau);
-  }
-  else
-    mexErrMsgTxt("Unknown command.");
-}
-*/
-
 PYBIND11_MODULE(py_env, m)
 {
     m.doc() = "pybind11 plugin for GRL";
-    m.def("init", &py_init, "Initialize envirnoment", py::arg("file"),
+    m.def("init", &py_init, "Initialize envirnoment", py::arg("file").none(false),
           py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
-    m.def("start", &py_start, "Start envirnoment", py::arg("test") = 0,
-          py::return_value_policy::copy,
+    m.def("start", &py_start, "Start envirnoment", py::arg("test").none(false) = 0,
+          py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
+    m.def("step", &py_step, "Start envirnoment", py::arg("py_action").noconvert(),
+          py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
+    m.def("fini", &py_fini, "Finish envirnoment",
           py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
 }
