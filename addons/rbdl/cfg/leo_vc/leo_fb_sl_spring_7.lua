@@ -173,9 +173,9 @@ function control(state, action)
     -- Add a Torsion spring to the hip angle so that it would not be possible to fully unstretch the body
     -- 1.27 and 1.03 are sitted and standing hip angles
     -- Max torque at 10V is 2.92 Nm
-    spring_pos = 1.10
+    spring_pos = 1.03
     if state[2] > spring_pos then
-      stiffness = 50 -- make it 3 times stronger to saturate -10 V bound on action (-4.1V is RL addition required to work against the spring)
+      stiffness = 7 -- make it 3 times stronger to saturate -10 V bound on action (-4.1V is RL addition required to work against the spring)
       action[2] = action[2] - stiffness*(state[2] - spring_pos) -- positive spring torque for standing up (hip angle 1.27 -> 1.03 changes due to negative torque of controller)
       -- print(-stiffness*(state[2] - spring_pos))
     end
