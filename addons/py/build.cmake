@@ -1,11 +1,11 @@
 # Setup build environment
-set(TARGET addon_py)
+#set(TARGET addon_py)
 
 # This code sets the following variables:
 # PYTHON_EXEC         - path to python executable
 # PYTHON_LIBRARIES    - path to the python library
 # PYTHON_INCLUDE_DIRS - path to where Python.h is found
-# PTYHON_SITE_MODULES - path to site-packages
+# PYTHON_SITE_MODULES - path to site-packages
 # PYTHON_ARCH         - name of architecture to be used for platform-specific 
 #                       binary modules
 # PYTHON_VERSION      - version of python
@@ -25,7 +25,7 @@ find_program(PYTHON_EXEC "python${Python_FIND_VERSION}" DOC "Location of python 
 string(REGEX REPLACE "/bin/python${Python_FIND_VERSION}$" "" PYTHON_PREFIX "${PYTHON_EXEC}")
 
 execute_process(COMMAND "${PYTHON_EXEC}" "-c"
-  "import sys; print '%d.%d' % (sys.version_info[0],sys.version_info[1])"
+  "import sys; print('%d.%d' % (sys.version_info[0],sys.version_info[1]))"
   OUTPUT_VARIABLE PYTHON_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -38,7 +38,7 @@ find_path(PYTHON_INCLUDE_DIRS "Python.h"
   DOC "Python include directories" NO_DEFAULT_PATH)
 
 execute_process(COMMAND "${PYTHON_EXEC}" "-c" 
-  "from distutils.sysconfig import get_python_lib; print get_python_lib()"
+  "from distutils.sysconfig import get_python_lib; print(get_python_lib())"
   OUTPUT_VARIABLE PYTHON_SITE_MODULES
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -51,7 +51,7 @@ function(find_python_module module)
 		# A module's location is usually a directory, but for binary modules
 		# it's a .so file.
 		execute_process(COMMAND "${PYTHON_EXEC}" "-c" 
-			"import re, ${module}; print re.compile('/__init__.py.*').sub('',${module}.__file__)"
+			"import re, ${module}; print(re.compile('/__init__.py.*').sub('',${module}.__file__))"
 			RESULT_VARIABLE _${module}_status 
 			OUTPUT_VARIABLE _${module}_location
 			ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -100,9 +100,11 @@ if (NOT EIGEN_VERSION_NUMBER GREATER 3.2.7)
   message("-- Eigen support in pybind11 requires Eigen >= 3.2.7")
 else()
   if (PY_GYM)
-    message("-- Building Python addon")
+    message("-- Building Python addon (using Python ${PYTHON_VERSION} from ${PYTHON_EXEC})")
     pybind11_add_module(py_env ${SRC}/py_env.cpp)
-    grl_link_libraries(py_env base)
+    target_link_libraries(py_env PRIVATE grl pthread dl yaml-cpp)
+    set_target_properties(py_env PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PYTHON_SITE_MODULES})
+    message("-- py_env will be copied to ${PYTHON_SITE_MODULES}")
   endif()
 endif()
 

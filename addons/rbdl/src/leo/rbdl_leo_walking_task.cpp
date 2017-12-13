@@ -47,7 +47,7 @@ void LeoWalkingTask::request(ConfigurationRequest *config)
   Task::request(config);
   config->push_back(CRP("target_env", "environment", "Interaction environment", target_env_, true));
   config->push_back(CRP("timeout", "double.timeout", "Task timeout", timeout_, CRP::System, 0.0, DBL_MAX));
-  config->push_back(CRP("randomize", "int.randomize", "Initialization from a random pose", randomize_, CRP::System, 0, 1));
+  config->push_back(CRP("randomize", "double.randomize", "Random pose within +/- randomize degrees", randomize_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("measurement_noise", "int.measurement_noise", "Adding measurement noise to observations", measurement_noise_, CRP::System, 0, 1));
   config->push_back(CRP("rwForward", "double", "Task timeout", rwForward_, CRP::System, 0.0, DBL_MAX));
   config->push_back(CRP("knee_mode", "Select the mode knee constrain is handled", knee_mode_, CRP::Configuration, {"fail_and_restart", "punish_and_continue", "continue"}));
@@ -124,9 +124,10 @@ void LeoWalkingTask::initLeo(int test, Vector *state) const
     target_env_->start(0, &obs);
     *state << obs.v, VectorConstructor(0.0);
   }
-  else if (!test)// == 0 && randomize_)
+  else if (!test)
   {
-    double r = 5 * 3.1415/180.0;
+    double r = randomize_ * 3.1415/180.0;
+    INFO("Randomizing with noise: " << r);
 
     for (int ii = rlwLeftHipAngle; ii <= rlwRightAnkleAngle; ii++)
       (*state)[ii] += RandGen::getUniform(-r, r);

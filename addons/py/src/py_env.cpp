@@ -50,7 +50,7 @@ static bool g_first=true;
 
 void py_fini();
 
-void py_init(const std::string &file)
+py::tuple py_init(const std::string &file)
 {
   if (g_first)
   {
@@ -60,6 +60,7 @@ void py_init(const std::string &file)
 
   if (g_env)
   {
+    // Implemented for Spider kernels which continue running the kernel
     std::cerr << "Re-initializing." << std::endl;
     py_fini();
   }
@@ -72,7 +73,8 @@ void py_init(const std::string &file)
   {
     safe_delete(&conf);
     safe_delete(&g_configurator);
-    return;
+    std::cerr << "Configuration file is not valid." << std::endl;
+    return py::make_tuple();
   }
 
   safe_delete(&conf);
@@ -82,6 +84,7 @@ void py_init(const std::string &file)
   {
     safe_delete(&g_configurator);
     std::cerr << "Configuration file does not specify a valid environment." << std::endl;
+    return py::make_tuple();
   }
 
   if (envconf->find("observation_min"))
@@ -89,7 +92,10 @@ void py_init(const std::string &file)
   else if (envconf->find("task/observation_min"))
     g_path = "task/";
   else
+  {
     std::cerr << "Could not determine task specification." << std::endl;
+    return py::make_tuple();
+  }
 
   g_observation_dims = (*envconf)[g_path+"observation_dims"];
   g_action_dims = (*envconf)[g_path+"action_dims"];
@@ -98,6 +104,16 @@ void py_init(const std::string &file)
   std::cout << "Action dims: " << g_action_dims << std::endl;
 
   g_started = false;
+
+  // Process output
+  return py::make_tuple(g_observation_dims, (*envconf)[g_path+"observation_min"].v(), (*envconf)[g_path+"observation_max"].v(),
+      g_action_dims, (*envconf)[g_path+"action_min"].v(), (*envconf)[g_path+"action_max"].v());
+}
+
+void py_seed(int seed)
+{
+  srand(seed);
+  srand48(seed);
 }
 
 Vector py_start(int test)
@@ -152,7 +168,9 @@ PYBIND11_MODULE(py_env, m)
     m.doc() = "pybind11 plugin for GRL";
     m.def("init", &py_init, "Initialize envirnoment", py::arg("file").none(false),
           py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
-    m.def("start", &py_start, "Start envirnoment", py::arg("test").none(false) = 0,
+    m.def("seed", &py_seed, "Seed envirnoment", py::arg("seed").none(false),
+          py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
+    m.def("start", &py_start, "Start envirnoment", py::arg("test").none(false),
           py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
     m.def("step", &py_step, "Start envirnoment", py::arg("py_action").noconvert(),
           py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
