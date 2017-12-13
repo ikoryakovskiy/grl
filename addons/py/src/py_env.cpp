@@ -25,155 +25,136 @@
  * \endverbatim
  */
 
-#include <pybind11/pybind11.h>
+#include <grl/environments/py_env.h>
 #include <pybind11/iostream.h>
-#include <pybind11/numpy.h>
 #include <pybind11/eigen.h>
-
 #include <string.h>
-
-#include <grl/grl.h>
-#include <grl/configuration.h>
-#include <grl/environment.h>
 
 using namespace grl;
 
 namespace py = pybind11;
 
-static Configurator *g_configurator=NULL;
-static Environment *g_env=NULL;
-static int g_action_dims=0;
-static int g_observation_dims=0;
-static bool g_started=false;
-static std::string g_path;
-static bool g_first=true;
-
-void py_fini();
-
-py::tuple py_init(const std::string &file)
+py::tuple PyEnv::init(const std::string &file)
 {
-  if (g_first)
+  if (first)
   {
     loadPlugins();
-    g_first = false;
+    first = false;
   }
 
-  if (g_env)
+  if (env)
   {
     // Implemented for Spider kernels which continue running the kernel
     std::cerr << "Re-initializing." << std::endl;
-    py_fini();
+    fini();
   }
 
   if (file == "")
     std::cerr << "Missing configuration file name." << std::endl;
 
   Configurator *conf, *envconf;
-  if (!(conf = loadYAML(file)) || !(g_configurator = conf->instantiate()) || !(envconf = g_configurator->find("environment")))
+  if (!(conf = loadYAML(file)) || !(configurator = conf->instantiate()) || !(envconf = configurator->find("environment")))
   {
     safe_delete(&conf);
-    safe_delete(&g_configurator);
+    safe_delete(&configurator);
     std::cerr << "Configuration file is not valid." << std::endl;
     return py::make_tuple();
   }
 
   safe_delete(&conf);
-  g_env = dynamic_cast<Environment*>(envconf->ptr());
+  env = dynamic_cast<Environment*>(envconf->ptr());
 
-  if (!g_env)
+  if (!env)
   {
-    safe_delete(&g_configurator);
+    safe_delete(&configurator);
     std::cerr << "Configuration file does not specify a valid environment." << std::endl;
     return py::make_tuple();
   }
 
   if (envconf->find("observation_min"))
-    g_path = "";
+    path = "";
   else if (envconf->find("task/observation_min"))
-    g_path = "task/";
+    path = "task/";
   else
   {
     std::cerr << "Could not determine task specification." << std::endl;
     return py::make_tuple();
   }
 
-  g_observation_dims = (*envconf)[g_path+"observation_dims"];
-  g_action_dims = (*envconf)[g_path+"action_dims"];
+  observation_dims = (*envconf)[path+"observation_dims"];
+  action_dims = (*envconf)[path+"action_dims"];
 
-  std::cout << "Observation dims: " << g_observation_dims << std::endl;
-  std::cout << "Action dims: " << g_action_dims << std::endl;
+  std::cout << "Observation dims: " << observation_dims << std::endl;
+  std::cout << "Action dims: " << action_dims << std::endl;
 
-  g_started = false;
+  started = false;
 
   // Process output
-  return py::make_tuple(g_observation_dims, (*envconf)[g_path+"observation_min"].v(), (*envconf)[g_path+"observation_max"].v(),
-      g_action_dims, (*envconf)[g_path+"action_min"].v(), (*envconf)[g_path+"action_max"].v());
+  return py::make_tuple(observation_dims, (*envconf)[path+"observation_min"].v(), (*envconf)[path+"observation_max"].v(),
+      action_dims, (*envconf)[path+"action_min"].v(), (*envconf)[path+"action_max"].v());
 }
 
-void py_seed(int seed)
+void PyEnv::seed(int seed)
 {
   srand(seed);
   srand48(seed);
 }
 
-Vector py_start(int test)
+Vector PyEnv::start(int test)
 {
-  if (!g_env)
+  if (!env)
     std::cerr << "Not initialized." << std::endl;
 
   // Run environment
   Observation obs;
 
-  g_env->start(test, &obs);
-  g_started = true;
+  env->start(test, &obs);
+  started = true;
 
 
   // Process output
   return obs.v;
 }
 
-py::tuple py_step(const Vector &action)
+py::tuple PyEnv::step(const Vector &action)
 {
-  if (!g_env)
+  if (!env)
     std::cerr << "Not initialized." << std::endl;
 
-  if (!g_started)
+  if (!started)
     std::cerr << "Environment not started." << std::endl;
 
-  if (action.size() != g_action_dims)
+  if (action.size() != action_dims)
     std::cerr << "Invalid action size." << std::endl;
 
   // Run environment
   Observation obs;
   double reward;
   int terminal;
-  double tau = g_env->step(action, &obs, &reward, &terminal);
+  double tau = env->step(action, &obs, &reward, &terminal);
 
   // Process output
   return py::make_tuple(obs.v, reward, terminal, tau);
 }
 
-void py_fini()
+void PyEnv::fini()
 {
-  if (!g_env)
+  if (!env)
     std::cerr << "Not initialized." << std::endl;
 
-  safe_delete(&g_configurator);
-  g_env = NULL;
-  g_first=true;
+  safe_delete(&configurator);
+  env = NULL;
+  first=true;
 }
 
 PYBIND11_MODULE(py_env, m)
 {
-    m.doc() = "pybind11 plugin for GRL";
-    m.def("init", &py_init, "Initialize envirnoment", py::arg("file").none(false),
-          py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
-    m.def("seed", &py_seed, "Seed envirnoment", py::arg("seed").none(false),
-          py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
-    m.def("start", &py_start, "Start envirnoment", py::arg("test").none(false),
-          py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
-    m.def("step", &py_step, "Start envirnoment", py::arg("py_action").noconvert(),
-          py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
-    m.def("fini", &py_fini, "Finish envirnoment",
-          py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
+  py::class_<PyEnv> py_env_class(m, "PyEnv");
+  py_env_class
+      .def(py::init<>())
+      .def("init",  &PyEnv::init)
+      .def("seed",  &PyEnv::seed)
+      .def("start", &PyEnv::start)
+      .def("step",  &PyEnv::step)
+      .def("fini",  &PyEnv::fini);
 }
