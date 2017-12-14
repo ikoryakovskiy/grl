@@ -36,14 +36,13 @@ namespace py = pybind11;
 
 py::tuple PyEnv::init(const std::string &file)
 {
-  //std::cout << "PyEnv::init" << std::endl;
-  if (first)
+  if (first_)
   {
     loadPlugins();
-    first = false;
+    first_ = false;
   }
 
-  if (env)
+  if (env_)
   {
     // Implemented for Spider kernels which continue running the kernel
     std::cerr << "Re-initializing." << std::endl;
@@ -54,24 +53,38 @@ py::tuple PyEnv::init(const std::string &file)
     std::cerr << "Missing configuration file name." << std::endl;
 
   Configurator *conf, *envconf;
-  if (!(conf = loadYAML(file)) || !(configurator = conf->instantiate()) || !(envconf = configurator->find("environment")))
+  if (!(conf = loadYAML(file)) || !(configurator_ = conf->instantiate()) || !(envconf = configurator_->find("environment")))
   {
     safe_delete(&conf);
-    safe_delete(&configurator);
+    safe_delete(&configurator_);
     std::cerr << "Configuration file is not valid." << std::endl;
     return py::make_tuple();
   }
 
   safe_delete(&conf);
-  env = dynamic_cast<Environment*>(envconf->ptr());
+  env_ = dynamic_cast<Environment*>(envconf->ptr());
 
-  if (!env)
+  if (!env_)
   {
-    safe_delete(&configurator);
+    safe_delete(&configurator_);
     std::cerr << "Configuration file does not specify a valid environment." << std::endl;
     return py::make_tuple();
   }
 
+/*
+  // Recursively trace unill the most low-level environment
+  // to support environment/pre and environment/post
+  Configurator *envconf_next = NULL;
+  do
+  {
+    envconf_next = envconf->find("environment");
+    if (envconf_next)
+      envconf = envconf_next;
+  }
+  while (envconf_next);
+*/
+
+  std::string path;
   if (envconf->find("observation_min"))
     path = "";
   else if (envconf->find("task/observation_min"))
@@ -82,37 +95,35 @@ py::tuple PyEnv::init(const std::string &file)
     return py::make_tuple();
   }
 
-  observation_dims = (*envconf)[path+"observation_dims"];
-  action_dims = (*envconf)[path+"action_dims"];
+  observation_dims_ = (*envconf)[path+"observation_dims"];
+  action_dims_ = (*envconf)[path+"action_dims"];
 
-  std::cout << "Observation dims: " << observation_dims << std::endl;
-  std::cout << "Action dims: " << action_dims << std::endl;
+  INFO("PyEnv: Observation dims: " << observation_dims_);
+  INFO("PyEnv: Action dims: " << action_dims_);
 
-  started = false;
+  started_ = false;
 
   // Process output
-  return py::make_tuple(observation_dims, (*envconf)[path+"observation_min"].v(), (*envconf)[path+"observation_max"].v(),
-      action_dims, (*envconf)[path+"action_min"].v(), (*envconf)[path+"action_max"].v());
+  return py::make_tuple(observation_dims_, (*envconf)[path+"observation_min"].v(), (*envconf)[path+"observation_max"].v(),
+      action_dims_, (*envconf)[path+"action_min"].v(), (*envconf)[path+"action_max"].v());
 }
 
 void PyEnv::seed(int seed)
 {
-  //std::cout << "PyEnv::seed" << std::endl;
   srand(seed);
   srand48(seed);
 }
 
 Vector PyEnv::start(int test)
 {
-  //std::cout << "PyEnv::start" << std::endl;
-  if (!env)
+  if (!env_)
     std::cerr << "Not initialized." << std::endl;
 
   // Run environment
   Observation obs;
 
-  env->start(test, &obs);
-  started = true;
+  env_->start(test, &obs);
+  started_ = true;
 
   // Process output
   return obs.v;
@@ -120,26 +131,20 @@ Vector PyEnv::start(int test)
 
 py::tuple PyEnv::step(const Vector &action)
 {
-  //std::cout << "PyEnv::step" << std::endl;
-
-  if (!env)
+  if (!env_)
     std::cerr << "Not initialized." << std::endl;
 
-  if (!started)
+  if (!started_)
     std::cerr << "Environment not started." << std::endl;
 
-  if (action.size() != action_dims)
+  if (action.size() != action_dims_)
     std::cerr << "Invalid action size." << std::endl;
-
-  //std::cout << "PyEnv::step ready" << std::endl;
 
   // Run environment
   Observation obs;
   double reward;
   int terminal;
-  double tau = env->step(action, &obs, &reward, &terminal);
-
-  //std::cout << "PyEnv::step done" << std::endl;
+  double tau = env_->step(action, &obs, &reward, &terminal);
 
   // Process output
   return py::make_tuple(obs.v, reward, terminal, tau);
@@ -147,13 +152,12 @@ py::tuple PyEnv::step(const Vector &action)
 
 void PyEnv::fini()
 {
-  //std::cout << "PyEnv::fini" << std::endl;
-  if (!env)
+  if (!env_)
     std::cerr << "Not initialized." << std::endl;
 
-  safe_delete(&configurator);
-  env = NULL;
-  first=true;
+  safe_delete(&configurator_);
+  env_ = NULL;
+  first_=true;
 }
 
 PYBIND11_MODULE(py_env, m)

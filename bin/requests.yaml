@@ -842,6 +842,12 @@ converter/state_action_converter:
     mutability: configuration
     default: ""
     optional: 1
+  filling:
+    type: string
+    description: Filling of the missing values
+    mutability: configuration
+    default: ""
+    optional: 1
 discretizer/peaked:
   description: Peaked discretizer, with more resolution around center
   min:
@@ -1386,6 +1392,92 @@ environment/ode:
     type: double.reward_max
     description: Upper limit on immediate reward
     mutability: provided
+environment/post/converting:
+  description: Reshape/rewire state and action elements
+  environment:
+    type: environment
+    description: Environment in which the agent acts
+    mutability: configuration
+    default: 0
+    optional: 0
+  converter:
+    type: converter
+    description: Convert states and actions if needed
+    mutability: configuration
+    default: 0
+    optional: 1
+  observation_dims:
+    type: int
+    description: int.observation_dims
+    mutability: provided
+  observation_min:
+    type: vector
+    description: vector.observation_min
+    mutability: provided
+  observation_max:
+    type: vector
+    description: vector.observation_max
+    mutability: provided
+  action_dims:
+    type: int
+    description: int.action_dims
+    mutability: provided
+  action_min:
+    type: vector
+    description: vector.action_min
+    mutability: provided
+  action_max:
+    type: vector
+    description: vector.action_max
+    mutability: provided
+  reward_min:
+    type: double
+    description: double.reward_min
+    mutability: provided
+  reward_max:
+    type: double
+    description: double.reward_max
+    mutability: provided
+  target_observation_min:
+    type: vector
+    description: vector.observation_min
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  target_observation_max:
+    type: vector
+    description: vector.observation_max
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  target_action_min:
+    type: vector
+    description: vector.action_min
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  target_action_max:
+    type: vector
+    description: vector.action_max
+    mutability: system
+    default: "[  ]"
+    optional: 1
+  target_reward_min:
+    type: double
+    description: double.reward_min
+    mutability: system
+    default: 0
+    optional: 1
+    min: -1.797693134862316e+308
+    max: 1.797693134862316e+308
+  target_reward_max:
+    type: double
+    description: double.reward_max
+    mutability: system
+    default: 0
+    optional: 1
+    min: -1.797693134862316e+308
+    max: 1.797693134862316e+308
 environment/post/mpml:
   description: Substitutes reward with model-plant mismatch
   sub_nominal_action:
@@ -1422,7 +1514,7 @@ environment/post/mpml:
     type: exporter
     description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
     mutability: configuration
-    default: 0x1788b28
+    default: 0x1557258
     optional: 1
 environment/post/mpml/benchmarking:
   description: Benchmark external action on an ideal model (MPML is not used as a reward)
@@ -1460,7 +1552,7 @@ environment/post/mpml/benchmarking:
     type: exporter
     description: Optional exporter for transition log (supports time, state, observation, action, reward, terminal)
     mutability: configuration
-    default: 0x1788b28
+    default: 0x1557258
     optional: 1
 environment/pre/noise:
   description: Injects noise into an environment
@@ -7078,13 +7170,13 @@ task/leo_balancing:
     min: 0
     max: 1.797693134862316e+308
   randomize:
-    type: int.randomize
-    description: Initialization from a random pose
+    type: double.randomize
+    description: Random pose within +/- randomize degrees
     mutability: system
     default: 0
     optional: 1
     min: 0
-    max: 1
+    max: 1.797693134862316e+308
   measurement_noise:
     type: int.measurement_noise
     description: Adding measurement noise to observations
@@ -7320,13 +7412,13 @@ task/leo_walking:
     min: 0
     max: 1.797693134862316e+308
   randomize:
-    type: int.randomize
-    description: Initialization from a random pose
+    type: double.randomize
+    description: Random pose within +/- randomize degrees
     mutability: system
     default: 0
     optional: 1
     min: 0
-    max: 1
+    max: 1.797693134862316e+308
   measurement_noise:
     type: int.measurement_noise
     description: Adding measurement noise to observations

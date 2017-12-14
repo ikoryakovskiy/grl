@@ -92,8 +92,8 @@ void LeoWalkingTask::configure(Configuration &config)
   config.set("action_dims", dof_);
   config.set("action_min", ConstantVector(dof_, -LEO_MAX_DXL_VOLTAGE));
   config.set("action_max", ConstantVector(dof_, LEO_MAX_DXL_VOLTAGE));
-  config.set("reward_min", VectorConstructor(-1000));
-  config.set("reward_max", VectorConstructor( 1000));
+  config.set("reward_min", -1000);
+  config.set("reward_max",  1000);
 
   std::cout << "observation_min: " << config["observation_min"].v() << std::endl;
   std::cout << "observation_max: " << config["observation_max"].v() << std::endl;

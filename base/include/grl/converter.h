@@ -42,8 +42,11 @@ class StateActionConverter : public Configurable
   protected:
     std::vector<int> state_map_, action_map_;
     int state_in_size_, action_out_size_;
+    bool fill_;
+    double filling_;
+
   public:
-    StateActionConverter() : state_in_size_(0), action_out_size_(0) { }
+    StateActionConverter() : state_in_size_(0), action_out_size_(0), fill_(false), filling_(.0) { }
     virtual ~StateActionConverter() { }
 
     // From Configurable
@@ -55,6 +58,7 @@ class StateActionConverter : public Configurable
     virtual void convert(const Vector &state_in, Vector &state_out, const Vector &action_in, Vector &action_out) const;
     virtual void convert_state(const Vector &state_in, Vector &state_out) const;
     virtual void convert_action(const Vector &action_in, Vector &action_out) const;
+    virtual void convert_action_invert(const Vector &action_out, Vector &action_in) const;
     virtual void prepare(const std::vector<std::string> in, const std::vector<std::string> out, std::vector<int> &map) const;
 
     virtual int get_state_in_size() { return state_in_size_; }
