@@ -33,6 +33,7 @@
 #include <grl/policy.h>
 #include <grl/exporter.h>
 #include <grl/mapping.h>
+#include <grl/converter.h>
 
 namespace grl
 {
@@ -480,6 +481,34 @@ class ExtStateModeledEnvironment : public Environment
     virtual void start(int test, Observation *obs);
     virtual double step(const Action &action, Observation *obs, double *reward, int *terminal);
     virtual void report(std::ostream &os) const;
+};
+
+/// Environment which can reshape/rewire state and action elements.
+class ConvertingEnvironment : public Environment
+{
+  public:
+    TYPEINFO("environment/post/converting", "Reshape/rewire state and action elements")
+
+  public:
+    Environment *environment_;
+    StateActionConverter *converter_;
+
+  public:
+    ConvertingEnvironment() : environment_(NULL), converter_(NULL) { }
+
+    // From Configurable
+    virtual void request(ConfigurationRequest *config);
+    virtual void configure(Configuration &config);
+    virtual ConvertingEnvironment &copy(const Configurable &obj);
+
+    // From Environment
+    virtual void start(int test, Observation *obs);
+    virtual double step(const Action &action, Observation *obs, double *reward, int *terminal);
+    virtual void report(std::ostream &os) const;
+
+  protected:
+    Observation target_obs_;
+    Action target_action_;
 };
 
 }

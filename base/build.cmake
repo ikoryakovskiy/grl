@@ -10,6 +10,7 @@ add_library(${TARGET} SHARED
             ${SRC}/signal.cpp
             ${SRC}/statistics.cpp
             ${SRC}/butterworth.cpp
+            ${SRC}/converter.cpp
             ${SRC}/agents/fixed.cpp
             ${SRC}/agents/black_box.cpp
             ${SRC}/agents/td.cpp

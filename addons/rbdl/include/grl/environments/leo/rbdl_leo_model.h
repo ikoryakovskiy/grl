@@ -30,8 +30,6 @@
 
 #include <grl/environment.h>
 #include <grl/environments/rbdl.h>
-//#include <grl/butterworth.h>
-//#include <../../agents/leo_sma.h>
 
 namespace grl
 {

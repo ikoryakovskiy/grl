@@ -63,28 +63,28 @@ void LeoWalkingTask::configure(Configuration &config)
   rwForward_ = config["rwForward"];
 
   // Target observations: 2*target_dof + time
-  std::vector<double> obs_min = {-1000, -1000, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -1000, -1000, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, 0};
-  std::vector<double> obs_max = { 1000, 1000, M_PI,  M_PI, M_PI, M_PI, M_PI, M_PI, M_PI, 1000, 1000, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI,  10*M_PI, 1};
+  std::vector<double> obs_min = {-1000, -1000, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -M_PI, -1000, -1000, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI, -10*M_PI};
+  std::vector<double> obs_max = { 1000, 1000, M_PI,  M_PI, M_PI, M_PI, M_PI, M_PI, M_PI, 1000, 1000, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI, 10*M_PI,  10*M_PI};
   toVector(obs_min, target_obs_min_);
   toVector(obs_max, target_obs_max_);
 
   dof_ = 9;
 
   // Observations and actions exposed to an agent
-  config.set("observation_dims", 2*dof_+1);
+  config.set("observation_dims", 2*dof_);
   Vector observation_min, observation_max;
-  observation_min.resize(2*dof_+1);
-  observation_max.resize(2*dof_+1);
+  observation_min.resize(2*dof_);
+  observation_max.resize(2*dof_);
 
   observation_min << target_obs_min_[rlwTorsoX], target_obs_min_[rlwTorsoZ], target_obs_min_[rlwTorsoAngle], target_obs_min_[rlwLeftHipAngle], target_obs_min_[rlwRightHipAngle], target_obs_min_[rlwLeftKneeAngle],
       target_obs_min_[rlwRightKneeAngle], target_obs_min_[rlwLeftAnkleAngle], target_obs_min_[rlwRightAnkleAngle], target_obs_min_[rlwTorsoXRate], target_obs_min_[rlwTorsoZRate], target_obs_min_[rlwTorsoAngleRate],
       target_obs_min_[rlwLeftHipAngleRate], target_obs_min_[rlwRightHipAngleRate], target_obs_min_[rlwLeftKneeAngleRate],
-      target_obs_min_[rlwRightKneeAngleRate], target_obs_min_[rlwLeftAnkleAngleRate], target_obs_min_[rlwRightAnkleAngleRate], target_obs_min_[rlwTime];
+      target_obs_min_[rlwRightKneeAngleRate], target_obs_min_[rlwLeftAnkleAngleRate], target_obs_min_[rlwRightAnkleAngleRate];
 
   observation_max << target_obs_max_[rlwTorsoX], target_obs_max_[rlwTorsoZ], target_obs_max_[rlwTorsoAngle], target_obs_max_[rlwLeftHipAngle], target_obs_max_[rlwRightHipAngle], target_obs_max_[rlwLeftKneeAngle],
       target_obs_max_[rlwRightKneeAngle], target_obs_max_[rlwLeftAnkleAngle], target_obs_max_[rlwRightAnkleAngle], target_obs_max_[rlwTorsoXRate], target_obs_max_[rlwTorsoZRate], target_obs_max_[rlwTorsoAngleRate],
       target_obs_max_[rlwLeftHipAngleRate], target_obs_max_[rlwRightHipAngleRate], target_obs_max_[rlwLeftKneeAngleRate],
-      target_obs_max_[rlwRightKneeAngleRate], target_obs_max_[rlwLeftAnkleAngleRate], target_obs_max_[rlwRightAnkleAngleRate], target_obs_max_[rlwTime];
+      target_obs_max_[rlwRightKneeAngleRate], target_obs_max_[rlwLeftAnkleAngleRate], target_obs_max_[rlwRightAnkleAngleRate];
 
   config.set("observation_min", observation_min);
   config.set("observation_max", observation_max);

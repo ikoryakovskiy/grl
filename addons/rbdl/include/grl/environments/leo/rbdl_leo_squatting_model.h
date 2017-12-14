@@ -28,8 +28,6 @@
 #ifndef RBDL_LEO_SQUATTING_MODEL_H
 #define RBDL_LEO_SQUATTING_MODEL_H
 
-//#include <grl/environment.h>
-//#include <grl/environments/rbdl.h>
 #include <grl/environments/leo/rbdl_leo_model.h>
 #include <grl/butterworth.h>
 #include <../../agents/leo_sma.h>

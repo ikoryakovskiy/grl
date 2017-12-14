@@ -59,8 +59,8 @@ void CommunicatorEnvironment::configure(Configuration &config)
       throw bad_param("environment/communicator:target_action_dims_");
   }
 
-  obs_conv_.resize(target_obs_dims_);
-  action_conv_.resize(target_action_dims_);
+  target_obs_.resize(target_obs_dims_);
+  target_action_.resize(target_action_dims_);
   computation_stat_.setBufferLength(500);
 }
 
@@ -77,12 +77,12 @@ void CommunicatorEnvironment::start(int test, Observation *obs)
     communicator_->reconfigure(config);
   }
 
-  communicator_->recv(&obs_conv_);
+  communicator_->recv(&target_obs_);
   clock_gettime(CLOCK_MONOTONIC, &computation_begin_);
   if (converter_)
-    converter_->convert_state(obs_conv_, obs->v);
+    converter_->convert_state(target_obs_, obs->v);
   else
-    *obs = obs_conv_;
+    *obs = target_obs_;
   obs->absorbing = false;
 
   started_ = true;
@@ -91,9 +91,9 @@ void CommunicatorEnvironment::start(int test, Observation *obs)
 double CommunicatorEnvironment::step(const Action &action, Observation *obs, double *reward, int *terminal)
 {
   if (converter_)
-    converter_->convert_action(action, action_conv_);
+    converter_->convert_action(action, target_action_);
   else
-    action_conv_ = action;
+    target_action_ = action;
 
   if (benchmark_delays_)
   {
@@ -104,16 +104,16 @@ double CommunicatorEnvironment::step(const Action &action, Observation *obs, dou
     std::cout << "Computation delay: " << computation_stat_.toStr("us") << std::endl;
   }
 
-  communicator_->send(action_conv_);
-  communicator_->recv(&obs_conv_);
+  communicator_->send(target_action_);
+  communicator_->recv(&target_obs_);
 
   timespec computation_begin_prev = computation_begin_;
   clock_gettime(CLOCK_MONOTONIC, &computation_begin_);
 
   if (converter_)
-    converter_->convert_state(obs_conv_, obs->v);
+    converter_->convert_state(target_obs_, obs->v);
   else
-    *obs = obs_conv_;
+    *obs = target_obs_;
   obs->absorbing = false;
 
   double tau = (computation_begin_.tv_sec - computation_begin_prev.tv_sec) + (static_cast<double>(computation_begin_.tv_nsec - computation_begin_prev.tv_nsec))/1.0e9;

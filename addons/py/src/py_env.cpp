@@ -36,6 +36,7 @@ namespace py = pybind11;
 
 py::tuple PyEnv::init(const std::string &file)
 {
+  //std::cout << "PyEnv::init" << std::endl;
   if (first)
   {
     loadPlugins();
@@ -96,12 +97,14 @@ py::tuple PyEnv::init(const std::string &file)
 
 void PyEnv::seed(int seed)
 {
+  //std::cout << "PyEnv::seed" << std::endl;
   srand(seed);
   srand48(seed);
 }
 
 Vector PyEnv::start(int test)
 {
+  //std::cout << "PyEnv::start" << std::endl;
   if (!env)
     std::cerr << "Not initialized." << std::endl;
 
@@ -111,13 +114,14 @@ Vector PyEnv::start(int test)
   env->start(test, &obs);
   started = true;
 
-
   // Process output
   return obs.v;
 }
 
 py::tuple PyEnv::step(const Vector &action)
 {
+  //std::cout << "PyEnv::step" << std::endl;
+
   if (!env)
     std::cerr << "Not initialized." << std::endl;
 
@@ -127,11 +131,15 @@ py::tuple PyEnv::step(const Vector &action)
   if (action.size() != action_dims)
     std::cerr << "Invalid action size." << std::endl;
 
+  //std::cout << "PyEnv::step ready" << std::endl;
+
   // Run environment
   Observation obs;
   double reward;
   int terminal;
   double tau = env->step(action, &obs, &reward, &terminal);
+
+  //std::cout << "PyEnv::step done" << std::endl;
 
   // Process output
   return py::make_tuple(obs.v, reward, terminal, tau);
@@ -139,6 +147,7 @@ py::tuple PyEnv::step(const Vector &action)
 
 void PyEnv::fini()
 {
+  //std::cout << "PyEnv::fini" << std::endl;
   if (!env)
     std::cerr << "Not initialized." << std::endl;
 
