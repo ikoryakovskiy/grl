@@ -127,7 +127,6 @@ void LeoWalkingTask::initLeo(int test, Vector *state) const
   else if (!test)
   {
     double r = randomize_ * 3.1415/180.0;
-    INFO("Randomizing with noise: " << r);
 
     for (int ii = rlwLeftHipAngle; ii <= rlwRightAnkleAngle; ii++)
       (*state)[ii] += RandGen::getUniform(-r, r);

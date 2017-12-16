@@ -21,29 +21,29 @@ set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++0x -Wall -Wextra -Wno-sign-compa
 # List of modules to build
 set(MODULES base
             externals/yaml-cpp
-            externals/ann
-            externals/cma
+#            externals/ann
+#            externals/cma
             externals/ics
             externals/itc
             externals/rbdl
             externals/cppzmq
             externals/pybind11
-            addons/cma
-            addons/llr
+#            addons/cma
+#            addons/llr
             addons/gl
             addons/glut
-            addons/ros
-            addons/matlab
+#            addons/ros
+#            addons/matlab
             addons/py
             addons/odesim
             addons/rbdl
             addons/muscod
             addons/leo
-            addons/leo2
-            addons/tlm
-            addons/lqr
+#            addons/leo2
+#            addons/tlm
+#            addons/lqr
             addons/zeromq
-            addons/tensorflow
+#            addons/tensorflow
 )
 
 # Is there a better way to find out if catkin_make was run?

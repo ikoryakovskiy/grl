@@ -71,19 +71,6 @@ py::tuple PyEnv::init(const std::string &file)
     return py::make_tuple();
   }
 
-/*
-  // Recursively trace unill the most low-level environment
-  // to support environment/pre and environment/post
-  Configurator *envconf_next = NULL;
-  do
-  {
-    envconf_next = envconf->find("environment");
-    if (envconf_next)
-      envconf = envconf_next;
-  }
-  while (envconf_next);
-*/
-
   std::string path;
   if (envconf->find("observation_min"))
     path = "";
@@ -165,9 +152,14 @@ PYBIND11_MODULE(py_env, m)
   py::class_<PyEnv> py_env_class(m, "PyEnv");
   py_env_class
       .def(py::init<>())
-      .def("init",  &PyEnv::init)
-      .def("seed",  &PyEnv::seed)
-      .def("start", &PyEnv::start)
-      .def("step",  &PyEnv::step)
-      .def("fini",  &PyEnv::fini);
+      .def("init",  &PyEnv::init, "Initialize envirnoment", py::return_value_policy::copy,
+           py::arg("file").none(false), py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>())
+      .def("seed",  &PyEnv::seed, "Seed envirnoment", py::arg("seed").none(false),
+           py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>())
+      .def("start", &PyEnv::start, "Start envirnoment", py::return_value_policy::copy,
+           py::arg("test").none(false), py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>())
+      .def("step",  &PyEnv::step, "Start envirnoment", py::return_value_policy::copy,
+           py::arg("py_action").noconvert(), py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>())
+      .def("fini",  &PyEnv::fini, "Finish envirnoment",
+           py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
 }

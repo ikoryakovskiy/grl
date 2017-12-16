@@ -151,7 +151,7 @@ void StateActionConverter::prepare(const std::vector<std::string> in, const std:
     {
       if (*it_out == *it_in)
       {
-        TRACE("Adding to the observation vector (physical state): " << *it_out);
+        CRAWL("Adding to the observation vector (physical state): " << *it_out);
         map.push_back(i);
         found = true;
         break;
@@ -231,7 +231,7 @@ ConvertingEnvironment &ConvertingEnvironment::copy(const Configurable &obj)
 void ConvertingEnvironment::start(int test, Observation *obs)
 {
   environment_->start(test, &target_obs_);
-  TRACE("Target observation " << target_obs_);
+  CRAWL("Target observation " << target_obs_);
   if (converter_)
   {
     converter_->convert_state(target_obs_.v, obs->v);
@@ -248,9 +248,9 @@ double ConvertingEnvironment::step(const Action &action, Observation *obs, doubl
   else
     target_action_ = action;
 
-  TRACE("Target action " << target_action_);
+  CRAWL("Target action " << target_action_);
   double tau = environment_->step(target_action_, &target_obs_, reward, terminal);
-  TRACE("Target observation " << target_obs_);
+  CRAWL("Target observation " << target_obs_);
 
   if (converter_)
   {
