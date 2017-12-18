@@ -239,10 +239,12 @@ void ConvertingEnvironment::start(int test, Observation *obs)
   }
   else
     *obs = target_obs_;
+  CRAWL("Observation " << *obs);
 }
 
 double ConvertingEnvironment::step(const Action &action, Observation *obs, double *reward, int *terminal)
 {
+  CRAWL("Action " << action);
   if (converter_)
     converter_->convert_action(action.v, target_action_.v);
   else
@@ -259,7 +261,7 @@ double ConvertingEnvironment::step(const Action &action, Observation *obs, doubl
   }
   else
     *obs = target_obs_;
-
+  CRAWL("Observation " << *obs);
   return tau;
 }
 

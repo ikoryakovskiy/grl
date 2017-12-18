@@ -1,6 +1,4 @@
-# Select the most possible python version
-message("============================================")
-
+# Select Python version which contains openai gym and baseline packages. If no such version found, select any available
 foreach(python_version IN ITEMS 3 2)
   message("-- Looking for Python version ${python_version}")
   FIND_PACKAGE(Python ${python_version} EXACT)

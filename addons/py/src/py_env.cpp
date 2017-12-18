@@ -106,6 +106,8 @@ Vector PyEnv::start(int test)
   if (!env_)
     std::cerr << "Not initialized." << std::endl;
 
+  test_ = test;
+
   // Run environment
   Observation obs;
 
@@ -131,10 +133,15 @@ py::tuple PyEnv::step(const Vector &action)
   Observation obs;
   double reward;
   int terminal;
-  double tau = env_->step(action, &obs, &reward, &terminal);
+  env_->step(action, &obs, &reward, &terminal);
+
+  // Pass extra info if episode is testing and has finished
+  std::ostringstream oss;
+  if (test_ && terminal)
+    env_->report(oss);
 
   // Process output
-  return py::make_tuple(obs.v, reward, terminal, tau);
+  return py::make_tuple(obs.v, reward, terminal, oss.str());
 }
 
 void PyEnv::fini()

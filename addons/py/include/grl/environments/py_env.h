@@ -47,9 +47,10 @@ class PyEnv
     int observation_dims_;
     bool started_;
     bool first_;
+    int test_;
 
   public:
-    PyEnv() : configurator_(NULL), env_(NULL), action_dims_(0), observation_dims_(0), started_(false), first_(true) { }
+    PyEnv() : configurator_(NULL), env_(NULL), action_dims_(0), observation_dims_(0), started_(false), first_(true), test_(0) { }
   
     pybind11::tuple init(const std::string &file);
     void seed(int seed);
