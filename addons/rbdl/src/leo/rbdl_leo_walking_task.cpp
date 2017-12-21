@@ -146,7 +146,6 @@ void LeoWalkingTask::start(int test, Vector *state) const
   *state << 0, 0, 0, 0, 0.82, 0, -1.27, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0,
             0;  // + rlwTime
-
   initLeo(test, state);
 }
 

@@ -48,15 +48,17 @@ class PyEnv
     bool started_;
     bool first_;
     int test_;
+    int report_idx_;
 
   public:
-    PyEnv() : configurator_(NULL), env_(NULL), action_dims_(0), observation_dims_(0), started_(false), first_(true), test_(0) { }
+    PyEnv() : configurator_(NULL), env_(NULL), action_dims_(0), observation_dims_(0), started_(false), first_(true), test_(0), report_idx_(1) { }
   
     pybind11::tuple init(const std::string &file);
     void seed(int seed);
     Vector start(int test);
     pybind11::tuple step(const Vector &action);
     void fini();
+    void report(int idx);
 };
 
 }

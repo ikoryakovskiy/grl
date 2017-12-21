@@ -51,8 +51,8 @@ if (PYTHON_FOUND)
       add_custom_command(
               TARGET py_env
               POST_BUILD
-              COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/py_env* ${PYTHON_PREFIX2}/${PYTHON_SITE_MODULES})
-      message("   py_env will be copied to ${PYTHON_PREFIX2}/${PYTHON_SITE_MODULES}")
+              COMMAND ln -s -f ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/py_env* ${PYTHON_PREFIX2}/${PYTHON_SITE_MODULES})
+      message("   the link to py_env will created from ${PYTHON_PREFIX2}/${PYTHON_SITE_MODULES} location")
     endif()
   endif()
 else()

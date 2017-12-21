@@ -137,7 +137,7 @@ py::tuple PyEnv::step(const Vector &action)
 
   // Pass extra info if episode is testing and has finished
   std::ostringstream oss;
-  if (test_ && terminal)
+  if (((test_ == report_idx_) || report_idx_ == 2) && terminal)
     env_->report(oss);
 
   // Process output
@@ -154,6 +154,12 @@ void PyEnv::fini()
   first_=true;
 }
 
+void PyEnv::report(int idx)
+{
+  report_idx_ = idx;
+}
+
+
 PYBIND11_MODULE(py_env, m)
 {
   py::class_<PyEnv> py_env_class(m, "PyEnv");
@@ -168,5 +174,7 @@ PYBIND11_MODULE(py_env, m)
       .def("step",  &PyEnv::step, "Start envirnoment", py::return_value_policy::copy,
            py::arg("py_action").noconvert(), py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>())
       .def("fini",  &PyEnv::fini, "Finish envirnoment",
+           py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>())
+      .def("report",  &PyEnv::report, "Report in episodes ['learn', 'test', 'all']", py::arg("idx").none(false),
            py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>());
 }
