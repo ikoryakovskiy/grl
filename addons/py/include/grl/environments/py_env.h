@@ -54,6 +54,7 @@ class PyEnv
     PyEnv() : configurator_(NULL), env_(NULL), action_dims_(0), observation_dims_(0), started_(false), first_(true), test_(0), report_idx_(1) { }
   
     pybind11::tuple init(const std::string &file);
+    void reconfigure(pybind11::dict config);
     void seed(int seed);
     Vector start(int test);
     pybind11::tuple step(const Vector &action);

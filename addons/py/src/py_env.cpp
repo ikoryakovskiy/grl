@@ -90,15 +90,32 @@ py::tuple PyEnv::init(const std::string &file)
 
   started_ = false;
 
+  // manual seed can be overwritten by PyEnv::seed()
+  srand(time(NULL));
+  srand48(time(NULL));
+
   // Process output
   return py::make_tuple(observation_dims_, (*envconf)[path+"observation_min"].v(), (*envconf)[path+"observation_max"].v(),
       action_dims_, (*envconf)[path+"action_min"].v(), (*envconf)[path+"action_max"].v());
+}
+
+void PyEnv::reconfigure(py::dict config)
+{
+  if (!env_)
+    std::cerr << "Not initialized." << std::endl;
+
+  Configuration updateconfig;
+  for (auto const &item : config)
+    updateconfig.set(std::string(py::str(item.first)), std::string(py::str(item.second)));
+
+  env_->walk(updateconfig);
 }
 
 void PyEnv::seed(int seed)
 {
   srand(seed);
   srand48(seed);
+  INFO("GRL seed " << seed);
 }
 
 Vector PyEnv::start(int test)
@@ -167,6 +184,8 @@ PYBIND11_MODULE(py_env, m)
       .def(py::init<>())
       .def("init",  &PyEnv::init, "Initialize envirnoment", py::return_value_policy::copy,
            py::arg("file").none(false), py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>())
+      .def("reconfigure",  &PyEnv::reconfigure, "Eeconfigure envirnoment", py::arg("config").none(false),
+           py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>())
       .def("seed",  &PyEnv::seed, "Seed envirnoment", py::arg("seed").none(false),
            py::call_guard<py::scoped_ostream_redirect,py::scoped_estream_redirect>())
       .def("start", &PyEnv::start, "Start envirnoment", py::return_value_policy::copy,
