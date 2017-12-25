@@ -98,7 +98,7 @@ void SandboxEnvironment::start(int test, Observation *obs)
   if (exporter_)
     exporter_->open((test_?"test":"learn"), (test_?time_test_:time_learn_) != 0.0);
 
-  prev_time_test_ = time_test_;
+  time_start_ = test_?time_test_:time_learn_;
 }
 
 double SandboxEnvironment::step(const Action &action, Observation *obs, double *reward, int *terminal)
@@ -136,7 +136,7 @@ void SandboxEnvironment::report(std::ostream &os) const
   const int pw = 15;
   std::stringstream progressString;
   progressString << std::fixed << std::setprecision(3) << std::right;
-  progressString << std::setw(pw) << (time_test_ - prev_time_test_);
+  progressString << std::setw(pw) << (test_?time_test_:time_learn_ - time_start_);
   os << progressString.str();
 
   sandbox_->report(os);
