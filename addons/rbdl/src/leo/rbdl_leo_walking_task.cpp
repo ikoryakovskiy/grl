@@ -71,20 +71,22 @@ void LeoWalkingTask::configure(Configuration &config)
   dof_ = 9;
 
   // Observations and actions exposed to an agent
-  config.set("observation_dims", 2*dof_);
+  config.set("observation_dims", 2*dof_+1);
   Vector observation_min, observation_max;
-  observation_min.resize(2*dof_);
-  observation_max.resize(2*dof_);
+  observation_min.resize(2*dof_+1);
+  observation_max.resize(2*dof_+1);
 
   observation_min << target_obs_min_[rlwTorsoX], target_obs_min_[rlwTorsoZ], target_obs_min_[rlwTorsoAngle], target_obs_min_[rlwLeftHipAngle], target_obs_min_[rlwRightHipAngle], target_obs_min_[rlwLeftKneeAngle],
       target_obs_min_[rlwRightKneeAngle], target_obs_min_[rlwLeftAnkleAngle], target_obs_min_[rlwRightAnkleAngle], target_obs_min_[rlwTorsoXRate], target_obs_min_[rlwTorsoZRate], target_obs_min_[rlwTorsoAngleRate],
       target_obs_min_[rlwLeftHipAngleRate], target_obs_min_[rlwRightHipAngleRate], target_obs_min_[rlwLeftKneeAngleRate],
-      target_obs_min_[rlwRightKneeAngleRate], target_obs_min_[rlwLeftAnkleAngleRate], target_obs_min_[rlwRightAnkleAngleRate];
+      target_obs_min_[rlwRightKneeAngleRate], target_obs_min_[rlwLeftAnkleAngleRate], target_obs_min_[rlwRightAnkleAngleRate],
+      -1000; // Forward promototion
 
   observation_max << target_obs_max_[rlwTorsoX], target_obs_max_[rlwTorsoZ], target_obs_max_[rlwTorsoAngle], target_obs_max_[rlwLeftHipAngle], target_obs_max_[rlwRightHipAngle], target_obs_max_[rlwLeftKneeAngle],
       target_obs_max_[rlwRightKneeAngle], target_obs_max_[rlwLeftAnkleAngle], target_obs_max_[rlwRightAnkleAngle], target_obs_max_[rlwTorsoXRate], target_obs_max_[rlwTorsoZRate], target_obs_max_[rlwTorsoAngleRate],
       target_obs_max_[rlwLeftHipAngleRate], target_obs_max_[rlwRightHipAngleRate], target_obs_max_[rlwLeftKneeAngleRate],
-      target_obs_max_[rlwRightKneeAngleRate], target_obs_max_[rlwLeftAnkleAngleRate], target_obs_max_[rlwRightAnkleAngleRate];
+      target_obs_max_[rlwRightKneeAngleRate], target_obs_max_[rlwLeftAnkleAngleRate], target_obs_max_[rlwRightAnkleAngleRate],
+      1000; // Forward promototion
 
   config.set("observation_min", observation_min);
   config.set("observation_max", observation_max);
@@ -153,8 +155,8 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
 {
   grl_assert(state.size() == rlwStateDim);
 
-  obs->v.resize(2*dof_);
-  obs->v << state.head(2*dof_);
+  obs->v.resize(2*dof_ + 1); // one for measurment of forward displacement of Leo
+  obs->v << state.head(2*dof_), state[rlwComX] - state[rlwPrevComX];
 
   // Adding measurement noise
   if (measurement_noise_)
@@ -182,6 +184,8 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
 
 void LeoWalkingTask::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const
 {
+  grl_assert(state[rlwComX] == next[rlwPrevComX]);
+
   // State is previous state and next is the new state
   double rwWork = -2;
   double stepEnergy = getMotorWork(state, next, action);

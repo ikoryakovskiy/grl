@@ -93,6 +93,8 @@ enum RbdlLeoWalkingState
     rlwComY,
     rlwComZ,
 
+    rlwPrevComX,
+
     rlwModelStateDim
 };
 

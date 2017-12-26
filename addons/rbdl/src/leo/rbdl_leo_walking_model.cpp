@@ -58,7 +58,8 @@ void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
 
   // Compose a complete state <state, time, height, com, ...,>
   state_.resize(rlwStateDim);
-  state_ << *state, rbdl_addition_;
+  state_ << *state, rbdl_addition_, 0;
+  state_[rlwPrevComX] = state_[rlwComX];
   *state = state_;
 
   active_left_heel_contact_ = 0;
@@ -83,7 +84,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
   bool check;
 
   qd_plus.resize(target_dof_);
-  next_state_mid.resize(rlwStateDim);
+  next_state_mid.resize(rlwStateDim); // avoid copying previous torso X position
   target_state_.resize(2*target_dof_+1);
   target_state_next_.resize(2*target_dof_+1);
   target_action_.resize(target_dof_);
@@ -142,7 +143,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 
       // Add additional states
       dynamics_->finalize(target_state_next_, rbdl_addition_mid);
-      next_state_mid << target_state_next_, rbdl_addition_mid;
+      next_state_mid << target_state_next_, rbdl_addition_mid, 0;
 
       // Check for collision points and update active constraint set
       check = getCollisionPoints(next_state_mid);
@@ -170,8 +171,6 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
       getConstraintSet(acting_constraint_set_, acting_num_contacts_, acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_);
       dynamics_->updateActingConstraintSet(acting_constraint_set_);
 
-      grl_assert(next_state_mid.size() == rlwStateDim);
-
       // Transfer old values to new
       target_state_ = target_state_next_;
       active_left_heel_contact_ = 0;
@@ -185,7 +184,7 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
   dynamics_->finalize(target_state_next_, rbdl_addition_);
 
   // Compose the next state
-  (*next) << target_state_next_, rbdl_addition_;
+  (*next) << target_state_next_, rbdl_addition_, state_[rlwComX];
   export_meshup_animation((*next)[rlwTime], *next, target_action_);
 
   state_ = *next;

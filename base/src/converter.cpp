@@ -151,7 +151,7 @@ void StateActionConverter::prepare(const std::vector<std::string> in, const std:
     {
       if (*it_out == *it_in)
       {
-        CRAWL("Adding to the observation vector (physical state): " << *it_out);
+        CRAWL("Adding to the observation/action vector: " << *it_out);
         map.push_back(i);
         found = true;
         break;
@@ -196,7 +196,11 @@ void ConvertingEnvironment::configure(Configuration &config)
 {
   environment_ = (Environment*)config["environment"].ptr();
   converter_ = (StateActionConverter*)config["converter"].ptr();
-
+/*
+  const ObjectConfigurator *ecfg = environment_->configurator();
+  Task *task = (Task*)(*ecfg)["task"].ptr();
+  Vector omin = omin = (*task->configurator())["observation_min"].v();
+*/
   if (converter_)
   {
     target_obs_.v.resize(converter_->get_state_in_size());
