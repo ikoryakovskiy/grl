@@ -134,7 +134,6 @@ class LeoWalkingTask : public Task
     mutable int falls_;
     mutable double trialEnergy_;
     std::string knee_mode_;
-
     double rwForward_;
 
   protected:

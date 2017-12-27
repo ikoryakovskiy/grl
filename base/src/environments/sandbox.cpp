@@ -136,7 +136,7 @@ void SandboxEnvironment::report(std::ostream &os) const
   const int pw = 15;
   std::stringstream progressString;
   progressString << std::fixed << std::setprecision(3) << std::right;
-  progressString << std::setw(pw) << (test_?time_test_:time_learn_ - time_start_);
+  progressString << std::setw(pw) << (test_?time_test_:time_learn_) - time_start_;
   os << progressString.str();
 
   sandbox_->report(os);

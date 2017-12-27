@@ -131,14 +131,14 @@ void LeoWalkingTask::initLeo(int test, Vector *state) const
     double r = randomize_ * 3.1415/180.0;
 
     for (int ii = rlwLeftHipAngle; ii <= rlwRightAnkleAngle; ii++)
-      (*state)[ii] += RandGen::getUniform(-r, r);
+      (*state)[ii] += 2*r*drand48()-r;
 
     (*state)[rlwLeftKneeAngle] = fmin((*state)[rlwLeftKneeAngle], -0.02);
     (*state)[rlwLeftKneeAngle] = fmin((*state)[rlwRightKneeAngle], -0.02);
   }
 
   trialEnergy_ = 0;
-  CRAWL("Initial state: " << *state);
+  TRACE("Initial state: " << *state);
 }
 
 void LeoWalkingTask::start(int test, Vector *state) const
