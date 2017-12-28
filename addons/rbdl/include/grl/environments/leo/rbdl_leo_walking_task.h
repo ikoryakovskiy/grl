@@ -110,7 +110,7 @@ class LeoWalkingTask : public Task
 
   public:
     LeoWalkingTask() : test_(0), target_env_(NULL), randomize_(.0), measurement_noise_(0), dof_(4), timeout_(0), falls_(0),
-      trialWork_(.0), knee_mode_("fail_and_restart"), rwForward_(300.), rwTime_(-1.5), rwWork_(-2), rwFail_(-75), rwBrokenKnee_(-1) { }
+      trialWork_(.0), knee_mode_("fail_and_restart"), rwForward_(300.), rwTime_(-1.5), rwWork_(0), rwFail_(-75), rwBrokenKnee_(0) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
