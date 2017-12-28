@@ -107,10 +107,20 @@ void LeoWalkingTask::reconfigure(const Configuration &config)
 {
   if (config.has("action"))
   {
-    if (config["action"].str() == "update")
+    if (config["action"].str() == "update_rwForward")
     {
       rwForward_ = config["rwForward"];
       INFO("New forward reward weighting is " << rwForward_);
+    }
+    if (config["action"].str() == "update_rwTime")
+    {
+      rwTime_ = config["rwTime"];
+      INFO("New time reward weighting is " << rwTime_);
+    }
+    if (config["action"].str() == "update_rwWork")
+    {
+      rwWork_ = config["rwWork"];
+      INFO("New work reward weighting is " << rwWork_);
     }
   }
 }
@@ -137,7 +147,7 @@ void LeoWalkingTask::initLeo(int test, Vector *state) const
     (*state)[rlwLeftKneeAngle] = fmin((*state)[rlwRightKneeAngle], -0.02);
   }
 
-  trialEnergy_ = 0;
+  trialWork_ = 0;
   TRACE("Initial state: " << *state);
 }
 
@@ -187,32 +197,28 @@ void LeoWalkingTask::evaluate(const Vector &state, const Action &action, const V
   grl_assert(state[rlwComX] == next[rlwPrevComX]);
 
   // State is previous state and next is the new state
-  double rwWork = -2;
-  double stepEnergy = getMotorWork(state, next, action);
-  trialEnergy_ += stepEnergy;
+  double stepWork = getMotorWork(state, next, action);
+  trialWork_ += stepWork;
 
-  *reward = rwWork*stepEnergy;
+  *reward = rwWork_*stepWork;
   *reward += calculateReward(state, next);
 }
 
 double LeoWalkingTask::calculateReward(const Vector &state, const Vector &next) const
 {
   double reward = 0;
-  double rwFail = -75;
-  double rwTime = -1.5;
-  double rwBrokenKnee = -10;
 
   // Time penalty
-  reward += rwTime;
+  reward += rwTime_;
 
   // Forward promotion
   reward += rwForward_*(next[rlwComX] - state[rlwComX]);
 
   // Negative reward
   if (isDoomedToFall(next) || (isKneeBroken(next) && knee_mode_ == "fail_and_restart"))
-    reward += rwFail;       // when failing the task due to 'fall' or 'broken knee'
+    reward += rwFail_;       // when failing the task due to 'fall' or 'broken knee'
   else if (!isDoomedToFall(next) && isKneeBroken(next) && knee_mode_ == "punish_and_continue")
-    reward += rwBrokenKnee; // when 'broken knee' is allowed but not preferred
+    reward += rwBrokenKnee_; // when 'broken knee' is allowed but not preferred
 
   return reward;
 }
@@ -275,11 +281,11 @@ void LeoWalkingTask::report(std::ostream &os, const Vector &state) const
   progressString << std::setw(pw) << state[rlwTorsoX]/state[rlwTime];
 
   // Energy usage
-  progressString << std::setw(pw) << trialEnergy_;
+  progressString << std::setw(pw) << trialWork_;
 
   // Energy per traveled meter
   if (state[rlwTorsoX] > 0.001)
-    progressString << std::setw(pw) << trialEnergy_/state[rlwTorsoX];
+    progressString << std::setw(pw) << trialWork_/state[rlwTorsoX];
   else
     progressString << std::setw(pw) << 0.0;
 
@@ -306,14 +312,12 @@ void LeoBalancingTask::start(int test, Vector *state) const
 double LeoBalancingTask::calculateReward(const Vector &state, const Vector &next) const
 {
   double reward = 0;
-  double rwFail = -75;
-  double rwBrokenKnee = -10;
 
   // Negative reward
   if (isDoomedToFall(next) || (isKneeBroken(next) && knee_mode_ == "fail_and_restart"))
-    reward += rwFail;       // when failing the task due to 'fall' or 'broken knee'
+    reward += rwFail_;       // when failing the task due to 'fall' or 'broken knee'
   else if (!isDoomedToFall(next) && isKneeBroken(next) && knee_mode_ == "punish_and_continue")
-    reward += rwBrokenKnee; // when 'broken knee' is allowed but not preferred
+    reward += rwBrokenKnee_; // when 'broken knee' is allowed but not preferred
 
   return reward;
 }

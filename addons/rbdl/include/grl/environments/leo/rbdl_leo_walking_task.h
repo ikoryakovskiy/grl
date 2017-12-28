@@ -110,7 +110,7 @@ class LeoWalkingTask : public Task
 
   public:
     LeoWalkingTask() : test_(0), target_env_(NULL), randomize_(.0), measurement_noise_(0), dof_(4), timeout_(0), falls_(0),
-      trialEnergy_(.0), knee_mode_("fail_and_restart"), rwForward_(300.) { }
+      trialWork_(.0), knee_mode_("fail_and_restart"), rwForward_(300.), rwTime_(-1.5), rwWork_(-2), rwFail_(-75), rwBrokenKnee_(-10) { }
 
     // From Configurable
     virtual void request(ConfigurationRequest *config);
@@ -132,9 +132,15 @@ class LeoWalkingTask : public Task
     double timeout_;
     Vector target_obs_min_, target_obs_max_;
     mutable int falls_;
-    mutable double trialEnergy_;
+    mutable double trialWork_;
     std::string knee_mode_;
+
+    // reward weights
     double rwForward_;
+    double rwTime_;
+    double rwWork_;
+    double rwFail_;
+    double rwBrokenKnee_;
 
   protected:
     virtual double calculateReward(const Vector &state, const Vector &next) const;
