@@ -147,13 +147,13 @@ class LeoWalkingTask : public Task
     virtual bool isDoomedToFall(const Vector &state) const;
     virtual bool isKneeBroken(const Vector &state) const;
     virtual double getMotorWork(const Vector &state, const Vector &next, const Action &action) const;
-    virtual void initLeo(int test, Vector *state) const;
+    virtual void initLeo(int test, Vector *state, int sym_rand = 0) const;
 };
 
 class LeoBalancingTask : public LeoWalkingTask
 {
   public:
-    TYPEINFO("task/leo_balancing", "Task specification for Leo balancing with all joints actuated (except for shoulder) and both feet on the floor")
+    TYPEINFO("task/leo_balancing", "Task specification for Leo standing straight and balancing with all joints actuated (except for shoulder) and both feet on the floor")
 
   public:
     LeoBalancingTask() {}
@@ -163,6 +163,22 @@ class LeoBalancingTask : public LeoWalkingTask
 
   protected:
     virtual double calculateReward(const Vector &state, const Vector &next) const;
+};
+
+class LeoCrouchingTask : public LeoBalancingTask
+{
+  public:
+    TYPEINFO("task/leo_crouching", "Task specification for Leo crouching and balancing with all joints actuated (except for shoulder) and both feet on the floor")
+
+  public:
+    LeoCrouchingTask() {}
+
+    // From Task
+    virtual void start(int test, Vector *state) const;
+
+  protected:
+    virtual bool isDoomedToFall(const Vector &state) const;
+  //  virtual double calculateReward(const Vector &state, const Vector &next) const;
 };
 
 }

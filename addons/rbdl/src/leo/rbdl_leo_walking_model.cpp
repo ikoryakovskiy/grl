@@ -29,6 +29,7 @@
 #include <grl/environments/leo/rbdl_leo_walking_task.h>
 #include <DynamixelSpecs.h>
 #include <iomanip>
+#include <bitset>
 
 using namespace grl;
 
@@ -62,6 +63,13 @@ void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
   state_[rlwPrevComX] = state_[rlwComX];
   *state = state_;
 
+  // Calculate root-to-feet distance, which defines floor. Thus, the point with maximum stretch touches the ground
+  CRAWL(state_[rlwLeftTipZ] << ", " << state_[rlwLeftHeelZ] << ", " << state_[rlwRightTipZ] << ", " << state_[rlwRightHeelZ]);
+  // root_to_feet_height_ is about -0.39387 for starting in a straight position
+  // root_to_feet_height_ is about -0.28733 for starting in a crounching position
+  root_to_feet_height_ = fmin(state_[rlwLeftTipZ], fmin(state_[rlwLeftHeelZ], fmin(state_[rlwRightTipZ], state_[rlwRightHeelZ]))) - state_[rlwTorsoZ];
+  TRACE("root_to_feet_height_ = " << root_to_feet_height_);
+
   active_left_heel_contact_ = 0;
   active_right_heel_contact_ = 0;
   active_left_tip_contact_ = 0;
@@ -73,9 +81,11 @@ void LeoWalkingSandboxModel::start(const Vector &hint, Vector *state)
   active_constraint_set_ = "";
   acting_constraint_set_ = "";
 
-  export_meshup_animation(state_[rlwTime], state_, ConstantVector(target_dof_, 0));
+  std::vector<std::string> aux;
+  aux.push_back(active_constraint_set_);
+  export_meshup_animation(state_[rlwTime], state_, ConstantVector(target_dof_, 0), aux);
 
-  TRACE("Initial state: " << state_);
+  CRAWL("Initial state: " << state_);
 }
 
 double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
@@ -185,7 +195,18 @@ double LeoWalkingSandboxModel::step(const Vector &action, Vector *next)
 
   // Compose the next state
   (*next) << target_state_next_, rbdl_addition_, state_[rlwComX];
-  export_meshup_animation((*next)[rlwTime], *next, target_action_);
+
+  // Additionally export feet contacts
+  if (animation_ != "nope")
+  {
+    std::vector<std::string> aux;
+    int contacts = (acting_left_tip_contact_ << 3) + (acting_left_heel_contact_ << 2) + (acting_right_tip_contact_ << 1) + (acting_right_heel_contact_ << 0);
+    std::string ss = std::bitset<4>(contacts).to_string();
+    aux.push_back(ss);
+    export_meshup_animation((*next)[rlwTime], *next, target_action_, aux);
+  }
+
+  CRAWL("Height = " << (*next)[rlwTorsoZ] << "; Ankle angles = " << (*next)[rlwRightAnkleAngle]);
 
   state_ = *next;
   return tau;

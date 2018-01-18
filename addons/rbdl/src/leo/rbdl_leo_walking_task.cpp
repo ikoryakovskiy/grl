@@ -41,6 +41,7 @@ using namespace grl;
 
 REGISTER_CONFIGURABLE(LeoWalkingTask)
 REGISTER_CONFIGURABLE(LeoBalancingTask)
+REGISTER_CONFIGURABLE(LeoCrouchingTask)
 
 void LeoWalkingTask::request(ConfigurationRequest *config)
 {
@@ -125,7 +126,7 @@ void LeoWalkingTask::reconfigure(const Configuration &config)
   }
 }
 
-void LeoWalkingTask::initLeo(int test, Vector *state) const
+void LeoWalkingTask::initLeo(int test, Vector *state, int sym_rand) const
 {
   test_ = test;
 
@@ -140,8 +141,20 @@ void LeoWalkingTask::initLeo(int test, Vector *state) const
   {
     double r = randomize_ * 3.1415/180.0;
 
-    for (int ii = rlwLeftHipAngle; ii <= rlwRightAnkleAngle; ii++)
-      (*state)[ii] += 2*r*drand48()-r;
+    if (!sym_rand)
+    {
+      for (int ii = rlwLeftHipAngle; ii <= rlwRightAnkleAngle; ii++)
+        (*state)[ii] += r * (2*drand48()-1);
+    }
+    else
+    {
+      for (int ii = rlwLeftHipAngle; ii <= rlwLeftAnkleAngle; ii+=2)
+      {
+        double delta = r * (2*drand48()-1);
+        (*state)[ii] += delta;
+        (*state)[ii+1] += delta;
+      }
+    }
 
     (*state)[rlwLeftKneeAngle] = fmin((*state)[rlwLeftKneeAngle], -0.02);
     (*state)[rlwLeftKneeAngle] = fmin((*state)[rlwRightKneeAngle], -0.02);
@@ -226,11 +239,12 @@ double LeoWalkingTask::calculateReward(const Vector &state, const Vector &next) 
 bool LeoWalkingTask::isDoomedToFall(const Vector &state) const
 {
   double torsoConstraint = 1;
-  double stanceConstraint = 0.36*M_PI;
+  double anklesConstraint = 0.36*M_PI;
   double torsoHeightConstraint = -0.15;
 
-  if ((fabs(state[rlwTorsoAngle]) > torsoConstraint) || (fabs(state[rlwRightAnkleAngle]) > stanceConstraint) || (fabs(state[rlwLeftAnkleAngle]) > stanceConstraint)
-      || (state[rlwTorsoZ] < torsoHeightConstraint))
+  if ((fabs(state[rlwTorsoAngle]) > torsoConstraint) ||
+      (fabs(state[rlwRightAnkleAngle]) > anklesConstraint) || (fabs(state[rlwLeftAnkleAngle]) > anklesConstraint) ||
+      (state[rlwTorsoZ] < torsoHeightConstraint))
     return true;
 
   return false;
@@ -322,3 +336,36 @@ double LeoBalancingTask::calculateReward(const Vector &state, const Vector &next
   return reward;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////
+
+void LeoCrouchingTask::start(int test, Vector *state) const
+{
+  // Default initialization of the balancing pose
+  *state = ConstantVector(2*dof_+1, 0);
+  *state <<
+      0, 0, 0,
+      1.0586571916803691E+00,
+      1.0586571916803691E+00,
+     -2.1266836153365212E+00,
+     -2.1266836153365212E+00,
+      1.0680264236561250E+00, // ideally, flat feet on the ground
+      1.0680264236561250E+00, // ideally, flat feet on the ground
+      0, 0, 0,
+      0, 0, 0, 0, 0, 0,
+      0;  // + rlwTime
+  initLeo(0, state, 1);
+}
+
+bool LeoCrouchingTask::isDoomedToFall(const Vector &state) const
+{
+  double torsoConstraint = 1;
+  double anklesConstraint = 0.5*M_PI;
+  double torsoHeightConstraint = -0.15;
+
+  if ((fabs(state[rlwTorsoAngle]) > torsoConstraint) ||
+      (fabs(state[rlwRightAnkleAngle]) > anklesConstraint) || (fabs(state[rlwLeftAnkleAngle]) > anklesConstraint) ||
+      (state[rlwTorsoZ] < torsoHeightConstraint))
+    return true;
+
+  return false;
+}

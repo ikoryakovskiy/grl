@@ -63,7 +63,7 @@ class LeoWalkingSandboxModel : public LeoSandboxModel
     Vector rbdl_addition_;
     VectorSignal *sub_ext_state_;
     std::string mode_, active_constraint_set_, acting_constraint_set_;
-    double root_to_feet_height_ = -0.393865;
+    double root_to_feet_height_; // This constant measures dictance from the root point to the heels or tips of the legs
     int active_left_tip_contact_, active_right_tip_contact_, active_left_heel_contact_, active_right_heel_contact_, active_num_contacts_;
     int acting_left_tip_contact_, acting_right_tip_contact_, acting_left_heel_contact_, acting_right_heel_contact_, acting_num_contacts_;
     std::string knee_mode_;

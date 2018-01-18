@@ -59,10 +59,12 @@ void LeoSandboxModel::configure(Configuration &config)
     // remove file because will be append otherwice
     std::remove("sd_leo.csv");
     std::remove("u_leo.csv");
+    std::remove("aux_leo.csv");
   }
 }
 
-void LeoSandboxModel::export_meshup_animation(double time, const Vector &state, const Vector &action) const
+void LeoSandboxModel::export_meshup_animation(double time, const Vector &state, const Vector &action,
+                                              const std::vector<std::string> &aux) const
 {
   if (animation_ == "nope")
     return;
@@ -93,4 +95,19 @@ void LeoSandboxModel::export_meshup_animation(double time, const Vector &state, 
     data_stream << action[i] << ", ";
   data_stream << action[target_dof_-1] << std::endl;
   data_stream.close();
+
+  if (aux.size())
+  {
+    data_stream.open ("aux_leo.csv", om);
+    if (!data_stream)
+    {
+      std::cerr << "Error opening file aux_leo.csv" << std::endl;
+      abort();
+    }
+    data_stream << time << ", ";
+    for (int i = 0; i < aux.size()-1; i++)
+      data_stream << aux[i] << ", ";
+    data_stream << aux[aux.size()-1] << std::endl;
+    data_stream.close();
+  }
 }

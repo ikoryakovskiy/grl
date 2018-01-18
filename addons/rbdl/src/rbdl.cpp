@@ -180,7 +180,6 @@ void RBDLDynamics::updateActiveConstraintSet(std::string point) const
   active_constraint_set_ = point;
 }
 
-
 void RBDLDynamics::calcCollisionImpactRhs(const Vector &state, Vector &out) const
 {
   RBDLState *rbdl = rbdl_state_.instance();
