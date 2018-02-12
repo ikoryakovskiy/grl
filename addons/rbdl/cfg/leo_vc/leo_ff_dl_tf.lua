@@ -30,7 +30,7 @@ torsoIYY = 0.004676374
 torsoheight = (0.24155)
 torsoHipDistX = (0.00273)
 torsoHipDistZ = (-torsoheight/2)
-torsoMass = 1.2 --0.94226
+torsoMass = 0.94226
 boomMass = 0.860
 boomCMY = 0.835
 boomLength = 1.70
@@ -58,7 +58,7 @@ armJointZ = (0.091275)
 upleglength = (0.116)
 interlegdist = (0.06390)
 
-uplegMass = 0.19978 --0.19978
+uplegMass = 0.19978
 uplegCMX = 0.00285
 uplegCMZ = -0.00481 - upleglength/2
 uplegIYY = 0.000273133
@@ -73,7 +73,7 @@ uplegRightJointZ = (torsoHipDistZ)
 
 loleglength = 0.1085
 
-lolegMass = 0.13691 --0.13691
+lolegMass = 0.13691
 lolegCMX = 0.00804 + 0.00405
 lolegCMZ = -0.00867 - loleglength/2
 lolegIYY = 0.000153379
@@ -117,6 +117,15 @@ local function iyymatrix(iyy)
   return {
            {inertiadontcare, 0., 0.},
            {0.0, iyy, 0.},
+           {0., 0., inertiadontcare}
+         }
+end
+
+local function inertiadontcarematrix()
+  local inertiadontcare = 10000.0
+  return {
+           {inertiadontcare, 0., 0.},
+           {0., inertiadontcare, 0.},
            {0., 0., inertiadontcare}
          }
 end
@@ -174,7 +183,7 @@ function control(state, action)
 --      print(action[ii])
       action[ii] = Kt*G*(action[ii] - Kt*G*state[dof + ii])/R;
 --      print(action[ii])
---      action[ii] = action[ii] - 0.03*state[dof + ii]; -- Friction
+      -- action[ii] = action[ii] - 0.0*state[dof + ii]; -- Friction
     end
     return {0.0, 0.0, 0.0, action[3], action[4], action[5], action[6], action[7], action[8]}
 end
@@ -577,7 +586,7 @@ model = {
       body = {
         mass = uplegMass,
         com = {uplegCMX, 0.0, uplegCMZ},
-        inertia = iyymatrix(uplegIYY),
+        inertia = inertiadontcarematrix(),
       },
       joint = joints.hinge,
       joint_frame = {
@@ -591,7 +600,7 @@ model = {
       body = {
         mass = uplegMass,
         com = {uplegCMX, 0., uplegCMZ},
-        inertia = iyymatrix(uplegIYY),
+        inertia = inertiadontcarematrix(),
       },
       joint = joints.hinge,
       joint_frame = {
@@ -605,7 +614,7 @@ model = {
       body = {
         mass = lolegMass,
         com = {lolegCMX, 0.0, lolegCMZ},
-        inertia = iyymatrix(lolegIYY)
+        inertia = inertiadontcarematrix()
       },
       joint = joints.hinge,
       joint_frame = {
@@ -619,7 +628,7 @@ model = {
       body = {
         mass = lolegMass,
         com = {lolegCMX, 0., lolegCMZ},
-        inertia = iyymatrix(lolegIYY)
+        inertia = inertiadontcarematrix()
       },
       joint = joints.hinge,
       joint_frame = {
@@ -633,7 +642,7 @@ model = {
       body = {
         mass = footMass,
         com = {footCMX, 0.0, footCMZ},
-        inertia = iyymatrix(footIYY)
+        inertia = inertiadontcarematrix()
       },
       joint = joints.hinge,
       joint_frame = {
@@ -651,7 +660,7 @@ model = {
       body = {
         mass = footMass,
         com = {footCMX, 0., footCMZ},
-        inertia = iyymatrix(footIYY)
+        inertia = inertiadontcarematrix()
       },
       joint = joints.hinge,
       joint_frame = {

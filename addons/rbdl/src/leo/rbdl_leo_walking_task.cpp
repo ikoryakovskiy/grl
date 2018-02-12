@@ -359,8 +359,8 @@ void LeoCrouchingTask::start(int test, Vector *state) const
 bool LeoCrouchingTask::isDoomedToFall(const Vector &state) const
 {
   double torsoConstraint = 1;
-  double anklesConstraint = 0.5*M_PI;
-  double torsoHeightConstraint = -0.15;
+  double anklesConstraint = 0.5*M_PI;   // allow ankles a greater bend
+  double torsoHeightConstraint = -0.05; // torso cannot move much more down compared to when Leo is straight
 
   if ((fabs(state[rlwTorsoAngle]) > torsoConstraint) ||
       (fabs(state[rlwRightAnkleAngle]) > anklesConstraint) || (fabs(state[rlwLeftAnkleAngle]) > anklesConstraint) ||
