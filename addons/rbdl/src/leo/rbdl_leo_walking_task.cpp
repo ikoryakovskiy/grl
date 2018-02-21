@@ -207,7 +207,10 @@ void LeoWalkingTask::observe(const Vector &state, Observation *obs, int *termina
 
 void LeoWalkingTask::evaluate(const Vector &state, const Action &action, const Vector &next, double *reward) const
 {
-  grl_assert(state[rlwComX] == next[rlwPrevComX]);
+  //grl_assert(state[rlwComX] == next[rlwPrevComX]-1);
+  //throw Exception("LeoWalkingTask::evaluate Exception");
+  if (state[rlwComX] != next[rlwPrevComX])
+    ERROR("LeoWalkingTask::evaluate COM error: " << state[rlwComX] << ", " << next[rlwPrevComX]);
 
   // State is previous state and next is the new state
   double stepWork = getMotorWork(state, next, action);
