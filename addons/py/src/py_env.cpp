@@ -29,13 +29,21 @@
 #include <pybind11/iostream.h>
 #include <pybind11/eigen.h>
 #include <string.h>
+#include <signal.h>
 
 using namespace grl;
 
 namespace py = pybind11;
 
+void hSIGABRT(int sig)
+{
+  throw Exception("GRL caught SIGABRT signal.");
+}
+
 py::tuple PyEnv::init(const std::string &file)
 {
+  signal(SIGABRT, hSIGABRT);
+
   if (first_)
   {
     loadPlugins();
@@ -113,6 +121,10 @@ void PyEnv::reconfigure(py::dict config)
 
 void PyEnv::seed(int seed)
 {
+  // for interface debugging
+  //if (seed % 2 == 0)
+  //    throw Exception("Error getting start state from simulator");
+  //grl_assert(seed % 2 == 0);
   srand(seed);
   srand48(seed);
   INFO("GRL seed " << seed);
