@@ -175,15 +175,13 @@ end
 
 function control(state, action)
     -- Convert voltage to torque
+    jointFriction = 0.00
     Kt = 0.006325081
     G = 212.6
     R = 4.6
     dof = 9
     for ii = 0, dof-1 do
---      print(action[ii])
-      action[ii] = Kt*G*(action[ii] - Kt*G*state[dof + ii])/R;
---      print(action[ii])
-      -- action[ii] = action[ii] - 0.0*state[dof + ii]; -- Friction
+      action[ii] = Kt*G*(action[ii] - Kt*G*state[dof + ii])/R - jointFriction*state[dof + ii];
     end
     return {0.0, 0.0, 0.0, action[3], action[4], action[5], action[6], action[7], action[8]}
 end

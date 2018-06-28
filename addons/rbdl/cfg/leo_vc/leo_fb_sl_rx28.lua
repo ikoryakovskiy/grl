@@ -14,30 +14,28 @@
 --]]
 
 -- strict checks for undefined variables
--- require 'SRC.strict'
+--require 'SRC.strict'
 
 -- load module with convenience functions
--- utils = require 'SRC.utils'
+--utils = require 'SRC.utils'
 
 -- initial
 armICangle = -0.26 -- = -15*degtorad
 
+
 -- for model
-torsoBoomMass = 0.91326
-torsoCMX = -0.00102
-torsoCMZ = 0.009945
-torsoIYY = 0.004676374
+inertiadontcare = 0.001
 torsoheight = (0.24155)
 torsoHipDistX = (0.00273)
 torsoHipDistZ = (-torsoheight/2)
-torsoMass = 1.41339 --0.94226
+torsoMass = 0.91326
 boomMass = 0.860
 boomCMY = 0.835
 boomLength = 1.70
 boomIZZ = 0.31863
-boomVirtualMassX = 0 --(boomCMY^2*boomMass + boomIZZ)/(boomLength^2)
---boomVirtualMassZ = boomMass*boomCMY/boomLength
---boomExtForce = (boomVirtualMassZ - boomVirtualMassX)*(-9.81)
+boomVirtualMassX = (boomCMY^2*boomMass + boomIZZ)/(boomLength^2)
+boomVirtualMassZ = boomMass*boomCMY/boomLength
+boomExtForce = (boomVirtualMassZ - boomVirtualMassX)*(-9.81)
 torsoBoomMass = torsoMass + boomVirtualMassX
 torsoCMX = -0.00102
 torsoCMZ = 0.009945
@@ -58,7 +56,7 @@ armJointZ = (0.091275)
 upleglength = (0.116)
 interlegdist = (0.06390)
 
-uplegMass = 0.19978
+uplegMass = 0.17978
 uplegCMX = 0.00285
 uplegCMZ = -0.00481 - upleglength/2
 uplegIYY = 0.000273133
@@ -71,9 +69,9 @@ uplegRightJointX = (torsoHipDistX)
 uplegRightJointY = (-interlegdist/2)
 uplegRightJointZ = (torsoHipDistZ)
 
-loleglength = 0.1085
+loleglength = (0.1045)
 
-lolegMass = 0.13691
+lolegMass = 0.12691
 lolegCMX = 0.00804 + 0.00405
 lolegCMZ = -0.00867 - loleglength/2
 lolegIYY = 0.000153379
@@ -121,15 +119,6 @@ local function iyymatrix(iyy)
          }
 end
 
-local function inertiadontcarematrix()
-  local inertiadontcare = 10000.0
-  return {
-           {inertiadontcare, 0., 0.},
-           {0., inertiadontcare, 0.},
-           {0., 0., inertiadontcare}
-         }
-end
-
 local function rotymatrix(angle)
   return {
            {  math.cos(angle), 0.0, math.sin(angle)},
@@ -154,9 +143,9 @@ joints = {
 }
 
 colors = {
-  bracket = { 0, 0.7, 0.0 },
-  wheel = { 0, 0.7, 0.0 },
-  dynamixels = { 0, 0.7, 0 }
+  bracket = { 0.8, 0.8, 0.8 },
+  wheel = { 0.1, 0.1, 0.1 },
+  dynamixels = { 0.5, 0.5, 0.5 }
 }
 
 -- **************************************************************************
@@ -171,21 +160,6 @@ local function get_point_by_name (container, name)
         end
     end
     print('container does not contain point with name: ', name)
-end
-
-function control(state, action)
-    -- Convert voltage to torque
-    Kt = 0.006325081
-    G = 212.6
-    R = 4.6
-    dof = 9
-    for ii = 0, dof-1 do
---      print(action[ii])
-      action[ii] = Kt*G*(action[ii] - Kt*G*state[dof + ii])/R;
---      print(action[ii])
-      action[ii] = action[ii] - 0.03*state[dof + ii]; -- Friction
-    end
-    return {0.0, 0.0, 0.0, action[3], action[4], action[5], action[6], action[7], action[8]}
 end
 
 -- **************************************************************************
@@ -235,45 +209,10 @@ visuals = {
       dimensions = { (0.020), (0.010), (0.140) },
       color = { 0.8, 0.8, 0.8},
       mesh_center = {
-        (0.01527), 0.0, (-0.05699)
-      },
-      src = "meshes/unit_cube.obj",
-    },
-    {
-      -- Should be rotated
-      name = "lower_arm_box",
-      dimensions = { (0.020), (0.010), (0.150) },
-      color = colors.bracket,
-      mesh_center = {
-        (0.06989), 0.0, (-0.18714)
-      },
-      src = "meshes/unit_cube.obj",
-    },
-    {
-      name = "hand_wheel",
-      dimensions = {
-        (2*handwheelradius), (2*handwheelradius), (2*handwheelradius)
-      },
-      color = colors.wheel,
-      mesh_center = {
-        (handoffsetx), 0.0, (handoffsetz)
-      },
-      src = "meshes/unit_sphere_lowres.obj"
-    }
-  },
-  upper_arm = {
-    {
-      -- Should be rotated
-      name = "upper_arm_box",
-      dimensions = { (0.020), (0.010), (0.140) },
-      color = { 0.8, 0.8, 0.8},
-      mesh_center = {
         (0.01527), 0.005, (-0.05699)
       },
       src = "meshes/unit_cube.obj",
     },
-  },
-  lower_arm = {
     {
       -- Should be rotated
       name = "lower_arm_box",
@@ -292,6 +231,41 @@ visuals = {
       color = colors.wheel,
       mesh_center = {
         (handoffsetx), 0.005, (handoffsetz)
+      },
+      src = "meshes/unit_sphere_lowres.obj"
+    }
+  },
+  upper_arm = {
+    {
+      -- Should be rotated
+      name = "upper_arm_box",
+      dimensions = { (0.020), (0.010), (0.140) },
+      color = { 0.8, 0.8, 0.8},
+      mesh_center = {
+        (0.01527), 0.0, (-0.05699)
+      },
+      src = "meshes/unit_cube.obj",
+    },
+  },
+  lower_arm = {
+    {
+      -- Should be rotated
+      name = "lower_arm_box",
+      dimensions = { (0.020), (0.010), (0.150) },
+      color = colors.bracket,
+      mesh_center = {
+        (0.06989), 0.0, (-0.18714)
+      },
+      src = "meshes/unit_cube.obj",
+    },
+    {
+      name = "hand_wheel",
+      dimensions = {
+        (2*handwheelradius), (2*handwheelradius), (2*handwheelradius)
+      },
+      color = colors.wheel,
+      mesh_center = {
+        (handoffsetx), 0.0, (handoffsetz)
       },
       src = "meshes/unit_sphere_lowres.obj"
     }
@@ -429,103 +403,26 @@ contact_points = {
 -- **************************************************************************
 
 constraint_sets = {
--- Single contacts
-  single_support_heel_right = {
-     { point = "heel_right", normal = { 1, 0, 0,}, },
-     { point = "heel_right", normal = { 0, 0, 1,}, },
-   },
-  single_support_heel_left = {
-     { point = "heel_left", normal = { 1, 0, 0,}, },
-     { point = "heel_left", normal = { 0, 0, 1,}, },
-   },
-  single_support_tip_right = {
-     { point = "tip_right", normal = { 1, 0, 0,}, },
-     { point = "tip_right", normal = { 0, 0, 1,}, },
-   },
-  single_support_tip_left = {
-     { point = "tip_left", normal = { 1, 0, 0,}, },
-     { point = "tip_left", normal = { 0, 0, 1,}, },
-   },
--- Double contacts
-  single_support_flat_right = {
-     { point = "heel_right", normal = { 1, 0, 0,}, },
-     { point = "heel_right", normal = { 0, 0, 1,}, },
-     { point = "tip_right", normal = { 0, 0, 1,}, },
-   },
-  single_support_flat_left = {
-     { point = "heel_left", normal = { 1, 0, 0,}, },
-     { point = "heel_left", normal = { 0, 0, 1,}, },
-     { point = "tip_left", normal = { 0, 0, 1,}, },
-   },
-  double_support_heel = {
-     { point = "heel_left", normal = { 1, 0, 0,}, },
-     { point = "heel_left", normal = { 0, 0, 1,}, },
-     { point = "heel_right", normal = { 1, 0, 0,}, },
-     { point = "heel_right", normal = { 0, 0, 1,}, },
-   },
-  double_support_tip = {
-     { point = "tip_left", normal = { 1, 0, 0,}, },
-     { point = "tip_left", normal = { 0, 0, 1,}, },
-     { point = "tip_right", normal = { 1, 0, 0,}, },
-     { point = "tip_right", normal = { 0, 0, 1,}, },
-   },
-  double_support_hr_tl = {
-     { point = "tip_left", normal = { 1, 0, 0,}, },
-     { point = "tip_left", normal = { 0, 0, 1,}, },
-     { point = "heel_right", normal = { 1, 0, 0,}, },
-     { point = "heel_right", normal = { 0, 0, 1,}, },
-   },
-  double_support_hl_tr = {
-     { point = "heel_left", normal = { 1, 0, 0,}, },
-     { point = "heel_left", normal = { 0, 0, 1,}, },
-     { point = "tip_right", normal = { 1, 0, 0,}, },
-     { point = "tip_right", normal = { 0, 0, 1,}, },
-   },
--- Triple contacts
-  double_support_fl_hr = {
-    { point = "heel_right", normal = { 1, 0, 0,}, },
-    { point = "heel_right", normal = { 0, 0, 1,}, },
-
-    { point = "heel_left", normal = { 1, 0, 0,}, },
-    { point = "heel_left", normal = { 0, 0, 1,}, },
-    { point = "tip_left", normal = { 0, 0, 1,}, },
-  },
-  double_support_fl_tr = {
-    { point = "tip_right", normal = { 1, 0, 0,}, },
-    { point = "tip_right", normal = { 0, 0, 1,}, },
-
-    { point = "heel_left", normal = { 1, 0, 0,}, },
-    { point = "heel_left", normal = { 0, 0, 1,}, },
-    { point = "tip_left", normal = { 0, 0, 1,}, },
-  },
-  double_support_fr_hl = {
-    { point = "heel_right", normal = { 1, 0, 0,}, },
-    { point = "heel_right", normal = { 0, 0, 1,}, },
-    { point = "tip_right", normal = { 0, 0, 1,}, },
-
-    { point = "heel_left", normal = { 1, 0, 0,}, },
-    { point = "heel_left", normal = { 0, 0, 1,}, },
-  },
-  double_support_fr_tl = {
-    { point = "heel_right", normal = { 1, 0, 0,}, },
-    { point = "heel_right", normal = { 0, 0, 1,}, },
-    { point = "tip_right", normal = { 0, 0, 1,}, },
-
-    { point = "tip_left", normal = { 1, 0, 0,}, },
-    { point = "tip_left", normal = { 0, 0, 1,}, },
-  },
--- All four in contact
-  double_support = {
-  --  -- NOTE: one has to be careful with multiple position contacts that should
-  --  --       are supposed to keep a body straight on the floor
-    { point = "heel_right", normal = { 1, 0, 0,}, },
-    { point = "heel_right", normal = { 0, 0, 1,}, },
-    { point = "tip_right", normal = { 0, 0, 1,}, },
-
-    { point = "heel_left", normal = { 1, 0, 0,}, },
-    { point = "heel_left", normal = { 0, 0, 1,}, },
-    { point = "tip_left", normal = { 0, 0, 1,}, },
-  },
+  -- FlatRight = {
+  --   { point = "heel_right", normal = { 1, 0, 0,}, },
+  --   { point = "heel_right", normal = { 0, 0, 1,}, },
+  -- },
+  -- FlatLeft = {
+  --   { point = "heel_left", normal = { 1, 0, 0,}, },
+  --   { point = "heel_left", normal = { 0, 0, 1,}, },
+  -- },
+  -- double_support = {
+  --   -- NOTE: one has to be careful with multiple position contacts that should
+  --   --       are supposed to keep a body straight on the floor
+  --   { point = "heel_right", normal = { 1, 0, 0,}, },
+  --   { point = "heel_right", normal = { 0, 0, 1,}, },
+  --   -- { point = "tip_right", normal = { 1, 0, 0,}, },
+  --   { point = "tip_right", normal = { 0, 0, 1,}, },
+  --   -- { point = "heel_left", normal = { 1, 0, 0,}, },
+  --   -- { point = "heel_left", normal = { 0, 0, 1,}, },
+  --   -- { point = "tip_left", normal = { 1, 0, 0,}, },
+  --   -- { point = "tip_left", normal = { 0, 0, 1,}, },
+  -- },
 }
 
 -- **************************************************************************
@@ -546,132 +443,220 @@ model = {
     axis_right = { 0, -1, 0},
     },
     frames = {
-    {
-      -- Note: torso is unmoved from original position
-      name = "torso",
-      parent = "ROOT",
-      body = {
-        mass = torsoBoomMass,
+      {
+        name = "world",
+        parent = "ROOT",
+        joint = joints.fixed,
+        joint_frame = {
+          r = {0., 0., 0.}
+        },
+        points = { -- draw contact points
+          -- support_center = {
+          --   coordinates = {0.0405, 0., 0.}
+          -- },
+          CoM = {
+            coordinates = {0.0351913, -0.00137974, 0.28}
+          },
+        }
+      },
+      {
+        name = "footleft",
+        parent = "ROOT",
+        body = {
+          mass = 2*footMass,
+          com = {footCMX, 0.0, footCMZ},
+          inertia = iyymatrix(2*footIYY)
+        },
+        joint = joints.fixed,
+        joint_frame = {
+          r = {-(-footlength/2 + 0.009), 0.5*interlegdist, footwheelradius + 0.03559}
+        },
+        visuals = visuals.foot,
+        points = { -- draw contact points
+          heel_left = get_point_by_name(contact_points, "heel_left"),
+          tip_left = get_point_by_name(contact_points, "tip_left"),
+        }
+      },
+      {
+        name = "ankleleft",
+        parent = "footleft",
+        joint = joints.lhinge,
+        joint_frame = {
+          -- r = {-footLeftJointX, -footLeftJointY, -footLeftJointZ}
+          -- r = {0.0, 0.5*interlegdist, footwheelradius + 0.03559}
+        },
+        -- visuals = visuals.foot,
+        -- visuals = visuals.lowerleg,
+        points = { -- draw contact points
+        }
+      },
+      {
+        name = "lowerlegleft",
+        parent = "ankleleft",
+        body = {
+          mass = 2*lolegMass,
+          com = {lolegCMX, 0.0, lolegCMZ},
+          inertia = iyymatrix(2*lolegIYY)
+        },
+        joint = joints.fixed,
+        joint_frame = {
+          -- r = {0.0, 0.0, 0.1}
+          -- r = {-footLeftJointX, -footLeftJointY, -footLeftJointZ}
+          r = {-footLeftJointX, -footLeftJointY, -footLeftJointZ}
+        },
+        visuals = visuals.lowerleg
+      },
+      {
+        name = "kneeleft",
+        parent = "lowerlegleft",
+        joint = joints.lhinge,
+        joint_frame = {
+          -- r = {-footLeftJointX, -footLeftJointY, -footLeftJointZ}
+          -- r = {0.0, 0.5*interlegdist, footwheelradius + 0.03559}
+        },
+        -- visuals = visuals.foot,
+        -- visuals = visuals.lowerleg,
+        points = { -- draw contact points
+        }
+      },
+      {
+        name = "upperlegleft",
+        parent = "kneeleft",
+        body = {
+          mass = 2*uplegMass,
+          com = {uplegCMX, 0.0, uplegCMZ},
+          inertia = iyymatrix(2*uplegIYY),
+        },
+        joint = joints.fixed,
+        joint_frame = {
+          r = {-lolegLeftJointX, -lolegLeftJointY, -lolegLeftJointZ}
+        },
+        visuals = visuals.upperleg
+      },
+      {
+        name = "hipleft",
+        parent = "upperlegleft",
+        joint = joints.lhinge,
+        joint_frame = {
+          -- r = {-footLeftJointX, -footLeftJointY, -footLeftJointZ}
+          -- r = {0.0, 0.5*interlegdist, footwheelradius + 0.03559}
+        },
+        -- visuals = visuals.foot,
+        -- visuals = visuals.lowerleg,
+        points = { -- draw contact points
+        }
+      },
+      {
+        -- Note: torso is unmoved from original position
+        name = "torso",
+        parent = "hipleft",
+        body = {
+          mass = torsoBoomMass,
           com = {torsoBoomCMX, 0., torsoBoomCMZ},
           inertia = iyymatrix(torsoBoomIYY)
-      },
-      joint = joints.boom,
-      visuals = visuals.torso,
-      points = { -- draw contact points
-        root = get_point_by_name(contact_points, "root"),
-      }
-    },
-    {
-      name = "arm",
-      parent = "torso",
-      body = {
-        mass = armMass,
-        com = {armCMX, 0., armCMZ},
-        inertia = iyymatrix(armIYY)
-      },
-      joint = joints.fixed,
-      joint_frame = {
-        r = {armJointX, armJointY, armJointZ},
-        E = {
-            { 1, 0 , 0},
-            { 0, 1,  0},
-            { 0, 0,  1},
         },
+        joint = joints.fixed,
+        joint_frame = {
+          r = {-uplegLeftJointX, -uplegLeftJointY, -uplegLeftJointZ}
+        },
+        visuals = visuals.torso,
+        points = { -- draw contact points
+          root = get_point_by_name(contact_points, "root"),
+        }
       },
-      visuals = visuals.arm
-    },
-    {
-      name = "upperlegleft",
-      parent = "torso",
-      body = {
-        mass = uplegMass,
-        com = {uplegCMX, 0.0, uplegCMZ},
-        inertia = inertiadontcarematrix(),
+      {
+        name = "arm",
+        parent = "torso",
+        body = {
+          mass = armMass,
+          com = {armCMX, 0., armCMZ},
+          inertia = iyymatrix(armIYY)
+        },
+        joint = joints.lhinge,
+        joint_frame = {
+          r = {armJointX, armJointY, armJointZ},
+          E = rotymatrix(armICangle),
+        },
+        visuals = visuals.arm
       },
-      joint = joints.hinge,
-      joint_frame = {
-        r = {uplegLeftJointX, uplegLeftJointY, uplegLeftJointZ}
-      },
-      visuals = visuals.upperleg
-    },
-    {
-      name = "upperlegright",
-      parent = "torso",
-      body = {
-        mass = uplegMass,
-        com = {uplegCMX, 0., uplegCMZ},
-        inertia = inertiadontcarematrix(),
-      },
-      joint = joints.hinge,
-      joint_frame = {
-        r = {uplegRightJointX, uplegRightJointY, uplegRightJointZ}
-      },
-      visuals = visuals.upperleg
-    },
-    {
-      name = "lowerlegleft",
-      parent = "upperlegleft",
-      body = {
-        mass = lolegMass,
-        com = {lolegCMX, 0.0, lolegCMZ},
-        inertia = inertiadontcarematrix()
-      },
-      joint = joints.hinge,
-      joint_frame = {
-        r = {lolegLeftJointX, lolegLeftJointY, lolegLeftJointZ}
-      },
-      visuals = visuals.lowerleg
-    },
-    {
-      name = "lowerlegright",
-      parent = "upperlegright",
-      body = {
-        mass = lolegMass,
-        com = {lolegCMX, 0., lolegCMZ},
-        inertia = inertiadontcarematrix()
-      },
-      joint = joints.hinge,
-      joint_frame = {
-        r = {lolegRightJointX, lolegRightJointY, lolegRightJointZ}
-      },
-      visuals = visuals.lowerleg
-    },
-    {
-      name = "footleft",
-      parent = "lowerlegleft",
-      body = {
-        mass = footMass,
-        com = {footCMX, 0.0, footCMZ},
-        inertia = inertiadontcarematrix()
-      },
-      joint = joints.hinge,
-      joint_frame = {
-        r = {footLeftJointX, footLeftJointY, footLeftJointZ}
-      },
-      visuals = visuals.foot,
-      points = { -- draw contact points
-        heel_left = get_point_by_name(contact_points, "heel_left"),
-        tip_left = get_point_by_name(contact_points, "tip_left"),
-      }
-    },
-    {
-      name = "footright",
-      parent = "lowerlegright",
-      body = {
-        mass = footMass,
-        com = {footCMX, 0., footCMZ},
-        inertia = inertiadontcarematrix()
-      },
-      joint = joints.hinge,
-      joint_frame = {
-        r = {footRightJointX, footRightJointY, footRightJointZ}
-      },
-      visuals = visuals.foot,
-      points = { -- draw contact points
-        heel_right = get_point_by_name(contact_points, "heel_right"),
-        tip_right = get_point_by_name(contact_points, "tip_right"),
-      }
-    }
+      -- {
+      --   name = "upper_arm",
+      --   parent = "torso",
+      --   body = {
+      --     mass = armMass,
+      --     com = {armCMX, 0., armCMZ},
+      --     inertia = iyymatrix(armIYY)
+      --   },
+      --   joint = joints.hinge,
+      --   joint_frame = {
+      --     r = {armJointX, armJointY, armJointZ},
+      --     E = {
+      --         { 0.96592582628906831, 0.0, -0.25881904510252074},
+      --         { 0.0,                 1.0,  0.0},
+      --         { 0.25881904510252074, 0.0,  0.96592582628906831},
+      --     },
+      --   },
+      --   visuals = visuals.upper_arm
+      -- },
+      -- {
+      --   name = "lower_arm",
+      --   parent = "upper_arm",
+      --   joint_frame = {
+      --     r = {0.0, 0.0, 0.0},
+      --     E = {
+      --         { 0.96592582628906831, 0.0,  0.25881904510252074},
+      --         { 0.0,                 1.0,  0.0},
+      --         {-0.25881904510252074, 0.0,  0.96592582628906831},
+      --     },
+      --   },
+      --   visuals = visuals.lower_arm
+      -- },
+  --     {
+  --       name = "upperlegright",
+  --       parent = "torso",
+  --       body = {
+  --         mass = uplegMass,
+  --         com = {uplegCMX, 0., uplegCMZ},
+  --         inertia = iyymatrix(uplegIYY),
+  --         },
+  --       joint = joints.hinge,
+  --       joint_frame = {
+  --         r = {uplegRightJointX, uplegRightJointY, uplegRightJointZ}
+  --       },
+  --       visuals = visuals.upperleg
+  --     },
+  --     {
+  --       name = "lowerlegright",
+  --       parent = "upperlegright",
+  --       body = {
+  --         mass = lolegMass,
+  --         com = {lolegCMX, 0., lolegCMZ},
+  --         inertia = iyymatrix(lolegIYY)
+  --       },
+  --       joint = joints.hinge,
+  --       joint_frame = {
+  --         r = {lolegRightJointX, lolegRightJointY, lolegRightJointZ}
+  --       },
+  --       visuals = visuals.lowerleg
+  --     },
+  --     {
+  --       name = "footright",
+  --       parent = "lowerlegright",
+  --       body = {
+  --         mass = footMass,
+  --         com = {footCMX, 0., footCMZ},
+  --         inertia = iyymatrix(footIYY)
+  --       },
+  --       joint = joints.hinge,
+  --       joint_frame = {
+  --         r = {footRightJointX, footRightJointY, footRightJointZ}
+  --       },
+  --       visuals = visuals.foot,
+  --       points = { -- draw contact points
+  --         heel_right = get_point_by_name(contact_points, "heel_right"),
+  --         tip_right = get_point_by_name(contact_points, "tip_right"),
+  --       }
+  --     }
   }, -- end frames
 } -- end model
 
